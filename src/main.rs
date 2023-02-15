@@ -7,7 +7,8 @@ pub mod components;
 use components::*;
 pub mod player;
 use player::*;
-
+pub mod rect;
+use rect::Rect;
 
 pub const WINDOW_HEIGHT: i32 = 50;
 pub const WINDOW_WIDTH: i32 = 80;
@@ -72,7 +73,7 @@ fn main() -> rltk::BError {
 
     let mut gs = State { ecs: World::new() };
 
-    gs.ecs.insert(new_map());
+    gs.ecs.insert(new_map_rooms_and_corridors());
 
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
