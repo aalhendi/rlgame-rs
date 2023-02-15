@@ -1,6 +1,4 @@
 use super::Rect;
-use crate::SPAWN_X;
-use crate::SPAWN_Y;
 use crate::WINDOW_HEIGHT;
 use crate::WINDOW_WIDTH;
 use rltk::{RandomNumberGenerator, Rltk, RGB};
@@ -31,7 +29,7 @@ pub fn new_map_test() -> Vec<TileType> {
 
     // Random Walls on ~10% of tiles via thread-local rng
     let mut rng = RandomNumberGenerator::new();
-    let spawn_idx = xy_idx(SPAWN_X, SPAWN_Y);
+    let spawn_idx = xy_idx(40, 25);
     for _ in 0..400 {
         let x = rng.roll_dice(1, WINDOW_WIDTH - 1);
         let y = rng.roll_dice(1, WINDOW_HEIGHT - 1);
@@ -44,18 +42,51 @@ pub fn new_map_test() -> Vec<TileType> {
     map
 }
 
-pub fn new_map_rooms_and_corridors() -> Vec<TileType> {
+/// Makes a new map using the algorithm from http://rogueliketutorials.com/tutorials/tcod/part-3/
+/// Returns map with random rooms and corridors to join them.
+pub fn new_map_rooms_and_corridors() -> (Vec<Rect>, Vec<TileType>) {
     let mut map = vec![TileType::Wall; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize];
 
-    let room1 = Rect::new(20, 15, 10, 15);
-    let room2 = Rect::new(35, 15, 10, 15);
+    let mut rooms: Vec<Rect> = Vec::new();
+    const MAX_ROOMS: i32 = 30;
+    const MIN_SIZE: i32 = 6;
+    const MAX_SIZE: i32 = 10;
 
-    apply_room_to_map(&room1, &mut map);
-    apply_room_to_map(&room2, &mut map);
+    let mut rng = RandomNumberGenerator::new();
 
-    apply_horizontal_tunnel(&mut map, 25, 40, 23);
+    for _ in 0..MAX_ROOMS {
+        let w = rng.range(MIN_SIZE, MAX_SIZE);
+        let h = rng.range(MIN_SIZE, MAX_SIZE);
+        let x = rng.roll_dice(1, WINDOW_WIDTH - 1 - w) - 1;
+        let y = rng.roll_dice(1, WINDOW_HEIGHT - 1 - h) - 1;
 
-    map
+        let new_room = Rect::new(x, y, w, h);
+        let mut ok = true;
+        for other_room in rooms.iter() {
+            if new_room.intersects(other_room) {
+                ok = false;
+            }
+        }
+        if ok {
+            apply_room_to_map(&new_room, &mut map);
+
+            if !rooms.is_empty() {
+                let new_center = new_room.center();
+                let old_center = rooms[rooms.len() - 1].center();
+                if rng.range(0, 2) == 1 {
+                    apply_horizontal_tunnel(&mut map, old_center.x, new_center.x, old_center.y);
+                    apply_vertical_tunnel(&mut map, old_center.y, new_center.y, old_center.x);
+                } else {
+                    apply_horizontal_tunnel(&mut map, old_center.x, new_center.x, new_center.y);
+                    apply_vertical_tunnel(&mut map, old_center.y, new_center.y, old_center.x);
+                }
+            }
+
+            rooms.push(new_room)
+        }
+    }
+
+    (rooms, map)
 }
 pub fn apply_room_to_map(room: &Rect, map: &mut [TileType]) {
     for y in room.y1 + 1..=room.y2 {

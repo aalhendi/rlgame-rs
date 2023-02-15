@@ -12,8 +12,6 @@ use rect::Rect;
 
 pub const WINDOW_HEIGHT: i32 = 50;
 pub const WINDOW_WIDTH: i32 = 80;
-pub const SPAWN_X: i32 = 40;
-pub const SPAWN_Y: i32 = 25;
 
 // --- Systems Start ---
 struct LeftWalker {}
@@ -73,19 +71,18 @@ fn main() -> rltk::BError {
 
     let mut gs = State { ecs: World::new() };
 
-    gs.ecs.insert(new_map_rooms_and_corridors());
-
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
     gs.ecs.register::<LeftMover>();
 
+    let (rooms, map) = new_map_rooms_and_corridors();
+    gs.ecs.insert(map);
+    let player_pos = rooms[0].center();
+
     gs.ecs
         .create_entity()
-        .with(Position {
-            x: SPAWN_X,
-            y: SPAWN_Y,
-        })
+        .with(player_pos)
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
