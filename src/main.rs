@@ -9,26 +9,12 @@ pub mod player;
 use player::*;
 pub mod rect;
 use rect::Rect;
+use visibility_system::VisibilitySystem;
+pub mod visibility_system;
 
 pub const WINDOW_HEIGHT: i32 = 50;
 pub const WINDOW_WIDTH: i32 = 80;
-
-// --- Systems Start ---
-struct LeftWalker {}
-
-impl<'a> System<'a> for LeftWalker {
-    type SystemData = (ReadStorage<'a, LeftMover>, WriteStorage<'a, Position>);
-
-    fn run(&mut self, (leftmovers, mut pos): Self::SystemData) {
-        for (_leftmover, pos) in (&leftmovers, &mut pos).join() {
-            pos.x -= 1;
-            if pos.x < 0 {
-                pos.x = WINDOW_WIDTH;
-            }
-        }
-    }
-}
-// --- Systems End ---
+const PLAYER_VIEW_RANGE: i32 = 8;
 
 // --- State Start ---
 pub struct State {
@@ -37,8 +23,8 @@ pub struct State {
 
 impl State {
     fn run_systems(&mut self) {
-        let mut lw = LeftWalker {};
-        lw.run_now(&self.ecs);
+        let mut vis = VisibilitySystem{};
+        vis.run_now(&self.ecs);
         self.ecs.maintain();
     }
 }
@@ -73,6 +59,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
+    gs.ecs.register::<Viewshed>();
     gs.ecs.register::<LeftMover>();
 
     let map = Map::new_map_rooms_and_corridors();
@@ -88,6 +75,10 @@ fn main() -> rltk::BError {
             bg: RGB::named(rltk::BLACK),
         })
         .with(Player {})
+        .with(Viewshed {
+            visible_tiles: Vec::new(),
+            range: PLAYER_VIEW_RANGE,
+        })
         .build();
 
     rltk::main_loop(context, gs)
