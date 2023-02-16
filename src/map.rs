@@ -17,6 +17,7 @@ pub struct Map {
     pub width: i32,
     pub height: i32,
     pub revealed_tiles: Vec<bool>,
+    pub visible_tiles: Vec<bool>,
 }
 
 impl rltk::Algorithm2D for Map {
@@ -74,6 +75,7 @@ impl Map {
             width: WINDOW_WIDTH,
             height: WINDOW_HEIGHT,
             revealed_tiles: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
+            visible_tiles: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
         };
 
         const MAX_ROOMS: i32 = 30;
@@ -150,26 +152,22 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
     let mut x = 0;
     for (idx, tile) in map.tiles.iter().enumerate() {
         if map.revealed_tiles[idx] {
+            let glyph;
+            let mut fg;
             match tile {
                 TileType::Floor => {
-                    ctx.set(
-                        x,
-                        y,
-                        RGB::from_f32(0.5, 0.5, 0.5),
-                        RGB::named(rltk::BLACK),
-                        rltk::to_cp437('.'),
-                    );
+                    glyph = rltk::to_cp437('.');
+                    fg = RGB::from_f32(0.0, 0.5, 0.5);
                 }
                 TileType::Wall => {
-                    ctx.set(
-                        x,
-                        y,
-                        RGB::from_f32(0.0, 1.0, 0.0),
-                        RGB::named(rltk::BLACK),
-                        rltk::to_cp437('#'),
-                    );
+                    glyph = rltk::to_cp437('#');
+                    fg = RGB::from_f32(0.0, 1.0, 0.0);
                 }
             }
+            if !map.visible_tiles[idx] {
+                fg = fg.to_greyscale()
+            }
+            ctx.set(x, y, fg, RGB::named(rltk::BLACK), glyph);
         }
 
         // iter coordinates as well
