@@ -1,12 +1,8 @@
-use rltk::RGB;
+use rltk::{RGB, Point};
 use specs::prelude::*;
 use specs_derive::Component;
 
 #[derive(Component)]
-// used in viewshed instead of rltk::Point which is the same struct
-// with some exrta derives listed below. add as needed
-// #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-// #[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
@@ -27,6 +23,6 @@ pub struct LeftMover {}
 
 #[derive(Component)]
 pub struct Viewshed {
-    pub visible_tiles: Vec<Position>,
+    pub visible_tiles: Vec<Point>,
     pub range: i32,
 }
