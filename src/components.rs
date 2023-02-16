@@ -1,4 +1,4 @@
-use rltk::{RGB, Point};
+use rltk::{Point, RGB};
 use specs::prelude::*;
 use specs_derive::Component;
 

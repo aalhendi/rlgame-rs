@@ -23,7 +23,7 @@ pub struct State {
 
 impl State {
     fn run_systems(&mut self) {
-        let mut vis = VisibilitySystem{};
+        let mut vis = VisibilitySystem {};
         vis.run_now(&self.ecs);
         self.ecs.maintain();
     }
