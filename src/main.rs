@@ -69,13 +69,22 @@ fn main() -> rltk::BError {
     let map = Map::new_map_rooms_and_corridors();
     let player_pos = map.rooms[0].center();
 
+    let mut rng = rltk::RandomNumberGenerator::new();
     for room in map.rooms.iter().skip(1) {
         let pos = room.center();
+
+        let roll = rng.roll_dice(1, 2);
+
+        let glyph = match roll {
+            1 => rltk::to_cp437('g'),
+            _ => rltk::to_cp437('o'),
+        };
+
         gs.ecs
             .create_entity()
             .with(pos)
             .with(Renderable {
-                glyph: rltk::to_cp437('g'),
+                glyph,
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::BLACK),
             })
