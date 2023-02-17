@@ -28,7 +28,9 @@ impl<'a> System<'a> for VisibilitySystem {
 
                 // If player, reveal visible tiles
                 if player.get(ent).is_some() {
-                    for t in map.visible_tiles.iter_mut() {*t = false};
+                    for t in map.visible_tiles.iter_mut() {
+                        *t = false
+                    }
                     for vis in viewshed.visible_tiles.iter() {
                         let idx = map.xy_idx(vis.x, vis.y);
                         map.revealed_tiles[idx] = true;
