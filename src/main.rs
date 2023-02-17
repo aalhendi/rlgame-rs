@@ -1,4 +1,4 @@
-use rltk::{GameState, Rltk, RGB};
+use rltk::{GameState, Point, Rltk, RGB};
 use specs::prelude::*;
 
 pub mod map;
@@ -9,22 +9,35 @@ pub mod player;
 use player::*;
 pub mod rect;
 use rect::Rect;
-use visibility_system::VisibilitySystem;
 pub mod visibility_system;
+use visibility_system::VisibilitySystem;
+pub mod monster_ai_system;
+use monster_ai_system::MonsterAI;
 
 pub const WINDOW_HEIGHT: i32 = 50;
 pub const WINDOW_WIDTH: i32 = 80;
 const PLAYER_VIEW_RANGE: i32 = 8;
 
 // --- State Start ---
+#[derive(PartialEq, Clone, Copy)]
+pub enum RunState {
+    Paused,
+    Running,
+}
+
 pub struct State {
-    ecs: World,
+    pub ecs: World,
+    pub runstate: RunState,
 }
 
 impl State {
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem {};
         vis.run_now(&self.ecs);
+
+        let mut mob = MonsterAI {};
+        mob.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -33,8 +46,12 @@ impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
 
-        player_input(self, ctx);
-        self.run_systems();
+        if self.runstate == RunState::Running {
+            self.run_systems();
+            self.runstate = RunState::Paused;
+        } else {
+            self.runstate = player_input(self, ctx);
+        }
 
         draw_map(&self.ecs, ctx);
 
@@ -58,13 +75,16 @@ fn main() -> rltk::BError {
         .with_title("Roguelike Tutorial")
         .build()?;
 
-    let mut gs = State { ecs: World::new() };
+    let mut gs = State {
+        ecs: World::new(),
+        runstate: RunState::Running,
+    };
 
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
     gs.ecs.register::<Viewshed>();
-    gs.ecs.register::<LeftMover>();
+    gs.ecs.register::<Monster>();
 
     let map = Map::new_map_rooms_and_corridors();
     let player_pos = map.rooms[0].center();
@@ -88,6 +108,7 @@ fn main() -> rltk::BError {
                 fg: RGB::named(rltk::RED),
                 bg: RGB::named(rltk::BLACK),
             })
+            .with(Monster {})
             .with(Viewshed {
                 visible_tiles: Vec::new(),
                 range: 8,
@@ -96,6 +117,7 @@ fn main() -> rltk::BError {
             .build();
     }
 
+    gs.ecs.insert(Point::new(player_pos.x, player_pos.y));
     gs.ecs.insert(map);
 
     gs.ecs
