@@ -1,4 +1,4 @@
-use super::{Monster, Viewshed};
+use super::{Monster, Name, Viewshed};
 use rltk::{console, Point};
 use specs::prelude::*;
 
@@ -9,14 +9,18 @@ impl<'a> System<'a> for MonsterAI {
         ReadStorage<'a, Viewshed>,
         ReadExpect<'a, Point>,
         ReadStorage<'a, Monster>,
+        ReadStorage<'a, Name>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (viewshed, player_pos, monster) = data;
+        let (viewshed, player_pos, monster, name) = data;
 
-        for (viewshed, _monster) in (&viewshed, &monster).join() {
+        for (viewshed, _monster, name) in (&viewshed, &monster, &name).join() {
             if viewshed.visible_tiles.contains(&*player_pos) {
-                console::log("Monster considers their own existence");
+                console::log(&format!(
+                    "{mon_name} considers their own existence",
+                    mon_name = name.name
+                ));
             }
         }
     }
