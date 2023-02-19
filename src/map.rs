@@ -1,7 +1,7 @@
 use super::Rect;
 use crate::WINDOW_HEIGHT;
 use crate::WINDOW_WIDTH;
-use rltk::{RandomNumberGenerator, Rltk, RGB};
+use rltk::{Point, RandomNumberGenerator, Rltk, RGB};
 use specs::World;
 use std::cmp::{max, min};
 
@@ -30,11 +30,51 @@ impl rltk::BaseMap for Map {
     fn is_opaque(&self, idx: usize) -> bool {
         self.tiles[idx] == TileType::Wall
     }
+
+    fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
+        let w = self.width as usize;
+        let p1 = Point::new(idx1 % w, idx1 / w);
+        let p2 = Point::new(idx2 % w, idx2 / w);
+        rltk::DistanceAlg::Pythagoras.distance2d(p1, p2)
+    }
+
+    fn get_available_exits(&self, idx: usize) -> rltk::SmallVec<[(usize, f32); 10]> {
+        let mut exits = rltk::SmallVec::new();
+        let x = idx as i32 % self.width;
+        let y = idx as i32 / self.width;
+        let w = self.width as usize;
+
+        // Cardinal directions
+        if self.is_exit_valid(x - 1, y) {
+            exits.push((idx - 1, 1.0))
+        };
+        if self.is_exit_valid(x + 1, y) {
+            exits.push((idx + 1, 1.0))
+        };
+        if self.is_exit_valid(x, y - 1) {
+            exits.push((idx - w, 1.0))
+        };
+        if self.is_exit_valid(x, y + 1) {
+            exits.push((idx + 1, 1.0))
+        };
+        exits
+    }
 }
 
 impl Map {
+    /// Returns index in 1D array via row-major indexing
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         (y * self.width + x) as usize
+    }
+
+    /// Returns if a tile can be entered and is within bounds
+    fn is_exit_valid(&self, x: i32, y: i32) -> bool {
+        // Check boundaries & out of bounds
+        if x < 1 || x > self.width - 1 || y < 1 || y > self.height - 1 {
+            return false;
+        }
+        let idx = self.xy_idx(x, y);
+        self.tiles[idx] != TileType::Wall
     }
 
     /// Returns a map with solid boundaries and 400 randomly placed wall tiles
