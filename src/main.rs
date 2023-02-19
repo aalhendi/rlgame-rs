@@ -13,6 +13,8 @@ pub mod visibility_system;
 use visibility_system::VisibilitySystem;
 pub mod monster_ai_system;
 use monster_ai_system::MonsterAI;
+pub mod map_indexing_system;
+use map_indexing_system::MapIndexingSystem;
 
 pub const WINDOW_HEIGHT: i32 = 50;
 pub const WINDOW_WIDTH: i32 = 80;
@@ -37,6 +39,9 @@ impl State {
 
         let mut mob = MonsterAI {};
         mob.run_now(&self.ecs);
+
+        let mut mapindex = MapIndexingSystem {};
+        mapindex.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -86,6 +91,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Name>();
+    gs.ecs.register::<BlocksTile>();
 
     let map = Map::new_map_rooms_and_corridors();
     let player_pos = map.rooms[0].center();
@@ -125,6 +131,7 @@ fn main() -> rltk::BError {
             .with(Name {
                 name: format!("{name} {idx}", name = &name),
             })
+            .with(BlocksTile {})
             .build();
     }
 

@@ -1,4 +1,4 @@
-use super::{Map, Player, Position, RunState, State, TileType, Viewshed};
+use super::{Map, Player, Position, RunState, State, Viewshed};
 use crate::WINDOW_HEIGHT;
 use crate::WINDOW_WIDTH;
 use rltk::{Point, Rltk, VirtualKeyCode};
@@ -13,7 +13,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
 
     for (_player, pos, viewshed) in (&mut players, &mut positions, &mut viewsheds).join() {
         let dest_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
-        if map.tiles[dest_idx] != TileType::Wall {
+        if !map.blocked[dest_idx] {
             pos.x = (pos.x + delta_x).clamp(0, WINDOW_WIDTH - 1);
             pos.y = (pos.y + delta_y).clamp(0, WINDOW_HEIGHT - 1);
             ppos.x = pos.x;

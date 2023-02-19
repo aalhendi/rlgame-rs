@@ -18,6 +18,7 @@ pub struct Map {
     pub height: i32,
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
+    pub blocked: Vec<bool>,
 }
 
 impl rltk::Algorithm2D for Map {
@@ -55,7 +56,7 @@ impl rltk::BaseMap for Map {
             exits.push((idx - w, 1.0))
         };
         if self.is_exit_valid(x, y + 1) {
-            exits.push((idx + 1, 1.0))
+            exits.push((idx + w, 1.0))
         };
         exits
     }
@@ -74,7 +75,14 @@ impl Map {
             return false;
         }
         let idx = self.xy_idx(x, y);
-        self.tiles[idx] != TileType::Wall
+        !self.blocked[idx]
+    }
+
+    /// Sets tile as blocked if Wall tile.
+    pub fn populate_blocked(&mut self) {
+        for (i, tile) in self.tiles.iter_mut().enumerate() {
+            self.blocked[i] = *tile == TileType::Wall;
+        }
     }
 
     /// Returns a map with solid boundaries and 400 randomly placed wall tiles
@@ -116,6 +124,7 @@ impl Map {
             height: WINDOW_HEIGHT,
             revealed_tiles: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
             visible_tiles: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
+            blocked: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
         };
 
         const MAX_ROOMS: i32 = 30;
