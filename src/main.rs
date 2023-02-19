@@ -15,6 +15,10 @@ pub mod monster_ai_system;
 use monster_ai_system::MonsterAI;
 pub mod map_indexing_system;
 use map_indexing_system::MapIndexingSystem;
+pub mod melee_combat_system;
+use melee_combat_system::MeleeCombatSystem;
+pub mod damage_system;
+use damage_system::DamageSystem;
 
 pub const WINDOW_HEIGHT: i32 = 50;
 pub const WINDOW_WIDTH: i32 = 80;
@@ -43,6 +47,12 @@ impl State {
         let mut mapindex = MapIndexingSystem {};
         mapindex.run_now(&self.ecs);
 
+        let mut melee_combat_system = MeleeCombatSystem {};
+        melee_combat_system.run_now(&self.ecs);
+
+        let mut damage_system = DamageSystem {};
+        damage_system.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -53,6 +63,7 @@ impl GameState for State {
 
         if self.runstate == RunState::Running {
             self.run_systems();
+            damage_system::delete_the_dead(&mut self.ecs);
             self.runstate = RunState::Paused;
         } else {
             self.runstate = player_input(self, ctx);
@@ -92,6 +103,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
+    gs.ecs.register::<CombatStats>();
+    gs.ecs.register::<WantsToMelee>();
+    gs.ecs.register::<SufferDamage>();
 
     let map = Map::new_map_rooms_and_corridors();
     let player_pos = map.rooms[0].center();
@@ -132,6 +146,12 @@ fn main() -> rltk::BError {
                 name: format!("{name} {idx}", name = &name),
             })
             .with(BlocksTile {})
+            .with(CombatStats {
+                max_hp: 16,
+                hp: 16,
+                defense: 1,
+                power: 4,
+            })
             .build();
     }
 
@@ -154,6 +174,12 @@ fn main() -> rltk::BError {
         })
         .with(Name {
             name: "Player".to_string(),
+        })
+        .with(CombatStats {
+            max_hp: 30,
+            hp: 30,
+            defense: 2,
+            power: 5,
         })
         .build();
 

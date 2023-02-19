@@ -8,15 +8,22 @@ impl<'a> System<'a> for MapIndexingSystem {
         WriteExpect<'a, Map>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, BlocksTile>,
+        Entities<'a>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut map, position, blockers) = data;
+        let (mut map, positions, blockers, entities) = data;
 
         map.populate_blocked();
-        for (position, _blocks) in (&position, &blockers).join() {
+        map.clear_content_index();
+        for (position, entity) in (&positions, &entities).join() {
             let idx = map.xy_idx(position.x, position.y);
-            map.blocked[idx] = true;
+
+            // Update blocked_tiles if theres a blocking entity
+            map.blocked[idx] = blockers.get(entity).is_some();
+
+            // Push the entity to appropriate index slot. Its a copy type (we dont want to move in or the ECS will lose it).
+            map.tile_content[idx].push(entity);
         }
     }
 }

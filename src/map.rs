@@ -2,7 +2,7 @@ use super::Rect;
 use crate::WINDOW_HEIGHT;
 use crate::WINDOW_WIDTH;
 use rltk::{Point, RandomNumberGenerator, Rltk, RGB};
-use specs::World;
+use specs::{Entity, World};
 use std::cmp::{max, min};
 
 #[derive(PartialEq, Copy, Clone)]
@@ -19,6 +19,7 @@ pub struct Map {
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
+    pub tile_content: Vec<Vec<Entity>>,
 }
 
 impl rltk::Algorithm2D for Map {
@@ -83,6 +84,13 @@ impl Map {
         (y * self.width + x) as usize
     }
 
+    // Clears the contents of tile_content field
+    pub fn clear_content_index(&mut self) {
+        for content in self.tile_content.iter_mut() {
+            content.clear();
+        }
+    }
+
     /// Returns if a tile can be entered and is within bounds
     fn is_exit_valid(&self, x: i32, y: i32) -> bool {
         // Check boundaries & out of bounds
@@ -140,6 +148,7 @@ impl Map {
             revealed_tiles: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
             visible_tiles: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
             blocked: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
+            tile_content: vec![Vec::new(); (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
         };
 
         const MAX_ROOMS: i32 = 30;
