@@ -155,10 +155,8 @@ fn main() -> rltk::BError {
             .build();
     }
 
-    gs.ecs.insert(Point::new(player_pos.x, player_pos.y));
-    gs.ecs.insert(map);
-
-    gs.ecs
+    let player_entity = gs
+        .ecs
         .create_entity()
         .with(player_pos)
         .with(Renderable {
@@ -183,5 +181,8 @@ fn main() -> rltk::BError {
         })
         .build();
 
+    gs.ecs.insert(Point::new(player_pos.x, player_pos.y));
+    gs.ecs.insert(map);
+    gs.ecs.insert(player_entity);
     rltk::main_loop(context, gs)
 }

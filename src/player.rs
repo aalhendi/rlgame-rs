@@ -3,7 +3,6 @@ use crate::components::CombatStats;
 use crate::components::WantsToMelee;
 use crate::WINDOW_HEIGHT;
 use crate::WINDOW_WIDTH;
-use rltk::console;
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 
@@ -41,7 +40,6 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
                         },
                     )
                     .expect("Add target failed");
-                console::log("From Hell's Hears, I stab thee!".to_string());
                 return; // So we don't move after attacking
             }
         }
