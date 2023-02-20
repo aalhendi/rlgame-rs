@@ -1,3 +1,5 @@
+use crate::RunState;
+
 use super::{Map, Monster, Position, Viewshed, WantsToMelee};
 use rltk::Point;
 use specs::prelude::*;
@@ -13,6 +15,7 @@ type MonsterAIData<'a> = (
     ReadStorage<'a, Monster>,
     WriteStorage<'a, Position>,
     WriteStorage<'a, WantsToMelee>,
+    ReadExpect<'a, RunState>,
 );
 impl<'a> System<'a> for MonsterAI {
     type SystemData = MonsterAIData<'a>;
@@ -27,7 +30,12 @@ impl<'a> System<'a> for MonsterAI {
             monster,
             mut position,
             mut wants_to_melee,
+            runstate,
         ) = data;
+
+        if *runstate != RunState::MonsterTurn {
+            return;
+        }
 
         for (entity, mut viewshed, _monster, mut pos) in
             (&entities, &mut viewshed, &monster, &mut position).join()

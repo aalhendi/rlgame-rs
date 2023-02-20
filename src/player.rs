@@ -57,8 +57,9 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
 
 pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
     use VirtualKeyCode::*;
+    // TODO: Replace with if let
     match ctx.key {
-        None => return RunState::Paused,
+        None => return RunState::AwaitingInput,
         Some(key) => match key {
             //Cardinal
             Left | Numpad4 | H => try_move_player(-1, 0, &mut gs.ecs),
@@ -72,8 +73,8 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             Numpad7 | B => try_move_player(-1, 1, &mut gs.ecs),
             Numpad3 | U => try_move_player(1, -1, &mut gs.ecs),
 
-            _ => return RunState::Paused,
+            _ => return RunState::AwaitingInput,
         },
     }
-    RunState::Running
+    RunState::PlayerTurn
 }
