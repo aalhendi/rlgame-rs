@@ -1,4 +1,4 @@
-use rltk::{GameState, Point, Rltk, RGB};
+use rltk::{GameState, Point, Rltk};
 use specs::prelude::*;
 
 pub mod map;
@@ -21,8 +21,7 @@ pub mod damage_system;
 use damage_system::DamageSystem;
 mod gamelog;
 mod gui;
-
-const PLAYER_VIEW_RANGE: i32 = 8;
+pub mod spawner;
 
 // --- State Start ---
 #[derive(PartialEq, Clone, Copy)]
@@ -128,76 +127,13 @@ fn main() -> rltk::BError {
     let map = Map::new_map_rooms_and_corridors();
     let player_pos = map.rooms[0].center();
 
-    let mut rng = rltk::RandomNumberGenerator::new();
-    for (idx, room) in map.rooms.iter().skip(1).enumerate() {
+    gs.ecs.insert(rltk::RandomNumberGenerator::new());
+    for room in map.rooms.iter().skip(1) {
         let pos = room.center();
-        let name: String;
-        let glyph: rltk::FontCharType;
-        let roll = rng.roll_dice(1, 2);
-
-        match roll {
-            1 => {
-                glyph = rltk::to_cp437('g');
-                name = "Goblin".to_string();
-            }
-            _ => {
-                glyph = rltk::to_cp437('o');
-                name = "Orc".to_string();
-            }
-        };
-
-        gs.ecs
-            .create_entity()
-            .with(pos)
-            .with(Renderable {
-                glyph,
-                fg: RGB::named(rltk::RED),
-                bg: RGB::named(rltk::BLACK),
-            })
-            .with(Monster {})
-            .with(Viewshed {
-                visible_tiles: Vec::new(),
-                range: 8,
-                dirty: true,
-            })
-            .with(Name {
-                name: format!("{name} {idx}", name = &name),
-            })
-            .with(BlocksTile {})
-            .with(CombatStats {
-                max_hp: 16,
-                hp: 16,
-                defense: 1,
-                power: 4,
-            })
-            .build();
+        spawner::random_monster(&mut gs.ecs, pos)
     }
 
-    let player_entity = gs
-        .ecs
-        .create_entity()
-        .with(player_pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437('@'),
-            fg: RGB::named(rltk::YELLOW),
-            bg: RGB::named(rltk::BLACK),
-        })
-        .with(Player {})
-        .with(Viewshed {
-            visible_tiles: Vec::new(),
-            range: PLAYER_VIEW_RANGE,
-            dirty: true,
-        })
-        .with(Name {
-            name: "Player".to_string(),
-        })
-        .with(CombatStats {
-            max_hp: 30,
-            hp: 30,
-            defense: 2,
-            power: 5,
-        })
-        .build();
+    let player_entity = spawner::player(&mut gs.ecs, player_pos);
 
     // Resource Insertion
     gs.ecs.insert(RunState::PreRun);
