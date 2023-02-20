@@ -21,7 +21,9 @@ pub mod damage_system;
 use damage_system::DamageSystem;
 mod gamelog;
 mod gui;
+pub mod inventory_system;
 pub mod spawner;
+use inventory_system::ItemCollectionSystem;
 
 // --- State Start ---
 #[derive(PartialEq, Clone, Copy)]
@@ -52,6 +54,9 @@ impl State {
 
         let mut damage_system = DamageSystem {};
         damage_system.run_now(&self.ecs);
+
+        let mut item_collection_system = ItemCollectionSystem {};
+        item_collection_system.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -113,6 +118,7 @@ fn main() -> rltk::BError {
 
     let mut gs = State { ecs: World::new() };
 
+    // Component registration
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
@@ -123,6 +129,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<WantsToMelee>();
     gs.ecs.register::<SufferDamage>();
+    gs.ecs.register::<Item>();
+    gs.ecs.register::<Potion>();
+    gs.ecs.register::<InBackpack>();
+    gs.ecs.register::<WantsToPickupItem>();
 
     let map = Map::new_map_rooms_and_corridors();
     let player_pos = map.rooms[0].center();
