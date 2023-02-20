@@ -74,6 +74,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
 
             // Item
             G => get_item(&mut gs.ecs),
+            I => return RunState::ShowInventory,
 
             _ => return RunState::AwaitingInput,
         },
