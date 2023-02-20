@@ -1,5 +1,5 @@
-use super::{gamelog::Gamelog, CombatStats, Player, MAPHEIGHT, MAPWIDTH};
-use rltk::{Rltk, RGB};
+use super::{gamelog::Gamelog, CombatStats, Map, Name, Player, Position, MAPHEIGHT, MAPWIDTH};
+use rltk::{Point, Rltk, RGB};
 use specs::prelude::*;
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
@@ -29,6 +29,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let yellow = RGB::named(rltk::YELLOW);
     let black = RGB::named(rltk::BLACK);
     let red = RGB::named(rltk::RED);
+    let magenta = RGB::named(rltk::MAGENTA);
 
     for (_player, stats) in (&players, &combat_stats).join() {
         let health = format!(
@@ -39,5 +40,79 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         ctx.print_color(12, 43, yellow, black, &health);
 
         ctx.draw_bar_horizontal(28, 43, 51, stats.hp, stats.max_hp, red, black);
+    }
+
+    // Draw mouse cursor
+    let mouse_pos = ctx.mouse_pos();
+    ctx.set_bg(mouse_pos.0, mouse_pos.1, magenta);
+    draw_tooltips(ecs, ctx);
+}
+
+fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
+    let white = RGB::named(rltk::WHITE);
+    let grey = RGB::named(rltk::GREY);
+
+    let map = ecs.fetch::<Map>();
+    let names = ecs.read_storage::<Name>();
+    let positions = ecs.read_storage::<Position>();
+
+    let mouse_pos = ctx.mouse_pos();
+    // Check if mouse is on map
+    if mouse_pos.0 >= map.width || mouse_pos.1 >= map.height {
+        return;
+    }
+    let mut tooltip: Vec<String> = Vec::new();
+
+    for (name, pos) in (&names, &positions).join() {
+        let idx = map.xy_idx(pos.x, pos.y);
+        if pos.x == mouse_pos.0 && pos.y == mouse_pos.1 && map.visible_tiles[idx] {
+            tooltip.push(name.name.to_string());
+        }
+    }
+
+    if !tooltip.is_empty() {
+        let mut width = 0;
+        for s in tooltip.iter() {
+            if width < s.len() {
+                width = s.len();
+            }
+        }
+        width += 3;
+
+        if mouse_pos.0 > map.width / 2 {
+            // Left label
+            let arrow_pos = Point::new(mouse_pos.0 - 2, mouse_pos.1);
+            let left_x = mouse_pos.0 - width as i32;
+            let mut y = mouse_pos.1;
+            for s in tooltip.iter() {
+                ctx.print_color(left_x, y, white, grey, s);
+                let padding = (width - s.len()) - 1;
+                for i in 0..padding {
+                    ctx.print_color(arrow_pos.x - i as i32, y, white, grey, &" ".to_string());
+                }
+                y += 1;
+            }
+            ctx.print_color(
+                arrow_pos.x,
+                arrow_pos.y,
+                RGB::named(rltk::WHITE),
+                RGB::named(rltk::GREY),
+                &"->".to_string(),
+            );
+        } else {
+            // Right label
+            let arrow_pos = Point::new(mouse_pos.0 + 1, mouse_pos.1);
+            let left_x = mouse_pos.0 + 3;
+            let mut y = mouse_pos.1;
+            for s in tooltip.iter() {
+                ctx.print_color(left_x + 1, y, white, grey, s);
+                let padding = (width - s.len()) - 1;
+                for i in 0..padding {
+                    ctx.print_color(arrow_pos.x + 1 + i as i32, y, white, grey, &" ".to_string());
+                }
+                y += 1;
+            }
+            ctx.print_color(arrow_pos.x, arrow_pos.y, white, grey, &"<-".to_string());
+        }
     }
 }
