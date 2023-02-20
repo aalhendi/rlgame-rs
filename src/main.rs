@@ -129,8 +129,7 @@ fn main() -> rltk::BError {
 
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     for room in map.rooms.iter().skip(1) {
-        let pos = room.center();
-        spawner::random_monster(&mut gs.ecs, pos)
+        spawner::spawn_room(&mut gs.ecs, room);
     }
 
     let player_entity = spawner::player(&mut gs.ecs, player_pos);

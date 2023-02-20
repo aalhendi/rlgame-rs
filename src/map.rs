@@ -5,7 +5,7 @@ use std::cmp::{max, min};
 
 pub const MAPWIDTH: usize = 80;
 pub const MAPHEIGHT: usize = 43;
-const MAPCOUNT: usize = MAPWIDTH * MAPHEIGHT;
+pub const MAPCOUNT: usize = MAPWIDTH * MAPHEIGHT;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum TileType {
