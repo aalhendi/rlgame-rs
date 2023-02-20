@@ -1,4 +1,4 @@
-use super::{CombatStats, Player, MAPHEIGHT, MAPWIDTH};
+use super::{gamelog::Gamelog, CombatStats, Player, MAPHEIGHT, MAPWIDTH};
 use rltk::{Rltk, RGB};
 use specs::prelude::*;
 
@@ -16,6 +16,15 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // player entity and combat_stats component read calls?
     let combat_stats = ecs.read_storage::<CombatStats>();
     let players = ecs.read_storage::<Player>();
+    let log = ecs.fetch::<Gamelog>();
+
+    let mut y = 44;
+    for entry in log.entries.iter().rev() {
+        if y < 49 {
+            ctx.print(2, y, entry);
+        }
+        y += 1;
+    }
 
     let yellow = RGB::named(rltk::YELLOW);
     let black = RGB::named(rltk::BLACK);
@@ -27,22 +36,8 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
             hp = stats.hp,
             max_hp = stats.max_hp
         );
-        ctx.print_color(
-            12,
-            43,
-            yellow,
-            black,
-            &health,
-        );
+        ctx.print_color(12, 43, yellow, black, &health);
 
-        ctx.draw_bar_horizontal(
-            28,
-            43,
-            51,
-            stats.hp,
-            stats.max_hp,
-            red,
-            black,
-        );
+        ctx.draw_bar_horizontal(28, 43, 51, stats.hp, stats.max_hp, red, black);
     }
 }

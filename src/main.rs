@@ -19,6 +19,7 @@ pub mod melee_combat_system;
 use melee_combat_system::MeleeCombatSystem;
 pub mod damage_system;
 use damage_system::DamageSystem;
+mod gamelog;
 mod gui;
 
 const PLAYER_VIEW_RANGE: i32 = 8;
@@ -198,9 +199,14 @@ fn main() -> rltk::BError {
         })
         .build();
 
+    // Resource Insertion
     gs.ecs.insert(RunState::PreRun);
     gs.ecs.insert(Point::new(player_pos.x, player_pos.y));
     gs.ecs.insert(map);
     gs.ecs.insert(player_entity);
+    gs.ecs.insert(gamelog::Gamelog {
+        entries: vec!["Welcome to Rusty Rougelike".to_string()],
+    });
+
     rltk::main_loop(context, gs)
 }
