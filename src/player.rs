@@ -1,8 +1,6 @@
 use super::{Map, Player, Position, RunState, State, Viewshed};
 use crate::components::CombatStats;
 use crate::components::WantsToMelee;
-use crate::WINDOW_HEIGHT;
-use crate::WINDOW_WIDTH;
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 
@@ -45,8 +43,8 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
         }
 
         if !map.blocked[dest_idx] {
-            pos.x = (pos.x + delta_x).clamp(0, WINDOW_WIDTH - 1);
-            pos.y = (pos.y + delta_y).clamp(0, WINDOW_HEIGHT - 1);
+            pos.x = (pos.x + delta_x).clamp(0, map.width - 1);
+            pos.y = (pos.y + delta_y).clamp(0, map.height - 1);
             ppos.x = pos.x;
             ppos.y = pos.y;
 

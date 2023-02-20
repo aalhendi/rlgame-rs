@@ -19,9 +19,8 @@ pub mod melee_combat_system;
 use melee_combat_system::MeleeCombatSystem;
 pub mod damage_system;
 use damage_system::DamageSystem;
+mod gui;
 
-pub const WINDOW_HEIGHT: i32 = 50;
-pub const WINDOW_WIDTH: i32 = 80;
 const PLAYER_VIEW_RANGE: i32 = 8;
 
 // --- State Start ---
@@ -100,6 +99,8 @@ impl GameState for State {
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph)
             }
         }
+
+        gui::draw_ui(&self.ecs, ctx);
     }
 }
 // --- State End ---

@@ -1,9 +1,11 @@
 use super::Rect;
-use crate::WINDOW_HEIGHT;
-use crate::WINDOW_WIDTH;
 use rltk::{Point, RandomNumberGenerator, Rltk, RGB};
 use specs::{Entity, World};
 use std::cmp::{max, min};
+
+pub const MAPWIDTH: usize = 80;
+pub const MAPHEIGHT: usize = 43;
+const MAPCOUNT: usize = MAPWIDTH * MAPHEIGHT;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum TileType {
@@ -110,7 +112,7 @@ impl Map {
 
     /// Returns a map with solid boundaries and 400 randomly placed wall tiles
     pub fn new_map_test(&self) -> Vec<TileType> {
-        let mut map = vec![TileType::Floor; (WINDOW_WIDTH * WINDOW_HEIGHT) as usize];
+        let mut map = vec![TileType::Floor; MAPCOUNT];
 
         // Setting window boundaries as walls
         for x in 0..self.width {
@@ -141,14 +143,14 @@ impl Map {
     /// Returns map with random rooms and corridors to join them.
     pub fn new_map_rooms_and_corridors() -> Map {
         let mut map = Map {
-            tiles: vec![TileType::Wall; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
+            tiles: vec![TileType::Wall; MAPCOUNT],
             rooms: Vec::new(),
-            width: WINDOW_WIDTH,
-            height: WINDOW_HEIGHT,
-            revealed_tiles: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
-            visible_tiles: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
-            blocked: vec![false; (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
-            tile_content: vec![Vec::new(); (WINDOW_HEIGHT * WINDOW_WIDTH) as usize],
+            width: MAPWIDTH as i32,
+            height: MAPHEIGHT as i32,
+            revealed_tiles: vec![false; MAPCOUNT],
+            visible_tiles: vec![false; MAPCOUNT],
+            blocked: vec![false; MAPCOUNT],
+            tile_content: vec![Vec::new(); MAPCOUNT],
         };
 
         const MAX_ROOMS: i32 = 30;
