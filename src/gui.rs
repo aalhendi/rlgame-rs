@@ -164,7 +164,7 @@ pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
         .filter(|(_entity, item, _name)| item.owner == *player_entity)
         .enumerate()
     {
-let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
+        let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
         print_item_label(ctx, y, label_char, item_name);
         equippable.push(entity);
         y += 1;

@@ -23,7 +23,7 @@ mod gamelog;
 mod gui;
 pub mod inventory_system;
 pub mod spawner;
-use inventory_system::ItemCollectionSystem;
+use inventory_system::{ItemCollectionSystem, PotionUseSystem};
 
 // --- State Start ---
 #[derive(PartialEq, Clone, Copy)]
@@ -59,6 +59,9 @@ impl State {
         let mut item_collection_system = ItemCollectionSystem {};
         item_collection_system.run_now(&self.ecs);
 
+        let mut potion_use_system = PotionUseSystem;
+        potion_use_system.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -72,6 +75,7 @@ impl GameState for State {
         match newrunstate {
             RunState::PreRun => {
                 self.run_systems();
+                self.ecs.maintain();
                 newrunstate = RunState::AwaitingInput;
             }
             RunState::AwaitingInput => {
@@ -79,10 +83,12 @@ impl GameState for State {
             }
             RunState::PlayerTurn => {
                 self.run_systems();
+                self.ecs.maintain();
                 newrunstate = RunState::MonsterTurn;
             }
             RunState::MonsterTurn => {
                 self.run_systems();
+                self.ecs.maintain();
                 newrunstate = RunState::AwaitingInput;
             }
             RunState::ShowInventory => {
@@ -94,12 +100,16 @@ impl GameState for State {
                     gui::ItemMenuResult::NoResponse => {}
                     gui::ItemMenuResult::Selected => {
                         let item_entity = item_entity.unwrap();
-                        let names = self.ecs.read_storage::<Name>();
-                        let mut gamelog = self.ecs.fetch_mut::<gamelog::Gamelog>();
-                        gamelog.entries.push(format!(
-                            "You try to use {item_name}, but it isn't written yet",
-                            item_name = names.get(item_entity).unwrap().name // TODO: Err handling
-                        ));
+                        let mut intent = self.ecs.write_storage::<WantsToDrinkPotion>();
+                        intent
+                            .insert(
+                                *self.ecs.fetch::<Entity>(),
+                                WantsToDrinkPotion {
+                                    potion: item_entity,
+                                },
+                            )
+                            .expect("Unable to insert intent");
+                        newrunstate = RunState::PlayerTurn;
                     }
                 }
             }
@@ -152,6 +162,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Potion>();
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<WantsToPickupItem>();
+    gs.ecs.register::<WantsToDrinkPotion>();
 
     let map = Map::new_map_rooms_and_corridors();
     let player_pos = map.rooms[0].center();
