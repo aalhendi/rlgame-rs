@@ -170,23 +170,7 @@ pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
         y += 1;
     }
 
-    // TODO: Replace with if-let
-    match ctx.key {
-        None => (ItemMenuResult::NoResponse, None),
-        Some(key) => match key {
-            VirtualKeyCode::Escape => (ItemMenuResult::Cancel, None),
-            _ => {
-                let selection = rltk::letter_to_option(key);
-                if selection > -1 && selection < count as i32 {
-                    return (
-                        ItemMenuResult::Selected,
-                        Some(equippable[selection as usize]),
-                    );
-                }
-                (ItemMenuResult::NoResponse, None)
-            }
-        },
-    }
+    return item_menu_input(ctx.key, &equippable, count as i32);
 }
 
 fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &Name) {
@@ -213,4 +197,74 @@ fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &Name) {
     );
 
     ctx.print(21, y, &name.name.to_string());
+}
+
+pub fn drop_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+    let player_entity = gs.ecs.fetch::<Entity>();
+    let names = gs.ecs.read_storage::<Name>();
+    let backpack = gs.ecs.read_storage::<InBackpack>();
+    let entities = gs.ecs.entities();
+
+    let player_inventory = (&backpack, &names)
+        .join()
+        .filter(|(item, _name)| item.owner == *player_entity);
+    let count = player_inventory.count();
+
+    let mut y = (25 - (count / 2)) as i32;
+    ctx.draw_box(
+        15,
+        y - 2,
+        31,
+        (count + 3) as i32,
+        RGB::named(rltk::WHITE),
+        RGB::named(rltk::BLACK),
+    );
+    ctx.print_color(
+        18,
+        y - 2,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Drop Which Item?",
+    );
+    ctx.print_color(
+        18,
+        y + count as i32 + 1,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "ESCAPE to cancel",
+    );
+
+    let mut equippable: Vec<Entity> = Vec::new();
+    for (j, (entity, _pack, item_name)) in (&entities, &backpack, &names)
+        .join()
+        .filter(|(_entity, item, _name)| item.owner == *player_entity)
+        .enumerate()
+    {
+        let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
+        print_item_label(ctx, y, label_char, item_name);
+        equippable.push(entity);
+        y += 1;
+    }
+
+    return item_menu_input(ctx.key, &equippable, count as i32);
+}
+
+fn item_menu_input(key: Option<VirtualKeyCode>, items: &Vec<Entity>, count:i32) -> (ItemMenuResult, Option<Entity>) {
+    //TODO: Replace with if-let
+    match key {
+        None => (ItemMenuResult::NoResponse, None),
+        Some(key) => match key {
+            VirtualKeyCode::Escape => (ItemMenuResult::Cancel, None),
+            _ => {
+                let selection = rltk::letter_to_option(key);
+                if selection > -1 && selection < count {
+                    return (
+                        ItemMenuResult::Selected,
+                        Some(items[selection as usize]),
+                    );
+                }
+                (ItemMenuResult::NoResponse, None)
+            }
+        },
+    }
 }

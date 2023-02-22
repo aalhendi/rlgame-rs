@@ -1,7 +1,7 @@
 use super::{BlocksTile, Map, Position};
 use specs::prelude::*;
 
-pub struct MapIndexingSystem {}
+pub struct MapIndexingSystem;
 
 impl<'a> System<'a> for MapIndexingSystem {
     type SystemData = (

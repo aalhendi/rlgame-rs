@@ -2,7 +2,7 @@ use super::{gamelog::Gamelog, CombatStats, Name, Player, SufferDamage};
 use rltk::console;
 use specs::prelude::*;
 
-pub struct DamageSystem {}
+pub struct DamageSystem;
 
 impl<'a> System<'a> for DamageSystem {
     type SystemData = (

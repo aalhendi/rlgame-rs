@@ -23,7 +23,7 @@ mod gamelog;
 mod gui;
 pub mod inventory_system;
 pub mod spawner;
-use inventory_system::{ItemCollectionSystem, PotionUseSystem};
+use inventory_system::{ItemCollectionSystem, ItemDropSystem, PotionUseSystem};
 
 // --- State Start ---
 #[derive(PartialEq, Clone, Copy)]
@@ -33,6 +33,7 @@ pub enum RunState {
     PlayerTurn,
     MonsterTurn,
     ShowInventory,
+    ShowDropItem,
 }
 
 pub struct State {
@@ -41,26 +42,29 @@ pub struct State {
 
 impl State {
     fn run_systems(&mut self) {
-        let mut vis = VisibilitySystem {};
+        let mut vis = VisibilitySystem;
         vis.run_now(&self.ecs);
 
-        let mut mob = MonsterAI {};
+        let mut mob = MonsterAI;
         mob.run_now(&self.ecs);
 
-        let mut mapindex = MapIndexingSystem {};
+        let mut mapindex = MapIndexingSystem;
         mapindex.run_now(&self.ecs);
 
-        let mut melee_combat_system = MeleeCombatSystem {};
+        let mut melee_combat_system = MeleeCombatSystem;
         melee_combat_system.run_now(&self.ecs);
 
-        let mut damage_system = DamageSystem {};
+        let mut damage_system = DamageSystem;
         damage_system.run_now(&self.ecs);
 
-        let mut item_collection_system = ItemCollectionSystem {};
+        let mut item_collection_system = ItemCollectionSystem;
         item_collection_system.run_now(&self.ecs);
 
         let mut potion_use_system = PotionUseSystem;
         potion_use_system.run_now(&self.ecs);
+
+        let mut item_drop_system = ItemDropSystem;
+        item_drop_system.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -90,6 +94,24 @@ impl GameState for State {
                 self.run_systems();
                 self.ecs.maintain();
                 newrunstate = RunState::AwaitingInput;
+            }
+            RunState::ShowDropItem => {
+                let (item_menu_result, item_entity) = gui::drop_item_menu(self, ctx);
+                match item_menu_result {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected => {
+                        let item_entity = item_entity.unwrap();
+                        let mut intent = self.ecs.write_storage::<WantsToDropItem>();
+                        intent
+                            .insert(
+                                *self.ecs.fetch::<Entity>(),
+                                WantsToDropItem { item: item_entity },
+                            )
+                            .expect("Unable to insert intent");
+                        newrunstate = RunState::PlayerTurn;
+                    }
+                }
             }
             RunState::ShowInventory => {
                 let (item_menu_result, item_entity) = gui::show_inventory(self, ctx);
@@ -163,6 +185,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<InBackpack>();
     gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<WantsToDrinkPotion>();
+    gs.ecs.register::<WantsToDropItem>();
 
     let map = Map::new_map_rooms_and_corridors();
     let player_pos = map.rooms[0].center();

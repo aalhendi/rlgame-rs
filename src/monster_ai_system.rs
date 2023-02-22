@@ -4,7 +4,7 @@ use super::{Map, Monster, Position, Viewshed, WantsToMelee};
 use rltk::Point;
 use specs::prelude::*;
 
-pub struct MonsterAI {}
+pub struct MonsterAI;
 
 type MonsterAIData<'a> = (
     WriteExpect<'a, Map>,

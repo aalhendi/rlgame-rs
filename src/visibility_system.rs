@@ -2,7 +2,7 @@ use super::{Map, Player, Position, Viewshed};
 use rltk::{field_of_view, Point};
 use specs::prelude::*;
 
-pub struct VisibilitySystem {}
+pub struct VisibilitySystem;
 
 impl<'a> System<'a> for VisibilitySystem {
     type SystemData = (
