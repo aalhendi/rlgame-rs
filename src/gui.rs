@@ -170,7 +170,7 @@ pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
         y += 1;
     }
 
-    return item_menu_input(ctx.key, &equippable, count as i32);
+    item_menu_input(ctx.key, &equippable, count as i32)
 }
 
 fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &Name) {
@@ -246,10 +246,14 @@ pub fn drop_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
         y += 1;
     }
 
-    return item_menu_input(ctx.key, &equippable, count as i32);
+    item_menu_input(ctx.key, &equippable, count as i32)
 }
 
-fn item_menu_input(key: Option<VirtualKeyCode>, items: &Vec<Entity>, count:i32) -> (ItemMenuResult, Option<Entity>) {
+fn item_menu_input(
+    key: Option<VirtualKeyCode>,
+    items: &[Entity],
+    count: i32,
+) -> (ItemMenuResult, Option<Entity>) {
     //TODO: Replace with if-let
     match key {
         None => (ItemMenuResult::NoResponse, None),
@@ -258,10 +262,7 @@ fn item_menu_input(key: Option<VirtualKeyCode>, items: &Vec<Entity>, count:i32) 
             _ => {
                 let selection = rltk::letter_to_option(key);
                 if selection > -1 && selection < count {
-                    return (
-                        ItemMenuResult::Selected,
-                        Some(items[selection as usize]),
-                    );
+                    return (ItemMenuResult::Selected, Some(items[selection as usize]));
                 }
                 (ItemMenuResult::NoResponse, None)
             }

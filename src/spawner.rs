@@ -16,6 +16,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             glyph: rltk::to_cp437('@'),
             fg: RGB::named(rltk::YELLOW),
             bg: RGB::named(rltk::BLACK),
+            render_order: 0,
         })
         .with(Player {})
         .with(Viewshed {
@@ -62,6 +63,7 @@ fn monster<S: ToString>(ecs: &mut World, pos: Position, glyph: rltk::FontCharTyp
             glyph,
             fg: RGB::named(rltk::RED),
             bg: RGB::named(rltk::BLACK),
+            render_order: 1,
         })
         .with(Monster {})
         .with(Viewshed {
@@ -147,6 +149,7 @@ fn health_potion(ecs: &mut World, pos: Position) {
             glyph: rltk::to_cp437('¡'),
             fg: RGB::named(rltk::MAGENTA),
             bg: RGB::named(rltk::BLACK),
+            render_order: 2,
         })
         .with(Name {
             name: "Health Potion".to_string(),

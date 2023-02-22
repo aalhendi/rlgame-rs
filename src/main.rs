@@ -149,7 +149,11 @@ impl GameState for State {
         let positions = self.ecs.read_storage::<Position>();
         let renderables = self.ecs.read_storage::<Renderable>();
 
-        for (pos, render) in (&positions, &renderables).join() {
+        let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
+        data.sort_by(|&(_a_pos, a_rndr), &(_b_pos, b_rndr)| {
+            b_rndr.render_order.cmp(&a_rndr.render_order)
+        });
+        for (pos, render) in data.iter() {
             let idx = map.xy_idx(pos.x, pos.y);
             if map.visible_tiles[idx] {
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph)
