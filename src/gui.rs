@@ -1,6 +1,6 @@
 use super::{
-    gamelog::Gamelog, CombatStats, InBackpack, Map, Name, Player, Position, State, MAPHEIGHT,
-    MAPWIDTH,
+    gamelog::Gamelog, CombatStats, InBackpack, Map, Name, Player, Position, State, Viewshed,
+    MAPHEIGHT, MAPWIDTH,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -268,4 +268,63 @@ fn item_menu_input(
             }
         },
     }
+}
+
+pub fn ranged_target(
+    gs: &mut State,
+    ctx: &mut Rltk,
+    range: i32,
+) -> (ItemMenuResult, Option<Point>) {
+    let player_entity = gs.ecs.fetch::<Entity>();
+    let player_pos = gs.ecs.fetch::<Point>();
+    let viewsheds = gs.ecs.read_storage::<Viewshed>();
+
+    ctx.print_color(
+        5,
+        0,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "Select Target:",
+    );
+
+    // Highlight available target cells
+    let mut available_cells = Vec::new();
+    if let Some(p_viewshed) = viewsheds.get(*player_entity) {
+        // We have a viewshed
+        for pt in p_viewshed.visible_tiles.iter() {
+            let distance = rltk::DistanceAlg::Pythagoras.distance2d(*player_pos, *pt);
+            if distance <= range as f32 {
+                ctx.set_bg(pt.x, pt.y, RGB::named(rltk::BLUE));
+                available_cells.push(pt);
+            }
+        }
+    } else {
+        return (ItemMenuResult::Cancel, None);
+    }
+
+    // Draw mouse cursor
+    let (mouse_x, mouse_y) = ctx.mouse_pos();
+    let mut valid_target = false;
+    let mouse_pt = Point {
+        x: mouse_x,
+        y: mouse_y,
+    };
+    if available_cells.contains(&&mouse_pt) {
+        valid_target = true;
+    }
+
+    if valid_target {
+        ctx.set_bg(mouse_x, mouse_y, RGB::named(rltk::CYAN));
+        if ctx.left_click {
+            rltk::console::log("Whats going on heer");
+            return (ItemMenuResult::Selected, Some(Point::new(mouse_x, mouse_y)));
+        }
+    } else {
+        ctx.set_bg(mouse_x, mouse_y, RGB::named(rltk::RED));
+        if ctx.left_click {
+            return (ItemMenuResult::Cancel, None);
+        }
+    }
+
+    (ItemMenuResult::NoResponse, None)
 }

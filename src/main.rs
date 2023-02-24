@@ -34,6 +34,7 @@ pub enum RunState {
     MonsterTurn,
     ShowInventory,
     ShowDropItem,
+    ShowTargeting { range: i32, item: Entity },
 }
 
 pub struct State {
@@ -73,6 +74,9 @@ impl State {
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
+
+        draw_map(&self.ecs, ctx);
+        gui::draw_ui(&self.ecs, ctx);
 
         let mut newrunstate = { *self.ecs.fetch::<RunState>() };
 
@@ -122,11 +126,41 @@ impl GameState for State {
                     gui::ItemMenuResult::NoResponse => {}
                     gui::ItemMenuResult::Selected => {
                         let item_entity = item_entity.unwrap();
+                        if let Some(item) = self.ecs.read_storage::<Ranged>().get(item_entity) {
+                            newrunstate = RunState::ShowTargeting {
+                                range: item.range,
+                                item: item_entity,
+                            }
+                        } else {
+                            let mut intent = self.ecs.write_storage::<WantsToUseItem>();
+                            intent
+                                .insert(
+                                    *self.ecs.fetch::<Entity>(),
+                                    WantsToUseItem {
+                                        item: item_entity,
+                                        target: None,
+                                    },
+                                )
+                                .expect("Unable to insert intent");
+                            newrunstate = RunState::PlayerTurn;
+                        }
+                    }
+                }
+            }
+            RunState::ShowTargeting { range, item } => {
+                let (item_menu_result, item_entity) = gui::ranged_target(self, ctx, range);
+                match item_menu_result {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected => {
                         let mut intent = self.ecs.write_storage::<WantsToUseItem>();
                         intent
                             .insert(
                                 *self.ecs.fetch::<Entity>(),
-                                WantsToUseItem { item: item_entity },
+                                WantsToUseItem {
+                                    item,
+                                    target: item_entity,
+                                },
                             )
                             .expect("Unable to insert intent");
                         newrunstate = RunState::PlayerTurn;
@@ -140,8 +174,6 @@ impl GameState for State {
             *runwriter = newrunstate;
         }
         damage_system::delete_the_dead(&mut self.ecs);
-
-        draw_map(&self.ecs, ctx);
 
         let map = self.ecs.fetch::<Map>();
         let positions = self.ecs.read_storage::<Position>();
@@ -157,8 +189,6 @@ impl GameState for State {
                 ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph)
             }
         }
-
-        gui::draw_ui(&self.ecs, ctx);
     }
 }
 // --- State End ---
@@ -182,7 +212,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<CombatStats>();
     gs.ecs.register::<WantsToMelee>();
     gs.ecs.register::<SufferDamage>();
+    gs.ecs.register::<InflictsDamage>();
     gs.ecs.register::<Consumable>();
+    gs.ecs.register::<Ranged>();
     gs.ecs.register::<Item>();
     gs.ecs.register::<ProvidesHealing>();
     gs.ecs.register::<InBackpack>();

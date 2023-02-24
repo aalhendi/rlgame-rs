@@ -64,7 +64,7 @@ impl<'a> System<'a> for ItemUseSystem {
             player_entity,
             mut gamelog,
             entities,
-            _consumables,
+            consumables,
             mut wants_use,
             names,
             healers,
@@ -72,11 +72,7 @@ impl<'a> System<'a> for ItemUseSystem {
         ) = data;
 
         for (entity, wants_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
-            let item = healers.get(wants_use.item);
-
-            match item {
-                None => {}
-                Some(healer) => {
+            if let Some(healer) = healers.get(wants_use.item) {
                     let amount = if stats.hp + healer.heal_amount > stats.max_hp {
                         stats.max_hp - stats.hp
                     } else {
@@ -89,10 +85,16 @@ impl<'a> System<'a> for ItemUseSystem {
                             potion_name = names.get(wants_use.item).unwrap().name,
                         ));
                     }
+                if consumables.get(wants_use.item).is_some() {
                     entities.delete(wants_use.item).expect("Delete failed");
                 }
             }
+
+            if consumables.get(wants_use.item).is_some() {
+                entities.delete(wants_use.item).expect("Delete failed");
         }
+        }
+
         wants_use.clear();
     }
 }

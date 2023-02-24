@@ -1,6 +1,6 @@
 use super::{
-    BlocksTile, CombatStats, Item, Monster, Name, Player, Position, ProvidesHealing, Rect,
-    Renderable, Viewshed, MAPWIDTH,
+    BlocksTile, CombatStats, Consumable, InflictsDamage, Item, Monster, Name, Player, Position,
+    ProvidesHealing, Ranged, Rect, Renderable, Viewshed, MAPWIDTH,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::prelude::*;
@@ -36,7 +36,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         .build()
 }
 
-// Spawns a random monster at a given location
+/// Spawns a random monster at a given location
 pub fn random_monster(ecs: &mut World, pos: Position) {
     let roll: i32;
     {
@@ -138,7 +138,20 @@ pub fn spawn_room(ecs: &mut World, room: &Rect) {
             x: (*idx % MAPWIDTH) as i32,
             y: (*idx / MAPWIDTH) as i32,
         };
-        health_potion(ecs, pos)
+        random_item(ecs, pos)
+    }
+}
+
+/// Spawns a random item at a given location
+pub fn random_item(ecs: &mut World, pos: Position) {
+    let roll: i32;
+    {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        roll = rng.roll_dice(1, 2);
+    }
+    match roll {
+        1 => health_potion(ecs, pos),
+        _ => magic_missile_scroll(ecs, pos),
     }
 }
 
@@ -154,7 +167,26 @@ fn health_potion(ecs: &mut World, pos: Position) {
         .with(Name {
             name: "Health Potion".to_string(),
         })
-        .with(Item {})
+        .with(Item)
         .with(ProvidesHealing { heal_amount: 8 })
+        .build();
+}
+
+fn magic_missile_scroll(ecs: &mut World, pos: Position) {
+    ecs.create_entity()
+        .with(pos)
+        .with(Renderable {
+            glyph: rltk::to_cp437(')'),
+            fg: RGB::named(rltk::CYAN),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Magic Missile Scroll".to_string(),
+        })
+        .with(Item)
+        .with(Consumable)
+        .with(Ranged { range: 6 })
+        .with(InflictsDamage { damage: 8 })
         .build();
 }
