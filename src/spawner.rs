@@ -169,6 +169,7 @@ fn health_potion(ecs: &mut World, pos: Position) {
         })
         .with(Item)
         .with(ProvidesHealing { heal_amount: 8 })
+        .with(Consumable)
         .build();
 }
 
