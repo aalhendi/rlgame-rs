@@ -316,7 +316,6 @@ pub fn ranged_target(
     if valid_target {
         ctx.set_bg(mouse_x, mouse_y, RGB::named(rltk::CYAN));
         if ctx.left_click {
-            rltk::console::log("Whats going on heer");
             return (ItemMenuResult::Selected, Some(Point::new(mouse_x, mouse_y)));
         }
     } else {
