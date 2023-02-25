@@ -1,6 +1,4 @@
-use crate::RunState;
-
-use super::{Map, Monster, Position, Viewshed, WantsToMelee};
+use super::{Confusion, Map, Monster, Position, RunState, Viewshed, WantsToMelee};
 use rltk::Point;
 use specs::prelude::*;
 
@@ -16,6 +14,7 @@ type MonsterAIData<'a> = (
     WriteStorage<'a, Position>,
     WriteStorage<'a, WantsToMelee>,
     ReadExpect<'a, RunState>,
+    WriteStorage<'a, Confusion>,
 );
 impl<'a> System<'a> for MonsterAI {
     type SystemData = MonsterAIData<'a>;
@@ -31,6 +30,7 @@ impl<'a> System<'a> for MonsterAI {
             mut position,
             mut wants_to_melee,
             runstate,
+            mut confused,
         ) = data;
 
         if *runstate != RunState::MonsterTurn {
@@ -40,34 +40,46 @@ impl<'a> System<'a> for MonsterAI {
         for (entity, mut viewshed, _monster, mut pos) in
             (&entities, &mut viewshed, &monster, &mut position).join()
         {
-            let distance =
-                rltk::DistanceAlg::Pythagoras.distance2d(Point::new(pos.x, pos.y), *player_pos);
-            if distance < 1.5 {
-                wants_to_melee
-                    .insert(
-                        entity,
-                        WantsToMelee {
-                            target: *player_entity,
-                        },
-                    )
-                    .expect("Unable to insert attack");
-            } else if viewshed.visible_tiles.contains(&*player_pos) {
-                let path = rltk::a_star_search(
-                    map.xy_idx(pos.x, pos.y) as i32,
-                    map.xy_idx(player_pos.x, player_pos.y) as i32,
-                    &*map,
-                );
-                if path.success && path.steps.len() > 1 {
-                    // Clear old pos
-                    let mut idx = map.xy_idx(pos.x, pos.y);
-                    map.blocked[idx] = false;
-                    // Calc new pos
-                    pos.x = path.steps[1] as i32 % map.width;
-                    pos.y = path.steps[1] as i32 / map.width;
-                    // Set new pos
-                    idx = map.xy_idx(pos.x, pos.y);
-                    map.blocked[idx] = true;
-                    viewshed.dirty = true;
+            let mut can_act = true;
+
+            if let Some(am_confused) = confused.get_mut(entity) {
+                am_confused.turns -= 1;
+                if am_confused.turns < 1 {
+                    confused.remove(entity);
+                }
+                can_act = false;
+            }
+
+            if can_act {
+                let distance =
+                    rltk::DistanceAlg::Pythagoras.distance2d(Point::new(pos.x, pos.y), *player_pos);
+                if distance < 1.5 {
+                    wants_to_melee
+                        .insert(
+                            entity,
+                            WantsToMelee {
+                                target: *player_entity,
+                            },
+                        )
+                        .expect("Unable to insert attack");
+                } else if viewshed.visible_tiles.contains(&*player_pos) {
+                    let path = rltk::a_star_search(
+                        map.xy_idx(pos.x, pos.y) as i32,
+                        map.xy_idx(player_pos.x, player_pos.y) as i32,
+                        &*map,
+                    );
+                    if path.success && path.steps.len() > 1 {
+                        // Clear old pos
+                        let mut idx = map.xy_idx(pos.x, pos.y);
+                        map.blocked[idx] = false;
+                        // Calc new pos
+                        pos.x = path.steps[1] as i32 % map.width;
+                        pos.y = path.steps[1] as i32 / map.width;
+                        // Set new pos
+                        idx = map.xy_idx(pos.x, pos.y);
+                        map.blocked[idx] = true;
+                        viewshed.dirty = true;
+                    }
                 }
             }
         }

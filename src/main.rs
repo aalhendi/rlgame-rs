@@ -213,6 +213,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToMelee>();
     gs.ecs.register::<SufferDamage>();
     gs.ecs.register::<InflictsDamage>();
+    gs.ecs.register::<Confusion>();
     gs.ecs.register::<AreaOfEffect>();
     gs.ecs.register::<Consumable>();
     gs.ecs.register::<Ranged>();

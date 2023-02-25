@@ -1,6 +1,7 @@
 use super::{
-    gamelog::Gamelog, AreaOfEffect, CombatStats, Consumable, InBackpack, InflictsDamage, Map, Name,
-    Position, ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToUseItem,
+    gamelog::Gamelog, AreaOfEffect, CombatStats, Confusion, Consumable, InBackpack, InflictsDamage,
+    Map, Name, Position, ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem,
+    WantsToUseItem,
 };
 use specs::prelude::*;
 
@@ -61,6 +62,7 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadExpect<'a, Map>,
         WriteStorage<'a, SufferDamage>,
         ReadStorage<'a, AreaOfEffect>,
+        WriteStorage<'a, Confusion>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -77,6 +79,7 @@ impl<'a> System<'a> for ItemUseSystem {
             map,
             mut suffer_damage,
             aoe,
+            mut confusers,
         ) = data;
 
         for (entity, wants_use) in (&entities, &wants_use).join() {
@@ -144,6 +147,25 @@ impl<'a> System<'a> for ItemUseSystem {
                                 potion_name = names.get(wants_use.item).unwrap().name,
                             ));
                         }
+                    }
+                }
+            }
+
+            // Confusion Item
+            if let Some(turns) = confusers
+                .get(wants_use.item)
+                .map(|confuser| confuser.turns.clone()) // To avoid double borrow
+            {
+                for mob in targets.iter() {
+                    confusers
+                        .insert(*mob, Confusion { turns })
+                        .expect("Unable to insert status");
+                    if entity == *player_entity {
+                        gamelog.entries.push(format!(
+                            "You use {item_name} on {mob_name}, confusing them.",
+                            mob_name = names.get(*mob).unwrap().name,
+                            item_name = names.get(wants_use.item).unwrap().name,
+                        ));
                     }
                 }
             }
