@@ -152,10 +152,8 @@ impl<'a> System<'a> for ItemUseSystem {
             }
 
             // Confusion Item
-            if let Some(turns) = confusers
-                .get(wants_use.item)
-                .map(|confuser| confuser.turns.clone()) // To avoid double borrow
-            {
+            // map To avoid double borrow
+            if let Some(turns) = confusers.get(wants_use.item).map(|confuser| confuser.turns) {
                 for mob in targets.iter() {
                     confusers
                         .insert(*mob, Confusion { turns })

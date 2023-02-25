@@ -34,7 +34,14 @@ pub enum RunState {
     MonsterTurn,
     ShowInventory,
     ShowDropItem,
-    ShowTargeting { range: i32, item: Entity },
+    ShowTargeting {
+        range: i32,
+        item: Entity,
+    },
+    MainMenu {
+        menu_selection: gui::MainMenuSelection,
+    },
+    SaveGame,
 }
 
 pub struct State {
@@ -73,13 +80,35 @@ impl State {
 
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
+        let mut newrunstate = { *self.ecs.fetch::<RunState>() };
         ctx.cls();
 
-        draw_map(&self.ecs, ctx);
-        gui::draw_ui(&self.ecs, ctx);
+        // Either draw Main Menu or draw map
+        match newrunstate {
+            RunState::MainMenu { .. } => {}
+            _ => {
+                draw_map(&self.ecs, ctx);
+                {
+                    let map = self.ecs.fetch::<Map>();
+                    let positions = self.ecs.read_storage::<Position>();
+                    let renderables = self.ecs.read_storage::<Renderable>();
 
-        let mut newrunstate = { *self.ecs.fetch::<RunState>() };
+                    let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
+                    data.sort_by(|&(_a_pos, a_rndr), &(_b_pos, b_rndr)| {
+                        b_rndr.render_order.cmp(&a_rndr.render_order)
+                    });
+                    for (pos, render) in data.iter() {
+                        let idx = map.xy_idx(pos.x, pos.y);
+                        if map.visible_tiles[idx] {
+                            ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph)
+                        }
+                        gui::draw_ui(&self.ecs, ctx);
+                    }
+                }
+            }
+        }
 
+        // Game states
         match newrunstate {
             RunState::PreRun => {
                 self.run_systems();
@@ -167,6 +196,29 @@ impl GameState for State {
                     }
                 }
             }
+            RunState::MainMenu { .. } => {
+                let main_menu_result = gui::main_menu(self, ctx);
+                match main_menu_result {
+                    gui::MainMenuResult::NoSelection { highlighted } => {
+                        newrunstate = RunState::MainMenu {
+                            menu_selection: highlighted,
+                        }
+                    }
+                    gui::MainMenuResult::Selected { highlighted } => match highlighted {
+                        gui::MainMenuSelection::NewGame => newrunstate = RunState::PreRun,
+                        gui::MainMenuSelection::LoadGame => newrunstate = RunState::PreRun,
+                        gui::MainMenuSelection::Quit => {
+                            ::std::process::exit(0);
+                        }
+                    },
+                }
+            }
+            RunState::SaveGame => {
+                // NOTE: Temporary dummy code
+                newrunstate = RunState::MainMenu {
+                    menu_selection: gui::MainMenuSelection::LoadGame,
+                };
+            }
         }
 
         {
@@ -174,21 +226,6 @@ impl GameState for State {
             *runwriter = newrunstate;
         }
         damage_system::delete_the_dead(&mut self.ecs);
-
-        let map = self.ecs.fetch::<Map>();
-        let positions = self.ecs.read_storage::<Position>();
-        let renderables = self.ecs.read_storage::<Renderable>();
-
-        let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
-        data.sort_by(|&(_a_pos, a_rndr), &(_b_pos, b_rndr)| {
-            b_rndr.render_order.cmp(&a_rndr.render_order)
-        });
-        for (pos, render) in data.iter() {
-            let idx = map.xy_idx(pos.x, pos.y);
-            if map.visible_tiles[idx] {
-                ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph)
-            }
-        }
     }
 }
 // --- State End ---
