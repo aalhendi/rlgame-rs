@@ -1,6 +1,6 @@
 use super::{
-    gamelog::Gamelog, CombatStats, Consumable, InBackpack, InflictsDamage, Map, Name, Position,
-    ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToUseItem,
+    gamelog::Gamelog, AreaOfEffect, CombatStats, Consumable, InBackpack, InflictsDamage, Map, Name,
+    Position, ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToUseItem,
 };
 use specs::prelude::*;
 
@@ -60,6 +60,7 @@ impl<'a> System<'a> for ItemUseSystem {
         WriteStorage<'a, CombatStats>,
         ReadExpect<'a, Map>,
         WriteStorage<'a, SufferDamage>,
+        ReadStorage<'a, AreaOfEffect>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -75,14 +76,45 @@ impl<'a> System<'a> for ItemUseSystem {
             mut combat_stats,
             map,
             mut suffer_damage,
+            aoe,
         ) = data;
 
-        for (entity, wants_use, stats) in (&entities, &wants_use, &mut combat_stats).join() {
+        for (entity, wants_use) in (&entities, &wants_use).join() {
+            // Targeting
+            let mut targets: Vec<Entity> = Vec::new();
+            match wants_use.target {
+                None => {
+                    targets.push(*player_entity);
+                }
+                Some(target) => {
+                    match aoe.get(wants_use.item) {
+                        None => {
+                            // Single target in tile
+                            let idx = map.xy_idx(target.x, target.y);
+                            for mob in map.tile_content[idx].iter() {
+                                targets.push(*mob);
+                            }
+                        }
+                        Some(aoe) => {
+                            // AoE
+                            let mut blast_tiles = rltk::field_of_view(target, aoe.radius, &*map);
+                            blast_tiles.retain(|p| {
+                                p.x > 0 && p.x < map.width - 1 && p.y > 0 && p.y < map.height - 1
+                            });
+                            for tile_idx in blast_tiles.iter() {
+                                let idx = map.xy_idx(tile_idx.x, tile_idx.y);
+                                for mob in map.tile_content[idx].iter() {
+                                    targets.push(*mob);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Damaging Item
             if let Some(damager) = damagers.get(wants_use.item) {
-                let target_pos = wants_use.target.unwrap();
-                let idx = map.xy_idx(target_pos.x, target_pos.y);
-                for mob in map.tile_content[idx].iter() {
+                for mob in targets.iter() {
                     SufferDamage::new_damage(&mut suffer_damage, *mob, damager.damage);
                     if entity == *player_entity {
                         gamelog.entries.push(format!(
@@ -98,17 +130,21 @@ impl<'a> System<'a> for ItemUseSystem {
 
             // Healing Item
             if let Some(healer) = healers.get(wants_use.item) {
-                let amount = if stats.hp + healer.heal_amount > stats.max_hp {
-                    stats.max_hp - stats.hp
-                } else {
-                    healer.heal_amount
-                };
-                stats.hp = i32::min(stats.max_hp, stats.hp + healer.heal_amount);
-                if entity == *player_entity {
-                    gamelog.entries.push(format!(
-                        "You drink the {potion_name}, healing {amount} hp.",
-                        potion_name = names.get(wants_use.item).unwrap().name,
-                    ));
+                for target in targets.iter() {
+                    if let Some(stats) = combat_stats.get_mut(*target) {
+                        let amount = if stats.hp + healer.heal_amount > stats.max_hp {
+                            stats.max_hp - stats.hp
+                        } else {
+                            healer.heal_amount
+                        };
+                        stats.hp = i32::min(stats.max_hp, stats.hp + healer.heal_amount);
+                        if entity == *player_entity {
+                            gamelog.entries.push(format!(
+                                "You drink the {potion_name}, healing {amount} hp.",
+                                potion_name = names.get(wants_use.item).unwrap().name,
+                            ));
+                        }
+                    }
                 }
             }
 
