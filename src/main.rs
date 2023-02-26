@@ -1,5 +1,8 @@
 use rltk::{GameState, Point, Rltk};
-use specs::prelude::*;
+use specs::{
+    prelude::*,
+    saveload::{SimpleMarker, SimpleMarkerAllocator},
+};
 
 pub mod map;
 use map::*;
@@ -24,6 +27,7 @@ mod gui;
 pub mod inventory_system;
 pub mod spawner;
 use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemUseSystem};
+mod saveload_system;
 
 // --- State Start ---
 #[derive(PartialEq, Clone, Copy)]
@@ -214,7 +218,7 @@ impl GameState for State {
                 }
             }
             RunState::SaveGame => {
-                // NOTE: Temporary dummy code
+                saveload_system::save_game(&mut self.ecs);
                 newrunstate = RunState::MainMenu {
                     menu_selection: gui::MainMenuSelection::LoadGame,
                 };
@@ -260,6 +264,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<WantsToUseItem>();
     gs.ecs.register::<WantsToDropItem>();
+    gs.ecs.register::<SimpleMarker<IsSerialized>>();
+    gs.ecs.register::<SerializationHelper>();
+
+    gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
 
     let map = Map::new_map_rooms_and_corridors();
     let player_pos = map.rooms[0].center();

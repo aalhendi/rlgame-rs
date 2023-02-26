@@ -1,9 +1,13 @@
 use super::{
-    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InflictsDamage, Item, Monster,
-    Name, Player, Position, ProvidesHealing, Ranged, Rect, Renderable, Viewshed, MAPWIDTH,
+    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InflictsDamage, IsSerialized,
+    Item, Monster, Name, Player, Position, ProvidesHealing, Ranged, Rect, Renderable, Viewshed,
+    MAPWIDTH,
 };
 use rltk::{RandomNumberGenerator, RGB};
-use specs::prelude::*;
+use specs::{
+    prelude::*,
+    saveload::{MarkedBuilder, SimpleMarker},
+};
 
 const MAX_MONSTERS: i32 = 4;
 const MAX_ITEMS: i32 = 2;
@@ -18,7 +22,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             bg: RGB::named(rltk::BLACK),
             render_order: 0,
         })
-        .with(Player {})
+        .with(Player)
         .with(Viewshed {
             visible_tiles: Vec::new(),
             range: 8,
@@ -33,6 +37,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             defense: 2,
             power: 5,
         })
+        .marked::<SimpleMarker<IsSerialized>>()
         .build()
 }
 
@@ -74,13 +79,14 @@ fn monster<S: ToString>(ecs: &mut World, pos: Position, glyph: rltk::FontCharTyp
         .with(Name {
             name: name.to_string(),
         })
-        .with(BlocksTile {})
+        .with(BlocksTile)
         .with(CombatStats {
             max_hp: 16,
             hp: 16,
             defense: 1,
             power: 4,
         })
+        .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
 
@@ -172,6 +178,7 @@ fn health_potion(ecs: &mut World, pos: Position) {
         .with(Item)
         .with(ProvidesHealing { heal_amount: 8 })
         .with(Consumable)
+        .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
 
@@ -191,6 +198,7 @@ fn magic_missile_scroll(ecs: &mut World, pos: Position) {
         .with(Consumable)
         .with(Ranged { range: 6 })
         .with(InflictsDamage { damage: 8 })
+        .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
 
@@ -211,6 +219,7 @@ fn fireball_scroll(ecs: &mut World, pos: Position) {
         .with(Ranged { range: 6 })
         .with(InflictsDamage { damage: 20 })
         .with(AreaOfEffect { radius: 3 })
+        .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
 
@@ -230,5 +239,6 @@ fn confusion_scroll(ecs: &mut World, pos: Position) {
         .with(Consumable)
         .with(Ranged { range: 6 })
         .with(Confusion { turns: 4 })
+        .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
