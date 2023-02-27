@@ -342,6 +342,7 @@ pub enum MainMenuResult {
 }
 
 pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
+    let save_exists = super::saveload_system::save_exists();
     let runstate = gs.ecs.fetch::<RunState>();
 
     ctx.print_color_centered(
@@ -361,12 +362,15 @@ pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
             24,
             cur_hovering == MainMenuSelection::NewGame,
         );
-        print_menu_item(
-            ctx,
-            "Load Game",
-            25,
-            cur_hovering == MainMenuSelection::LoadGame,
-        );
+
+        if save_exists {
+            print_menu_item(
+                ctx,
+                "Load Game",
+                25,
+                cur_hovering == MainMenuSelection::LoadGame,
+            );
+        }
         print_menu_item(ctx, "Quit", 26, cur_hovering == MainMenuSelection::Quit);
 
         if let Some(key) = ctx.key {
@@ -379,13 +383,13 @@ pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
                 VirtualKeyCode::Up => {
                     // Cycle++
                     return MainMenuResult::NoSelection {
-                        highlighted: cycle_hovering(cur_hovering, true),
+                        highlighted: cycle_hovering(cur_hovering, true, save_exists),
                     };
                 }
                 VirtualKeyCode::Down => {
                     //Cycle--
                     return MainMenuResult::NoSelection {
-                        highlighted: cycle_hovering(cur_hovering, false),
+                        highlighted: cycle_hovering(cur_hovering, false, save_exists),
                     };
                 }
                 VirtualKeyCode::Return => {
@@ -425,16 +429,29 @@ fn print_menu_item(ctx: &mut Rltk, text: &str, y: i32, is_highlighted: bool) {
 fn cycle_hovering(
     cur_hovering: MainMenuSelection,
     is_positive_direction: bool,
+    save_exists: bool,
 ) -> MainMenuSelection {
     if is_positive_direction {
         match cur_hovering {
             MainMenuSelection::NewGame => MainMenuSelection::Quit,
             MainMenuSelection::LoadGame => MainMenuSelection::NewGame,
-            MainMenuSelection::Quit => MainMenuSelection::LoadGame,
+            MainMenuSelection::Quit => {
+                if save_exists {
+                    MainMenuSelection::LoadGame
+                } else {
+                    MainMenuSelection::NewGame
+                }
+            }
         }
     } else {
         match cur_hovering {
-            MainMenuSelection::NewGame => MainMenuSelection::LoadGame,
+            MainMenuSelection::NewGame => {
+                if save_exists {
+                    MainMenuSelection::LoadGame
+                } else {
+                    MainMenuSelection::Quit
+                }
+            }
             MainMenuSelection::LoadGame => MainMenuSelection::Quit,
             MainMenuSelection::Quit => MainMenuSelection::NewGame,
         }
