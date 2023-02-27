@@ -22,7 +22,7 @@ pub struct Renderable {
 }
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Player;
+pub struct Player {}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Viewshed {
@@ -32,7 +32,7 @@ pub struct Viewshed {
 }
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Monster;
+pub struct Monster {}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Name {
@@ -74,7 +74,7 @@ impl SufferDamage {
 }
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Item;
+pub struct Item {}
 
 #[derive(Component, Debug, ConvertSaveload, Clone)]
 pub struct ProvidesHealing {
@@ -103,7 +103,7 @@ pub struct WantsToDropItem {
 }
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Consumable;
+pub struct Consumable {}
 
 #[derive(Component, Debug, ConvertSaveload, Clone)]
 pub struct Ranged {

@@ -22,7 +22,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             bg: RGB::named(rltk::BLACK),
             render_order: 0,
         })
-        .with(Player)
+        .with(Player {})
         .with(Viewshed {
             visible_tiles: Vec::new(),
             range: 8,
@@ -175,9 +175,9 @@ fn health_potion(ecs: &mut World, pos: Position) {
         .with(Name {
             name: "Health Potion".to_string(),
         })
-        .with(Item)
+        .with(Item {})
         .with(ProvidesHealing { heal_amount: 8 })
-        .with(Consumable)
+        .with(Consumable {})
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
@@ -194,8 +194,8 @@ fn magic_missile_scroll(ecs: &mut World, pos: Position) {
         .with(Name {
             name: "Magic Missile Scroll".to_string(),
         })
-        .with(Item)
-        .with(Consumable)
+        .with(Item {})
+        .with(Consumable {})
         .with(Ranged { range: 6 })
         .with(InflictsDamage { damage: 8 })
         .marked::<SimpleMarker<IsSerialized>>()
@@ -214,8 +214,8 @@ fn fireball_scroll(ecs: &mut World, pos: Position) {
         .with(Name {
             name: "Fireball Scroll".to_string(),
         })
-        .with(Item)
-        .with(Consumable)
+        .with(Item {})
+        .with(Consumable {})
         .with(Ranged { range: 6 })
         .with(InflictsDamage { damage: 20 })
         .with(AreaOfEffect { radius: 3 })
@@ -235,8 +235,8 @@ fn confusion_scroll(ecs: &mut World, pos: Position) {
         .with(Name {
             name: "Confusion Scroll".to_string(),
         })
-        .with(Item)
-        .with(Consumable)
+        .with(Item {})
+        .with(Consumable {})
         .with(Ranged { range: 6 })
         .with(Confusion { turns: 4 })
         .marked::<SimpleMarker<IsSerialized>>()
