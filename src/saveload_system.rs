@@ -27,7 +27,7 @@ macro_rules! deserialize_individually {
         $(
         DeserializeComponents::<NoError, _>::deserialize(
             &mut ( &mut $ecs.write_storage::<$type>(), ),
-            &mut $data.0, // entities
+            &    $data.0, // entities
             &mut $data.1, // marker
             &mut $data.2, // allocater
             &mut $de,

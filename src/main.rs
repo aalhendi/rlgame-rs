@@ -106,8 +106,9 @@ impl GameState for State {
                         if map.visible_tiles[idx] {
                             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph)
                         }
-                        gui::draw_ui(&self.ecs, ctx);
                     }
+
+                    gui::draw_ui(&self.ecs, ctx);
                 }
             }
         }
@@ -224,7 +225,7 @@ impl GameState for State {
             RunState::SaveGame => {
                 saveload_system::save_game(&mut self.ecs);
                 newrunstate = RunState::MainMenu {
-                    menu_selection: gui::MainMenuSelection::LoadGame,
+                    menu_selection: gui::MainMenuSelection::Quit,
                 };
             }
         }
@@ -281,7 +282,7 @@ fn main() -> rltk::BError {
         spawner::spawn_room(&mut gs.ecs, room);
     }
 
-    let player_entity = spawner::player(&mut gs.ecs, player_pos);
+    let player_entity = spawner::player(&mut gs.ecs, player_pos.clone());
 
     // Resource Insertion
     gs.ecs.insert(RunState::MainMenu {

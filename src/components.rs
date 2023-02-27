@@ -7,7 +7,7 @@ use specs::{
 use specs_derive::*;
 use std::convert::Infallible as NoError;
 
-#[derive(Component, Copy, Clone, ConvertSaveload)]
+#[derive(Component, ConvertSaveload, Clone)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
@@ -23,9 +23,6 @@ pub struct Renderable {
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Player;
-
-#[derive(Component)]
-pub struct LeftMover;
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Viewshed {
@@ -53,7 +50,7 @@ pub struct CombatStats {
     pub power: i32,
 }
 
-#[derive(Component, Debug, Clone, ConvertSaveload)]
+#[derive(Component, Debug, ConvertSaveload, Clone)]
 pub struct WantsToMelee {
     pub target: Entity,
 }
@@ -84,23 +81,23 @@ pub struct ProvidesHealing {
     pub heal_amount: i32,
 }
 
-#[derive(Component, Debug, ConvertSaveload, Clone)]
+#[derive(Component, Debug, ConvertSaveload)]
 pub struct InBackpack {
     pub owner: Entity,
 }
 
-#[derive(Component, Debug, ConvertSaveload, Clone)]
+#[derive(Component, Debug, ConvertSaveload)]
 pub struct WantsToPickupItem {
     pub collected_by: Entity,
     pub item: Entity,
 }
-#[derive(Component, Debug, ConvertSaveload, Clone)]
+#[derive(Component, Debug, ConvertSaveload)]
 pub struct WantsToUseItem {
     pub item: Entity,
     pub target: Option<Point>,
 }
 
-#[derive(Component, Debug, ConvertSaveload, Clone)]
+#[derive(Component, Debug, ConvertSaveload)]
 pub struct WantsToDropItem {
     pub item: Entity,
 }

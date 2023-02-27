@@ -202,7 +202,7 @@ impl<'a> System<'a> for ItemDropSystem {
         ) = data;
 
         for (entity, to_drop) in (&entities, &wants_drop).join() {
-            let dropper_pos = *positions.get(entity).unwrap();
+            let dropper_pos = positions.get(entity).unwrap().clone();
 
             positions
                 .insert(to_drop.item, dropper_pos)
