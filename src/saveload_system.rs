@@ -1,13 +1,15 @@
 use specs::prelude::*;
-use specs::saveload::{
-    DeserializeComponents, MarkedBuilder, SerializeComponents, SimpleMarker, SimpleMarkerAllocator,
-};
+use specs::saveload::{DeserializeComponents, SimpleMarker, SimpleMarkerAllocator};
+
+#[cfg(not(target_arch = "wasm32"))]
+use specs::saveload::{MarkedBuilder, SerializeComponents};
 
 use super::components::*;
 use std::convert::Infallible as NoError;
 use std::path::Path;
 
 // Used to avoid compile fail when over 16 component types...
+#[cfg(not(target_arch = "wasm32"))]
 macro_rules! serialize_individually {
     ($ecs:expr, $ser:expr, $data:expr, $( $type:ty),*) => {
         $(
