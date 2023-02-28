@@ -61,7 +61,10 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
     match ctx.key {
         None => return RunState::AwaitingInput,
         Some(key) => match key {
-            //Cardinal
+            // Skip turn
+            Space | Numpad5 => return RunState::PlayerTurn,
+
+            // Cardinal
             Left | Numpad4 | H => try_move_player(-1, 0, &mut gs.ecs),
             Right | Numpad6 | L => try_move_player(1, 0, &mut gs.ecs),
             Up | Numpad8 | K => try_move_player(0, -1, &mut gs.ecs),
