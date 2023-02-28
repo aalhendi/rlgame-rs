@@ -46,6 +46,7 @@ pub enum RunState {
         menu_selection: gui::MainMenuSelection,
     },
     SaveGame,
+    NextLevel,
 }
 
 pub struct State {
@@ -53,6 +54,75 @@ pub struct State {
 }
 
 impl State {
+    fn goto_next_level(&mut self) {
+        let to_delete = self.entities_to_remove_on_level_change();
+        for e in to_delete {
+            self.ecs.delete_entity(e).expect("Unable to delte entity");
+        }
+
+        let worldmap = {
+            let mut wmap_res = self.ecs.write_resource::<Map>();
+            *wmap_res = Map::new_map_rooms_and_corridors(wmap_res.depth + 1);
+            wmap_res.clone()
+        };
+
+        // Populate rooms
+        for room in worldmap.rooms.iter().skip(1) {
+            spawner::spawn_room(&mut self.ecs, room);
+        }
+
+        let p_pos = worldmap.rooms[0].center();
+        let mut player_position = self.ecs.write_resource::<Point>();
+        *player_position = Point::new(p_pos.x, p_pos.y);
+
+        let mut positions_store = self.ecs.write_storage::<Position>();
+        let player_entity = self.ecs.fetch::<Entity>();
+        if let Some(ppos_comp) = positions_store.get_mut(*player_entity) {
+            *ppos_comp = p_pos;
+        }
+
+        let mut viewsheds_store = self.ecs.write_storage::<Viewshed>();
+        if let Some(player_vs) = viewsheds_store.get_mut(*player_entity) {
+            player_vs.dirty = true;
+        }
+
+        // Notify the player and give them some health
+        let mut gamelog = self.ecs.fetch_mut::<gamelog::Gamelog>();
+        let mut combat_stats_store = self.ecs.write_storage::<CombatStats>();
+
+        gamelog
+            .entries
+            .push("You descend to the next level, and take a moment to heal.".to_string());
+
+        if let Some(player_stats) = combat_stats_store.get_mut(*player_entity) {
+            player_stats.hp = i32::max(player_stats.hp, player_stats.max_hp / 2);
+        }
+    }
+
+    fn entities_to_remove_on_level_change(&mut self) -> Vec<Entity> {
+        let entities = self.ecs.entities();
+        let player = self.ecs.read_storage::<Player>();
+        let backpack = self.ecs.read_storage::<InBackpack>();
+        let player_entity = self.ecs.fetch::<Entity>();
+
+        let mut to_delete: Vec<Entity> = Vec::new();
+
+        for e in entities.join() {
+            let is_in_player_backpack = match backpack.get(e) {
+                None => false,
+                Some(e) => e.owner == *player_entity,
+            };
+
+            // Don't delete player or their items
+            if is_in_player_backpack || player.get(e).is_some() {
+                continue;
+            } else {
+                to_delete.push(e);
+            }
+        }
+        to_delete
+    }
+
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem;
         vis.run_now(&self.ecs);
@@ -228,6 +298,10 @@ impl GameState for State {
                     menu_selection: gui::MainMenuSelection::Quit,
                 };
             }
+            RunState::NextLevel => {
+                self.goto_next_level();
+                newrunstate = RunState::PreRun;
+            }
         }
 
         {
@@ -274,7 +348,7 @@ fn main() -> rltk::BError {
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
 
-    let map = Map::new_map_rooms_and_corridors();
+    let map = Map::new_map_rooms_and_corridors(1);
     let player_pos = map.rooms[0].center();
 
     gs.ecs.insert(rltk::RandomNumberGenerator::new());

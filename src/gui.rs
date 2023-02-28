@@ -45,6 +45,10 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         ctx.draw_bar_horizontal(28, 43, 51, stats.hp, stats.max_hp, red, black);
     }
 
+    let map = ecs.fetch::<Map>();
+    let depth = format!("Depth: {depth}", depth = map.depth);
+    ctx.print_color(2, 43, yellow, black, &depth);
+
     // Draw mouse cursor
     let mouse_pos = ctx.mouse_pos();
     ctx.set_bg(mouse_pos.0, mouse_pos.1, magenta);
