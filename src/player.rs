@@ -1,4 +1,4 @@
-use super::{Item, Map, Player, Position, RunState, State, Viewshed, WantsToPickupItem};
+use super::{Item, Map, Monster, Player, Position, RunState, State, Viewshed, WantsToPickupItem};
 use crate::components::CombatStats;
 use crate::components::WantsToMelee;
 use crate::gamelog::Gamelog;
@@ -62,7 +62,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
         None => return RunState::AwaitingInput,
         Some(key) => match key {
             // Skip turn
-            Space | Numpad5 => return RunState::PlayerTurn,
+            Space | Numpad5 => return skip_turn(&mut gs.ecs),
 
             // Cardinal
             Left | Numpad4 | H => try_move_player(-1, 0, &mut gs.ecs),
@@ -145,4 +145,28 @@ pub fn is_down_stairs(ecs: &mut World) -> bool {
             .push("There is no way down from here".to_string());
     }
     is_down_stairs
+}
+
+fn skip_turn(ecs: &mut World) -> RunState {
+    let player_entity = ecs.fetch::<Entity>();
+    let viewsheds = ecs.read_storage::<Viewshed>();
+    let monsters = ecs.read_storage::<Monster>();
+    let map = ecs.fetch::<Map>();
+
+    // Check that no monsters in player viewshed
+    let viewshed = viewsheds.get(*player_entity).unwrap();
+    for tile in viewshed.visible_tiles.iter() {
+        let idx = map.xy_idx(tile.x, tile.y);
+        for entity in map.tile_content[idx].iter() {
+            if monsters.get(*entity).is_some() {
+                return RunState::PlayerTurn;
+            }
+        }
+    }
+
+    // Heal Player
+    let mut combat_stats = ecs.write_storage::<CombatStats>();
+    let player_stats = combat_stats.get_mut(*player_entity).unwrap();
+    player_stats.hp = i32::min(player_stats.hp + 1, player_stats.max_hp);
+    RunState::PlayerTurn
 }
