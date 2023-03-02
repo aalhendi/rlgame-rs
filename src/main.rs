@@ -69,7 +69,7 @@ impl State {
 
         // Populate rooms
         for room in worldmap.rooms.iter().skip(1) {
-            spawner::spawn_room(&mut self.ecs, room);
+            spawner::spawn_room(&mut self.ecs, room, worldmap.depth);
         }
 
         let p_pos = worldmap.rooms[0].center();
@@ -354,7 +354,7 @@ fn main() -> rltk::BError {
 
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     for room in map.rooms.iter().skip(1) {
-        spawner::spawn_room(&mut gs.ecs, room);
+        spawner::spawn_room(&mut gs.ecs, room, 1);
     }
 
     let player_entity = spawner::player(&mut gs.ecs, player_pos.clone());

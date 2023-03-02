@@ -81,25 +81,24 @@ fn monster<S: ToString>(ecs: &mut World, pos: Position, glyph: rltk::FontCharTyp
 
 /// Spawns entites in rooms
 #[allow(clippy::map_entry)]
-pub fn spawn_room(ecs: &mut World, room: &Rect) {
-    let spawn_table = room_table();
+pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
+    let spawn_table = room_table(map_depth);
     let mut spawn_points: HashMap<usize, String> = HashMap::new();
 
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        let num_spawns = rng.roll_dice(1, MAX_MONSTERS + 3) - 3;
+        let num_spawns = rng.roll_dice(1, MAX_MONSTERS + 3) + (map_depth - 1) - 3;
 
         // Generate spawn points
         for _ in 0..num_spawns {
-            let mut added = false;
             let mut tries = 0;
-            while !added && tries < 20 {
+            while tries < 20 {
                 let x = (room.x1 + rng.roll_dice(1, i32::abs(room.x2 - room.x1))) as usize;
                 let y = (room.y1 + rng.roll_dice(1, i32::abs(room.y2 - room.y1))) as usize;
                 let idx = (y * MAPWIDTH) + x;
                 if !spawn_points.contains_key(&idx) {
                     spawn_points.insert(idx, spawn_table.roll(&mut rng));
-                    added = true;
+                    break;
                 } else {
                     tries += 1;
                 }
@@ -206,12 +205,12 @@ fn confusion_scroll(ecs: &mut World, pos: Position) {
         .build();
 }
 
-fn room_table() -> RandomTable {
+fn room_table(map_depth: i32) -> RandomTable {
     RandomTable::new()
         .add("Goblin", 10)
-        .add("Orc", 1)
+        .add("Orc", 1 + map_depth)
         .add("Health Potion", 7)
-        .add("Fireball Scroll", 2)
-        .add("Confusion Scroll", 2)
+        .add("Fireball Scroll", 2 + map_depth)
+        .add("Confusion Scroll", 2 + map_depth)
         .add("Magic Missile Scroll", 4)
 }
