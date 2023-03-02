@@ -1,8 +1,11 @@
+use std::collections::HashMap;
+
 use super::{
     AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InflictsDamage, IsSerialized,
     Item, Monster, Name, Player, Position, ProvidesHealing, Ranged, Rect, Renderable, Viewshed,
     MAPWIDTH,
 };
+use crate::random_table::RandomTable;
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
     prelude::*,
@@ -10,7 +13,6 @@ use specs::{
 };
 
 const MAX_MONSTERS: i32 = 4;
-const MAX_ITEMS: i32 = 2;
 
 /// Spawns the player and returns its entity object
 pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
@@ -39,19 +41,6 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         })
         .marked::<SimpleMarker<IsSerialized>>()
         .build()
-}
-
-/// Spawns a random monster at a given location
-pub fn random_monster(ecs: &mut World, pos: Position) {
-    let roll: i32;
-    {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        roll = rng.roll_dice(1, 2);
-    }
-    match roll {
-        1 => orc(ecs, pos),
-        _ => goblin(ecs, pos),
-    }
 }
 
 fn orc(ecs: &mut World, pos: Position) {
@@ -91,75 +80,49 @@ fn monster<S: ToString>(ecs: &mut World, pos: Position, glyph: rltk::FontCharTyp
 }
 
 /// Spawns entites in rooms
+#[allow(clippy::map_entry)]
 pub fn spawn_room(ecs: &mut World, room: &Rect) {
-    let mut monster_spawn_points: Vec<usize> = Vec::new();
-    let mut item_spawn_points: Vec<usize> = Vec::new();
+    let spawn_table = room_table();
+    let mut spawn_points: HashMap<usize, String> = HashMap::new();
 
     {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        let num_monsters = rng.roll_dice(1, MAX_MONSTERS + 2) - 3;
-        let num_items = rng.roll_dice(1, MAX_ITEMS + 2) - 3;
+        let num_spawns = rng.roll_dice(1, MAX_MONSTERS + 3) - 3;
 
-        // Generate monster spawn points
-        for _ in 0..num_monsters {
+        // Generate spawn points
+        for _ in 0..num_spawns {
             let mut added = false;
-            while !added {
+            let mut tries = 0;
+            while !added && tries < 20 {
                 let x = (room.x1 + rng.roll_dice(1, i32::abs(room.x2 - room.x1))) as usize;
                 let y = (room.y1 + rng.roll_dice(1, i32::abs(room.y2 - room.y1))) as usize;
                 let idx = (y * MAPWIDTH) + x;
-                if !monster_spawn_points.contains(&idx) {
-                    monster_spawn_points.push(idx);
+                if !spawn_points.contains_key(&idx) {
+                    spawn_points.insert(idx, spawn_table.roll(&mut rng));
                     added = true;
-                }
-            }
-        }
-
-        // Generate item spawn points
-        for _ in 0..num_items {
-            let mut added = false;
-            while !added {
-                let x = (room.x1 + rng.roll_dice(1, i32::abs(room.x2 - room.x1))) as usize;
-                let y = (room.y1 + rng.roll_dice(1, i32::abs(room.y2 - room.y1))) as usize;
-                let idx = (y * MAPWIDTH) + x;
-                if !item_spawn_points.contains(&idx) {
-                    item_spawn_points.push(idx);
-                    added = true;
+                } else {
+                    tries += 1;
                 }
             }
         }
     }
 
-    // Spawning monsters
-    for idx in monster_spawn_points.iter() {
+    // Spawning things
+    for (idx, name) in spawn_points.iter() {
         let pos = Position {
             x: (*idx % MAPWIDTH) as i32,
             y: (*idx / MAPWIDTH) as i32,
         };
-        random_monster(ecs, pos)
-    }
 
-    // Spawning items
-    for idx in item_spawn_points.iter() {
-        let pos = Position {
-            x: (*idx % MAPWIDTH) as i32,
-            y: (*idx / MAPWIDTH) as i32,
-        };
-        random_item(ecs, pos)
-    }
-}
-
-/// Spawns a random item at a given location
-pub fn random_item(ecs: &mut World, pos: Position) {
-    let roll: i32;
-    {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        roll = rng.roll_dice(1, 4);
-    }
-    match roll {
-        1 => health_potion(ecs, pos),
-        2 => magic_missile_scroll(ecs, pos),
-        3 => confusion_scroll(ecs, pos),
-        _ => fireball_scroll(ecs, pos),
+        match name.as_ref() {
+            "Goblin" => goblin(ecs, pos),
+            "Orc" => orc(ecs, pos),
+            "Health Potion" => health_potion(ecs, pos),
+            "Fireball Scroll" => fireball_scroll(ecs, pos),
+            "Confusion Scroll" => confusion_scroll(ecs, pos),
+            "Magic Missile Scroll" => magic_missile_scroll(ecs, pos),
+            _ => {}
+        }
     }
 }
 
@@ -241,4 +204,14 @@ fn confusion_scroll(ecs: &mut World, pos: Position) {
         .with(Confusion { turns: 4 })
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
+}
+
+fn room_table() -> RandomTable {
+    RandomTable::new()
+        .add("Goblin", 10)
+        .add("Orc", 1)
+        .add("Health Potion", 7)
+        .add("Fireball Scroll", 2)
+        .add("Confusion Scroll", 2)
+        .add("Magic Missile Scroll", 4)
 }

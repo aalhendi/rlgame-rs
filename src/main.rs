@@ -27,6 +27,7 @@ mod gui;
 pub mod inventory_system;
 pub mod spawner;
 use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemUseSystem};
+mod random_table;
 mod saveload_system;
 
 // --- State Start ---
