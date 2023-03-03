@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use super::{
-    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, InflictsDamage, IsSerialized,
-    Item, Monster, Name, Player, Position, ProvidesHealing, Ranged, Rect, Renderable, Viewshed,
-    MAPWIDTH,
+    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, EquipmentSlot, Equippable,
+    InflictsDamage, IsSerialized, Item, Monster, Name, Player, Position, ProvidesHealing, Ranged,
+    Rect, Renderable, Viewshed, MAPWIDTH,
 };
 use crate::random_table::RandomTable;
 use rltk::{RandomNumberGenerator, RGB};
@@ -120,6 +120,8 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
             "Fireball Scroll" => fireball_scroll(ecs, pos),
             "Confusion Scroll" => confusion_scroll(ecs, pos),
             "Magic Missile Scroll" => magic_missile_scroll(ecs, pos),
+            "Dagger" => dagger(ecs, pos),
+            "Shield" => shield(ecs, pos),
             _ => {}
         }
     }
@@ -205,6 +207,46 @@ fn confusion_scroll(ecs: &mut World, pos: Position) {
         .build();
 }
 
+fn dagger(ecs: &mut World, pos: Position) {
+    ecs.create_entity()
+        .with(pos)
+        .with(Renderable {
+            glyph: rltk::to_cp437('/'),
+            fg: RGB::named(rltk::CYAN),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Dagger".to_string(),
+        })
+        .with(Item {})
+        .with(Equippable {
+            slot: EquipmentSlot::Melee,
+        })
+        .marked::<SimpleMarker<IsSerialized>>()
+        .build();
+}
+
+fn shield(ecs: &mut World, pos: Position) {
+    ecs.create_entity()
+        .with(pos)
+        .with(Renderable {
+            glyph: rltk::to_cp437('('),
+            fg: RGB::named(rltk::CYAN),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Shield".to_string(),
+        })
+        .with(Item {})
+        .with(Equippable {
+            slot: EquipmentSlot::Shield,
+        })
+        .marked::<SimpleMarker<IsSerialized>>()
+        .build();
+}
+
 fn room_table(map_depth: i32) -> RandomTable {
     RandomTable::new()
         .add("Goblin", 10)
@@ -213,4 +255,6 @@ fn room_table(map_depth: i32) -> RandomTable {
         .add("Fireball Scroll", 2 + map_depth)
         .add("Confusion Scroll", 2 + map_depth)
         .add("Magic Missile Scroll", 4)
+        .add("Dagger", 3)
+        .add("Shield", 3)
 }

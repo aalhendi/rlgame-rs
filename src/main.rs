@@ -105,6 +105,7 @@ impl State {
         let player = self.ecs.read_storage::<Player>();
         let backpack = self.ecs.read_storage::<InBackpack>();
         let player_entity = self.ecs.fetch::<Entity>();
+        let equipped = self.ecs.read_storage::<Equipped>();
 
         let mut to_delete: Vec<Entity> = Vec::new();
 
@@ -113,9 +114,13 @@ impl State {
                 None => false,
                 Some(e) => e.owner == *player_entity,
             };
+            let is_equipped = match equipped.get(e) {
+                None => false,
+                Some(e) => e.owner == *player_entity,
+            };
 
             // Don't delete player or their items
-            if is_in_player_backpack || player.get(e).is_some() {
+            if is_in_player_backpack || player.get(e).is_some() || is_equipped {
                 continue;
             } else {
                 to_delete.push(e);
@@ -344,6 +349,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<WantsToPickupItem>();
     gs.ecs.register::<WantsToUseItem>();
     gs.ecs.register::<WantsToDropItem>();
+    gs.ecs.register::<Equippable>();
+    gs.ecs.register::<Equipped>();
     gs.ecs.register::<SimpleMarker<IsSerialized>>();
     gs.ecs.register::<SerializationHelper>();
 
