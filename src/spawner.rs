@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use super::{
-    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, EquipmentSlot, Equippable,
-    InflictsDamage, IsSerialized, Item, Monster, Name, Player, Position, ProvidesHealing, Ranged,
-    Rect, Renderable, Viewshed, MAPWIDTH,
+    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EquipmentSlot,
+    Equippable, InflictsDamage, IsSerialized, Item, MeleePowerBonus, Monster, Name, Player,
+    Position, ProvidesHealing, Ranged, Rect, Renderable, Viewshed, MAPWIDTH,
 };
 use crate::random_table::RandomTable;
 use rltk::{RandomNumberGenerator, RGB};
@@ -223,6 +223,7 @@ fn dagger(ecs: &mut World, pos: Position) {
         .with(Equippable {
             slot: EquipmentSlot::Melee,
         })
+        .with(MeleePowerBonus { amount: 2 })
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
@@ -243,6 +244,7 @@ fn shield(ecs: &mut World, pos: Position) {
         .with(Equippable {
             slot: EquipmentSlot::Shield,
         })
+        .with(DefenseBonus { amount: 1 })
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
