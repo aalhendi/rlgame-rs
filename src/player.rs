@@ -80,6 +80,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             G => get_item(&mut gs.ecs),
             I => return RunState::ShowInventory,
             D => return RunState::ShowDropItem,
+            R => return RunState::ShowRemoveItem,
 
             // Main Menu
             Escape => return RunState::SaveGame,
