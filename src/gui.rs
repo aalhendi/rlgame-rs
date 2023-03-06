@@ -427,3 +427,36 @@ fn print_item_menu(ctx: &mut Rltk, y: i32, count: usize, label: &str) {
         "ESCAPE to cancel",
     );
 }
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum GameOverResult {
+    NoSelection,
+    QuitToMenu,
+}
+
+pub fn game_over(ctx: &mut Rltk) -> GameOverResult {
+    ctx.print_color_centered(
+        15,
+        RGB::named(rltk::YELLOW),
+        RGB::named(rltk::BLACK),
+        "You Died!",
+    );
+    ctx.print_color_centered(
+        18,
+        RGB::named(rltk::WHITE),
+        RGB::named(rltk::BLACK),
+        "Some day there might be stats here...",
+    );
+
+    ctx.print_color_centered(
+        20,
+        RGB::named(rltk::MAGENTA),
+        RGB::named(rltk::BLACK),
+        "Press any key to return to the menu.",
+    );
+
+    match ctx.key {
+        None => GameOverResult::NoSelection,
+        Some(_) => GameOverResult::QuitToMenu,
+    }
+}

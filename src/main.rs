@@ -49,6 +49,7 @@ pub enum RunState {
     },
     SaveGame,
     NextLevel,
+    GameOver,
 }
 
 pub struct State {
@@ -130,6 +131,41 @@ impl State {
         to_delete
     }
 
+    fn game_over_cleanup(&mut self) {
+        self.ecs.delete_all();
+
+        // Build a new map and place the player
+        let worldmap = {
+            let mut worldmap_resource = self.ecs.write_resource::<Map>();
+            *worldmap_resource = Map::new_map_rooms_and_corridors(1);
+            worldmap_resource.clone()
+        };
+
+        // Spawn bad guys
+        for room in worldmap.rooms.iter().skip(1) {
+            spawner::spawn_room(&mut self.ecs, room, 1);
+        }
+
+        // Place the player and update resources
+        let player_pos = worldmap.rooms[0].center();
+        let player_entity = spawner::player(&mut self.ecs, player_pos.clone());
+        let mut player_position = self.ecs.write_resource::<Point>();
+        *player_position = Point::new(player_pos.x, player_pos.y);
+        let mut position_components = self.ecs.write_storage::<Position>();
+        let mut player_entity_writer = self.ecs.write_resource::<Entity>();
+        *player_entity_writer = player_entity;
+        if let Some(player_pos_comp) = position_components.get_mut(player_entity) {
+            player_pos_comp.x = player_pos.x;
+            player_pos_comp.y = player_pos.y;
+        }
+
+        // Mark the player's visibility as dirty
+        let mut viewshed_components = self.ecs.write_storage::<Viewshed>();
+        if let Some(player_vs) = viewshed_components.get_mut(player_entity) {
+            player_vs.dirty = true;
+        }
+    }
+
     fn run_systems(&mut self) {
         let mut vis = VisibilitySystem;
         vis.run_now(&self.ecs);
@@ -170,6 +206,7 @@ impl GameState for State {
         // Either draw Main Menu or draw map
         match newrunstate {
             RunState::MainMenu { .. } => {}
+            RunState::GameOver => {}
             _ => {
                 draw_map(&self.ecs, ctx);
                 {
@@ -329,6 +366,18 @@ impl GameState for State {
             RunState::NextLevel => {
                 self.goto_next_level();
                 newrunstate = RunState::PreRun;
+            }
+            RunState::GameOver => {
+                let game_over_result = gui::game_over(ctx);
+                match game_over_result {
+                    gui::GameOverResult::NoSelection => {}
+                    gui::GameOverResult::QuitToMenu => {
+                        self.game_over_cleanup();
+                        newrunstate = RunState::MainMenu {
+                            menu_selection: gui::MainMenuSelection::NewGame,
+                        };
+                    }
+                }
             }
         }
 
