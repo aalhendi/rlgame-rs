@@ -1,6 +1,6 @@
 use super::{
-    gamelog::Gamelog, CombatStats, Equipped, InBackpack, Map, Name, Player, Position, RunState,
-    State, Viewshed, MAPHEIGHT, MAPWIDTH,
+    gamelog::Gamelog, CombatStats, Equipped, InBackpack, Map, Name, Owned, Player, Position,
+    RunState, State, Viewshed, MAPHEIGHT, MAPWIDTH,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -125,15 +125,18 @@ pub enum ItemMenuResult {
     Selected,
 }
 
-pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+pub fn show_menu<T: Owned + Component>(
+    gs: &mut State,
+    ctx: &mut Rltk,
+) -> (ItemMenuResult, Option<Entity>) {
     let player_entity = gs.ecs.fetch::<Entity>();
     let names = gs.ecs.read_storage::<Name>();
-    let backpack = gs.ecs.read_storage::<InBackpack>();
+    let backpack = gs.ecs.read_storage::<T>();
     let entities = gs.ecs.entities();
 
     let inventory = (&backpack, &names)
         .join()
-        .filter(|(item, _name)| item.owner == *player_entity);
+        .filter(|(item, _name)| item.owned_by(&player_entity));
     let count = inventory.count();
 
     let mut y = (25 - (count / 2)) as i32;
@@ -142,7 +145,7 @@ pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
     let mut equippable: Vec<Entity> = Vec::new();
     for (j, (entity, _pack, item_name)) in (&entities, &backpack, &names)
         .join()
-        .filter(|(_entity, item, _name)| item.owner == *player_entity)
+        .filter(|(_entity, item, _name)| item.owned_by(&player_entity))
         .enumerate()
     {
         let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
@@ -152,6 +155,18 @@ pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option
     }
 
     item_menu_input(ctx.key, &equippable, count as i32)
+}
+
+pub fn show_inventory(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+    show_menu::<InBackpack>(gs, ctx)
+}
+
+pub fn drop_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+    show_menu::<InBackpack>(gs, ctx)
+}
+
+pub fn remove_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+    show_menu::<Equipped>(gs, ctx)
 }
 
 fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &Name) {
@@ -178,35 +193,6 @@ fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &Name) {
     );
 
     ctx.print(21, y, &name.name.to_string());
-}
-
-pub fn drop_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
-    let player_entity = gs.ecs.fetch::<Entity>();
-    let names = gs.ecs.read_storage::<Name>();
-    let backpack = gs.ecs.read_storage::<InBackpack>();
-    let entities = gs.ecs.entities();
-
-    let player_inventory = (&backpack, &names)
-        .join()
-        .filter(|(item, _name)| item.owner == *player_entity);
-    let count = player_inventory.count();
-
-    let mut y = (25 - (count / 2)) as i32;
-    print_item_menu(ctx, y, count, "Drop which item?");
-
-    let mut equippable: Vec<Entity> = Vec::new();
-    for (j, (entity, _pack, item_name)) in (&entities, &backpack, &names)
-        .join()
-        .filter(|(_entity, item, _name)| item.owner == *player_entity)
-        .enumerate()
-    {
-        let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
-        print_item_label(ctx, y, label_char, item_name);
-        equippable.push(entity);
-        y += 1;
-    }
-
-    item_menu_input(ctx.key, &equippable, count as i32)
 }
 
 fn item_menu_input(
@@ -415,36 +401,6 @@ fn cycle_hovering(
             MainMenuSelection::Quit => MainMenuSelection::NewGame,
         }
     }
-}
-
-pub fn remove_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
-    let player_entity = gs.ecs.fetch::<Entity>();
-    let names = gs.ecs.read_storage::<Name>();
-    let backpack = gs.ecs.read_storage::<Equipped>();
-    let entities = gs.ecs.entities();
-
-    let inventory = (&backpack, &names)
-        .join()
-        .filter(|(item_entity, _item_name)| item_entity.owner == *player_entity);
-    let count = inventory.count();
-
-    let mut y = (25 - (count / 2)) as i32;
-    print_item_menu(ctx, y, count, "Remove which item?");
-
-    let mut equippable: Vec<Entity> = Vec::new();
-    for (j, (entity, _pack, name)) in (&entities, &backpack, &names)
-        .join()
-        .filter(|item| item.1.owner == *player_entity)
-        .enumerate()
-    {
-        let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
-        print_item_label(ctx, y, label_char, name);
-
-        equippable.push(entity);
-        y += 1;
-    }
-
-    item_menu_input(ctx.key, &equippable, count as i32)
 }
 
 fn print_item_menu(ctx: &mut Rltk, y: i32, count: usize, label: &str) {

@@ -86,6 +86,12 @@ pub struct InBackpack {
     pub owner: Entity,
 }
 
+impl Owned for InBackpack {
+    fn owned_by(&self, entity: &Entity) -> bool {
+        self.owner == *entity
+    }
+}
+
 #[derive(Component, Debug, ConvertSaveload)]
 pub struct WantsToPickupItem {
     pub collected_by: Entity,
@@ -150,6 +156,12 @@ pub struct Equipped {
     pub slot: EquipmentSlot,
 }
 
+impl Owned for Equipped {
+    fn owned_by(&self, entity: &Entity) -> bool {
+        self.owner == *entity
+    }
+}
+
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct MeleePowerBonus {
     pub amount: i32,
@@ -163,4 +175,8 @@ pub struct DefenseBonus {
 #[derive(Component, Debug, ConvertSaveload, Clone)]
 pub struct WantsToRemoveItem {
     pub item: Entity,
+}
+
+pub trait Owned {
+    fn owned_by(&self, entity: &Entity) -> bool;
 }
