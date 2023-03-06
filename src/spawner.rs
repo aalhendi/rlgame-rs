@@ -122,6 +122,8 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
             "Magic Missile Scroll" => magic_missile_scroll(ecs, pos),
             "Dagger" => dagger(ecs, pos),
             "Shield" => shield(ecs, pos),
+            "Longsword" => longsword(ecs, pos),
+            "Tower Shield" => tower_shield(ecs, pos),
             _ => {}
         }
     }
@@ -249,6 +251,48 @@ fn shield(ecs: &mut World, pos: Position) {
         .build();
 }
 
+fn longsword(ecs: &mut World, pos: Position) {
+    ecs.create_entity()
+        .with(pos)
+        .with(Renderable {
+            glyph: rltk::to_cp437('/'),
+            fg: RGB::named(rltk::YELLOW),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Longsword".to_string(),
+        })
+        .with(Item {})
+        .with(Equippable {
+            slot: EquipmentSlot::Melee,
+        })
+        .with(MeleePowerBonus { amount: 4 })
+        .marked::<SimpleMarker<IsSerialized>>()
+        .build();
+}
+
+fn tower_shield(ecs: &mut World, pos: Position) {
+    ecs.create_entity()
+        .with(pos)
+        .with(Renderable {
+            glyph: rltk::to_cp437('('),
+            fg: RGB::named(rltk::YELLOW),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Tower Shield".to_string(),
+        })
+        .with(Item {})
+        .with(Equippable {
+            slot: EquipmentSlot::Shield,
+        })
+        .with(DefenseBonus { amount: 3 })
+        .marked::<SimpleMarker<IsSerialized>>()
+        .build();
+}
+
 fn room_table(map_depth: i32) -> RandomTable {
     RandomTable::new()
         .add("Goblin", 10)
@@ -259,4 +303,6 @@ fn room_table(map_depth: i32) -> RandomTable {
         .add("Magic Missile Scroll", 4)
         .add("Dagger", 3)
         .add("Shield", 3)
+        .add("Longsword", map_depth - 1)
+        .add("Tower Shield", map_depth - 1)
 }
