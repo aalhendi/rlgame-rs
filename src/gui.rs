@@ -1,6 +1,6 @@
 use super::{
-    gamelog::Gamelog, CombatStats, Equipped, InBackpack, Map, Name, Owned, Player, Position,
-    RunState, State, Viewshed, MAPHEIGHT, MAPWIDTH,
+    gamelog::Gamelog, CombatStats, Equipped, HungerClock, HungerState, InBackpack, Map, Name,
+    Owned, Player, Position, RunState, State, Viewshed, MAPHEIGHT, MAPWIDTH,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -20,6 +20,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let combat_stats = ecs.read_storage::<CombatStats>();
     let players = ecs.read_storage::<Player>();
     let log = ecs.fetch::<Gamelog>();
+    let hunger = ecs.read_storage::<HungerClock>();
 
     let mut y = 44;
     for entry in log.entries.iter().rev() {
@@ -33,8 +34,11 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let black = RGB::named(rltk::BLACK);
     let red = RGB::named(rltk::RED);
     let magenta = RGB::named(rltk::MAGENTA);
+    let green = RGB::named(rltk::GREEN);
+    let orange = RGB::named(rltk::ORANGE);
+    let white = RGB::named(rltk::WHITE);
 
-    for (_player, stats) in (&players, &combat_stats).join() {
+    for (_player, stats, hc) in (&players, &combat_stats, &hunger).join() {
         let health = format!(
             " HP: {hp} / {max_hp} ",
             hp = stats.hp,
@@ -43,6 +47,13 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
         ctx.print_color(12, 43, yellow, black, &health);
 
         ctx.draw_bar_horizontal(28, 43, 51, stats.hp, stats.max_hp, red, black);
+
+        match hc.state {
+            HungerState::WellFed => ctx.print_color(71, 42, green, black, "Well Fed"),
+            HungerState::Normal => ctx.print_color(71, 42, white, black, "Normal"),
+            HungerState::Hungry => ctx.print_color(71, 42, orange, black, "Hungry"),
+            HungerState::Starving => ctx.print_color(71, 42, red, black, "Starving"),
+        }
     }
 
     let map = ecs.fetch::<Map>();

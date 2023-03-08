@@ -1,8 +1,8 @@
 use super::{
     gamelog::Gamelog, particle_system::ParticleBuilder, AreaOfEffect, CombatStats, Confusion,
-    Consumable, Equippable, Equipped, InBackpack, InflictsDamage, Map, Name, Position,
-    ProvidesHealing, SufferDamage, WantsToDropItem, WantsToPickupItem, WantsToRemoveItem,
-    WantsToUseItem,
+    Consumable, Equippable, Equipped, HungerClock, HungerState, InBackpack, InflictsDamage, Map,
+    Name, Position, ProvidesFood, ProvidesHealing, SufferDamage, WantsToDropItem,
+    WantsToPickupItem, WantsToRemoveItem, WantsToUseItem,
 };
 use specs::prelude::*;
 
@@ -69,6 +69,8 @@ impl<'a> System<'a> for ItemUseSystem {
         WriteStorage<'a, InBackpack>,
         WriteExpect<'a, ParticleBuilder>,
         ReadStorage<'a, Position>,
+        ReadStorage<'a, ProvidesFood>,
+        WriteStorage<'a, HungerClock>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -91,6 +93,8 @@ impl<'a> System<'a> for ItemUseSystem {
             mut backpack,
             mut particle_builder,
             positions,
+            feeders,
+            mut hunger_clocks,
         ) = data;
 
         for (entity, wants_use) in (&entities, &wants_use).join() {
@@ -258,6 +262,18 @@ impl<'a> System<'a> for ItemUseSystem {
                             200.0,
                         );
                     }
+                }
+            }
+
+            // Edible Item
+            if feeders.get(wants_use.item).is_some() {
+                if let Some(hc) = hunger_clocks.get_mut(targets[0]) {
+                    hc.state = HungerState::WellFed;
+                    hc.duration = 20;
+                    gamelog.entries.push(format!(
+                        "You eat the {item_name}.",
+                        item_name = names.get(wants_use.item).unwrap().name
+                    ));
                 }
             }
 

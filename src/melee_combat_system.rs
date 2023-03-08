@@ -1,6 +1,6 @@
 use super::{
     gamelog::Gamelog, particle_system::ParticleBuilder, CombatStats, DefenseBonus, Equipped,
-    MeleePowerBonus, Name, Position, SufferDamage, WantsToMelee,
+    HungerClock, HungerState, MeleePowerBonus, Name, Position, SufferDamage, WantsToMelee,
 };
 use specs::prelude::*;
 
@@ -19,6 +19,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Equipped>,
         WriteExpect<'a, ParticleBuilder>,
         ReadStorage<'a, Position>,
+        ReadStorage<'a, HungerClock>,
     );
     fn run(&mut self, data: Self::SystemData) {
         let (
@@ -33,6 +34,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             equipped,
             mut particle_builder,
             positions,
+            hunger_clock,
         ) = data;
 
         for (entity, wants_melee, name, stats) in
@@ -57,6 +59,12 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     {
                         if equipped_by.owner == wants_melee.target {
                             defensive_bonus += defense_bonus.amount;
+                        }
+                    }
+
+                    if let Some(hc) = hunger_clock.get(entity) {
+                        if hc.state == HungerState::WellFed {
+                            offensive_bonus += 1;
                         }
                     }
 

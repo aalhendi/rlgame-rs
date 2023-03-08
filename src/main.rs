@@ -27,6 +27,7 @@ mod gui;
 pub mod inventory_system;
 pub mod spawner;
 use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
+mod hunger_system;
 mod particle_system;
 mod random_table;
 mod saveload_system;
@@ -194,6 +195,9 @@ impl State {
 
         let mut item_remove_system = ItemRemoveSystem;
         item_remove_system.run_now(&self.ecs);
+
+        let mut hunger_system = hunger_system::HungerSystem;
+        hunger_system.run_now(&self.ecs);
 
         let mut particle_system = particle_system::ParticleSpawnSystem {};
         particle_system.run_now(&self.ecs);
@@ -433,6 +437,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MeleePowerBonus>();
     gs.ecs.register::<DefenseBonus>();
     gs.ecs.register::<ParticleLifetime>();
+    gs.ecs.register::<HungerClock>();
+    gs.ecs.register::<ProvidesFood>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
 

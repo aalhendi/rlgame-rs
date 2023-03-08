@@ -1,4 +1,7 @@
-use super::{Item, Map, Monster, Player, Position, RunState, State, Viewshed, WantsToPickupItem};
+use super::{
+    HungerClock, HungerState, Item, Map, Monster, Player, Position, RunState, State, Viewshed,
+    WantsToPickupItem,
+};
 use crate::components::CombatStats;
 use crate::components::WantsToMelee;
 use crate::gamelog::Gamelog;
@@ -162,6 +165,15 @@ fn skip_turn(ecs: &mut World) -> RunState {
             if monsters.get(*entity).is_some() {
                 return RunState::PlayerTurn;
             }
+        }
+    }
+
+    let hunger_clocks = ecs.read_storage::<HungerClock>();
+    if let Some(hc) = hunger_clocks.get(*player_entity) {
+        match hc.state {
+            HungerState::Hungry => return RunState::PlayerTurn,
+            HungerState::Starving => return RunState::PlayerTurn,
+            _ => {}
         }
     }
 
