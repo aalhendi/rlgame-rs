@@ -1,8 +1,8 @@
 use super::{
     gamelog::Gamelog, particle_system::ParticleBuilder, AreaOfEffect, CombatStats, Confusion,
-    Consumable, Equippable, Equipped, HungerClock, HungerState, InBackpack, InflictsDamage, Map,
-    Name, Position, ProvidesFood, ProvidesHealing, SufferDamage, WantsToDropItem,
-    WantsToPickupItem, WantsToRemoveItem, WantsToUseItem,
+    Consumable, Equippable, Equipped, HungerClock, HungerState, InBackpack, InflictsDamage,
+    MagicMapper, Map, Name, Position, ProvidesFood, ProvidesHealing, RunState, SufferDamage,
+    WantsToDropItem, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem,
 };
 use specs::prelude::*;
 
@@ -71,6 +71,8 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadStorage<'a, Position>,
         ReadStorage<'a, ProvidesFood>,
         WriteStorage<'a, HungerClock>,
+        ReadStorage<'a, MagicMapper>,
+        WriteExpect<'a, RunState>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -95,6 +97,8 @@ impl<'a> System<'a> for ItemUseSystem {
             positions,
             feeders,
             mut hunger_clocks,
+            magic_mapper,
+            mut runstate,
         ) = data;
 
         for (entity, wants_use) in (&entities, &wants_use).join() {
@@ -275,6 +279,14 @@ impl<'a> System<'a> for ItemUseSystem {
                         item_name = names.get(wants_use.item).unwrap().name
                     ));
                 }
+            }
+
+            // Magic Mapper Scroll
+            if magic_mapper.get(wants_use.item).is_some() {
+                gamelog
+                    .entries
+                    .push("The map is revealed to you!".to_string());
+                *runstate = RunState::MagicMapReveal { row: 0 };
             }
 
             if consumables.get(wants_use.item).is_some() {

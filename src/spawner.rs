@@ -2,9 +2,9 @@ use std::collections::HashMap;
 
 use super::{
     AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EquipmentSlot,
-    Equippable, HungerClock, HungerState, InflictsDamage, IsSerialized, Item, MeleePowerBonus,
-    Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Rect, Renderable,
-    Viewshed, MAPWIDTH,
+    Equippable, HungerClock, HungerState, InflictsDamage, IsSerialized, Item, MagicMapper,
+    MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Rect,
+    Renderable, Viewshed, MAPWIDTH,
 };
 use crate::random_table::RandomTable;
 use rltk::{RandomNumberGenerator, RGB};
@@ -130,6 +130,7 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
             "Longsword" => longsword(ecs, pos),
             "Tower Shield" => tower_shield(ecs, pos),
             "Rations" => rations(ecs, pos),
+            "Magic Mapping Scroll" => magic_mapping_scroll(ecs, pos),
             _ => {}
         }
     }
@@ -211,6 +212,25 @@ fn confusion_scroll(ecs: &mut World, pos: Position) {
         .with(Consumable {})
         .with(Ranged { range: 6 })
         .with(Confusion { turns: 4 })
+        .marked::<SimpleMarker<IsSerialized>>()
+        .build();
+}
+
+fn magic_mapping_scroll(ecs: &mut World, pos: Position) {
+    ecs.create_entity()
+        .with(pos)
+        .with(Renderable {
+            glyph: rltk::to_cp437(')'),
+            fg: RGB::named(rltk::CYAN3),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Scroll of Magic Mapping".to_string(),
+        })
+        .with(Item {})
+        .with(MagicMapper {})
+        .with(Consumable {})
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
@@ -331,4 +351,5 @@ fn room_table(map_depth: i32) -> RandomTable {
         .add("Longsword", map_depth - 1)
         .add("Tower Shield", map_depth - 1)
         .add("Rations", 10)
+        .add("Magic Mapping Scroll", 2)
 }
