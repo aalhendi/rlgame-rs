@@ -256,7 +256,7 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
                     fg = RGB::from_f32(0.0, 0.5, 0.5);
                 }
                 TileType::Wall => {
-                    glyph = get_wall_glyph(&*map, x, y);
+                    glyph = get_wall_glyph(&map, x, y);
                     fg = RGB::from_f32(0., 1.0, 0.);
                 }
                 TileType::DownStairs => {
@@ -283,7 +283,7 @@ pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
 }
 
 fn get_wall_glyph(map: &Map, x: i32, y: i32) -> rltk::FontCharType {
-    if x < 1 || x > map.width - 2 || y < 1 || y > map.height - 2 as i32 {
+    if x < 1 || x > map.width - 2 || y < 1 || y > map.height - 2 {
         return 35;
     }
     let mut mask: u8 = 0;

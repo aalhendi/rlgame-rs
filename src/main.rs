@@ -27,6 +27,7 @@ mod gui;
 pub mod inventory_system;
 pub mod spawner;
 use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
+mod particle_system;
 mod random_table;
 mod saveload_system;
 
@@ -194,6 +195,9 @@ impl State {
         let mut item_remove_system = ItemRemoveSystem;
         item_remove_system.run_now(&self.ecs);
 
+        let mut particle_system = particle_system::ParticleSpawnSystem {};
+        particle_system.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -202,6 +206,7 @@ impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         let mut newrunstate = { *self.ecs.fetch::<RunState>() };
         ctx.cls();
+        particle_system::cull_dead_particles(&mut self.ecs, ctx);
 
         // Either draw Main Menu or draw map
         match newrunstate {
@@ -427,6 +432,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<SerializationHelper>();
     gs.ecs.register::<MeleePowerBonus>();
     gs.ecs.register::<DefenseBonus>();
+    gs.ecs.register::<ParticleLifetime>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
 
@@ -450,6 +456,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(gamelog::Gamelog {
         entries: vec!["Welcome to Rusty Rougelike".to_string()],
     });
+    gs.ecs.insert(particle_system::ParticleBuilder::new());
 
     rltk::main_loop(context, gs)
 }

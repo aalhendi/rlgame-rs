@@ -180,3 +180,8 @@ pub struct WantsToRemoveItem {
 pub trait Owned {
     fn owned_by(&self, entity: &Entity) -> bool;
 }
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct ParticleLifetime {
+    pub lifetime_ms: f32,
+}
