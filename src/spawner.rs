@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use super::{
-    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EquipmentSlot,
-    Equippable, HungerClock, HungerState, InflictsDamage, IsSerialized, Item, MagicMapper,
-    MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood, ProvidesHealing, Ranged, Rect,
-    Renderable, Viewshed, MAPWIDTH,
+    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EntryTrigger,
+    EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, IsSerialized,
+    Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood,
+    ProvidesHealing, Ranged, Rect, Renderable, Viewshed, MAPWIDTH,
 };
 use crate::random_table::RandomTable;
 use rltk::{RandomNumberGenerator, RGB};
@@ -131,6 +131,7 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
             "Tower Shield" => tower_shield(ecs, pos),
             "Rations" => rations(ecs, pos),
             "Magic Mapping Scroll" => magic_mapping_scroll(ecs, pos),
+            "Bear Trap" => bear_trap(ecs, pos),
             _ => {}
         }
     }
@@ -338,6 +339,25 @@ fn rations(ecs: &mut World, pos: Position) {
         .build();
 }
 
+fn bear_trap(ecs: &mut World, pos: Position) {
+    ecs.create_entity()
+        .with(pos)
+        .with(Renderable {
+            glyph: rltk::to_cp437('^'),
+            fg: RGB::named(rltk::RED),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Bear Trap".to_string(),
+        })
+        .with(Hidden {})
+        .with(EntryTrigger {})
+        .with(InflictsDamage { damage: 6 })
+        .marked::<SimpleMarker<IsSerialized>>()
+        .build();
+}
+
 fn room_table(map_depth: i32) -> RandomTable {
     RandomTable::new()
         .add("Goblin", 10)
@@ -352,4 +372,5 @@ fn room_table(map_depth: i32) -> RandomTable {
         .add("Tower Shield", map_depth - 1)
         .add("Rations", 10)
         .add("Magic Mapping Scroll", 2)
+        .add("Bear Trap", 2)
 }

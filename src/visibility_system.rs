@@ -1,4 +1,4 @@
-use super::{Map, Player, Position, Viewshed};
+use super::{gamelog::Gamelog, Hidden, Map, Name, Player, Position, Viewshed};
 use rltk::{field_of_view, Point};
 use specs::prelude::*;
 
@@ -11,12 +11,16 @@ impl<'a> System<'a> for VisibilitySystem {
         WriteStorage<'a, Viewshed>,
         WriteStorage<'a, Position>,
         ReadStorage<'a, Player>,
+        WriteStorage<'a, Hidden>,
+        WriteExpect<'a, rltk::RandomNumberGenerator>,
+        WriteExpect<'a, Gamelog>,
+        ReadStorage<'a, Name>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut map, entities, mut viewshed, pos, player) = data;
-        // tuple and join used here to ensure only entities with BOTH viewshed and positon get
-        // called
+        let (mut map, entities, mut viewshed, pos, player, mut hidden, mut rng, mut log, names) =
+            data;
+
         for (ent, viewshed, pos) in (&entities, &mut viewshed, &pos).join() {
             if viewshed.dirty {
                 viewshed.visible_tiles.clear();
@@ -35,6 +39,17 @@ impl<'a> System<'a> for VisibilitySystem {
                         let idx = map.xy_idx(vis.x, vis.y);
                         map.revealed_tiles[idx] = true;
                         map.visible_tiles[idx] = true;
+
+                        // Chance to reveal hidden things
+                        for e in map.tile_content[idx].iter() {
+                            if hidden.get(*e).is_some() && rng.roll_dice(1, 24) == 1 {
+                                if let Some(name) = names.get(*e) {
+                                    log.entries
+                                        .push(format!("You spotted a {name}.", name = &name.name));
+                                }
+                                hidden.remove(*e);
+                            }
+                        }
                     }
                 }
                 viewshed.dirty = false;

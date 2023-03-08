@@ -1,6 +1,6 @@
 use super::{
-    gamelog::Gamelog, CombatStats, Equipped, HungerClock, HungerState, InBackpack, Map, Name,
-    Owned, Player, Position, RunState, State, Viewshed, MAPHEIGHT, MAPWIDTH,
+    gamelog::Gamelog, CombatStats, Equipped, Hidden, HungerClock, HungerState, InBackpack, Map,
+    Name, Owned, Player, Position, RunState, State, Viewshed, MAPHEIGHT, MAPWIDTH,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -73,6 +73,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let map = ecs.fetch::<Map>();
     let names = ecs.read_storage::<Name>();
     let positions = ecs.read_storage::<Position>();
+    let hidden = ecs.read_storage::<Hidden>();
 
     let mouse_pos = ctx.mouse_pos();
     // Check if mouse is on map
@@ -81,7 +82,7 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     }
     let mut tooltip: Vec<String> = Vec::new();
 
-    for (name, pos) in (&names, &positions).join() {
+    for (name, pos, _hidden) in (&names, &positions, !&hidden).join() {
         let idx = map.xy_idx(pos.x, pos.y);
         if pos.x == mouse_pos.0 && pos.y == mouse_pos.1 && map.visible_tiles[idx] {
             tooltip.push(name.name.to_string());

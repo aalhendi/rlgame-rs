@@ -31,6 +31,7 @@ mod hunger_system;
 mod particle_system;
 mod random_table;
 mod saveload_system;
+mod trigger_system;
 
 // --- State Start ---
 #[derive(PartialEq, Clone, Copy)]
@@ -178,6 +179,9 @@ impl State {
         let mut mob = MonsterAI;
         mob.run_now(&self.ecs);
 
+        let mut trigger_system = trigger_system::TriggerSystem;
+        trigger_system.run_now(&self.ecs);
+
         let mut mapindex = MapIndexingSystem;
         mapindex.run_now(&self.ecs);
 
@@ -202,7 +206,7 @@ impl State {
         let mut hunger_system = hunger_system::HungerSystem;
         hunger_system.run_now(&self.ecs);
 
-        let mut particle_system = particle_system::ParticleSpawnSystem {};
+        let mut particle_system = particle_system::ParticleSpawnSystem;
         particle_system.run_now(&self.ecs);
 
         self.ecs.maintain();
@@ -225,12 +229,17 @@ impl GameState for State {
                     let map = self.ecs.fetch::<Map>();
                     let positions = self.ecs.read_storage::<Position>();
                     let renderables = self.ecs.read_storage::<Renderable>();
+                    let hidden = self.ecs.read_storage::<Hidden>();
 
-                    let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
-                    data.sort_by(|&(_a_pos, a_rndr), &(_b_pos, b_rndr)| {
-                        b_rndr.render_order.cmp(&a_rndr.render_order)
-                    });
-                    for (pos, render) in data.iter() {
+                    let mut data = (&positions, &renderables, !&hidden)
+                        .join()
+                        .collect::<Vec<_>>();
+                    data.sort_by(
+                        |&(_a_pos, a_rndr, _a_hidden), &(_b_pos, b_rndr, _b_hidden)| {
+                            b_rndr.render_order.cmp(&a_rndr.render_order)
+                        },
+                    );
+                    for (pos, render, _hidden) in data.iter() {
                         let idx = map.xy_idx(pos.x, pos.y);
                         if map.visible_tiles[idx] {
                             ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph)
@@ -460,6 +469,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<HungerClock>();
     gs.ecs.register::<ProvidesFood>();
     gs.ecs.register::<MagicMapper>();
+    gs.ecs.register::<Hidden>();
+    gs.ecs.register::<EntryTrigger>();
+    gs.ecs.register::<EntityMoved>();
+    gs.ecs.register::<SingleActivation>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
 

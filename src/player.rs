@@ -1,6 +1,6 @@
 use super::{
-    HungerClock, HungerState, Item, Map, Monster, Player, Position, RunState, State, Viewshed,
-    WantsToPickupItem,
+    EntityMoved, HungerClock, HungerState, Item, Map, Monster, Player, Position, RunState, State,
+    Viewshed, WantsToPickupItem,
 };
 use crate::components::CombatStats;
 use crate::components::WantsToMelee;
@@ -18,6 +18,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let map = ecs.fetch::<Map>();
     let entities = ecs.entities();
     let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
+    let mut entity_moved = ecs.write_storage::<EntityMoved>();
 
     for (_player, pos, viewshed, entity) in
         (&mut players, &mut positions, &mut viewsheds, &entities).join()
@@ -55,6 +56,10 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
 
             viewshed.dirty = true;
         }
+
+        entity_moved
+            .insert(entity, EntityMoved {})
+            .expect("Unable to insert marker");
     }
 }
 
