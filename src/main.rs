@@ -28,6 +28,7 @@ pub mod inventory_system;
 pub mod spawner;
 use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
 mod hunger_system;
+pub mod map_builders;
 mod particle_system;
 mod random_table;
 mod saveload_system;
@@ -71,7 +72,7 @@ impl State {
 
         let worldmap = {
             let mut wmap_res = self.ecs.write_resource::<Map>();
-            *wmap_res = Map::new_map_rooms_and_corridors(wmap_res.depth + 1);
+            *wmap_res = map_builders::build_random_map(wmap_res.depth + 1);
             wmap_res.clone()
         };
 
@@ -143,7 +144,7 @@ impl State {
         // Build a new map and place the player
         let worldmap = {
             let mut worldmap_resource = self.ecs.write_resource::<Map>();
-            *worldmap_resource = Map::new_map_rooms_and_corridors(1);
+            *worldmap_resource = map_builders::build_random_map(1);
             worldmap_resource.clone()
         };
 
@@ -476,7 +477,7 @@ fn main() -> rltk::BError {
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
 
-    let map = Map::new_map_rooms_and_corridors(1);
+    let map = map_builders::build_random_map(1);
     let player_pos = map.rooms[0].center();
 
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
