@@ -4,7 +4,7 @@ use super::{
     AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EntryTrigger,
     EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, IsSerialized,
     Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood,
-    ProvidesHealing, Ranged, Rect, Renderable, Viewshed, MAPWIDTH,
+    ProvidesHealing, Ranged, Rect, Renderable, SingleActivation, Viewshed, MAPWIDTH,
 };
 use crate::random_table::RandomTable;
 use rltk::{RandomNumberGenerator, RGB};
@@ -353,6 +353,7 @@ fn bear_trap(ecs: &mut World, pos: Position) {
         })
         .with(Hidden {})
         .with(EntryTrigger {})
+        .with(SingleActivation {})
         .with(InflictsDamage { damage: 6 })
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
