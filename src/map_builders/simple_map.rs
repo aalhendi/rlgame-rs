@@ -121,7 +121,7 @@ impl SimpleMapBuilder {
         }
 
         // Insert down stairs in center of last room
-        let stairs_pos = self.rooms[self.rooms.len() - 1].center();
+        let stairs_pos = self.rooms.last().unwrap().center();
         let stairs_idx = self.map.xy_idx(stairs_pos.x, stairs_pos.y);
         self.map.tiles[stairs_idx] = TileType::DownStairs;
 

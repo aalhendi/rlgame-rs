@@ -1,5 +1,5 @@
 use rltk::{Point, RandomNumberGenerator, Rltk, RGB};
-use specs::{Entity};
+use specs::Entity;
 use std::collections::HashSet;
 
 pub const MAPWIDTH: usize = 80;
@@ -166,7 +166,6 @@ impl Map {
 }
 
 pub fn draw_map(map: &Map, ctx: &mut Rltk) {
-
     let mut y = 0;
     let mut x = 0;
     for (idx, tile) in map.tiles.iter().enumerate() {
@@ -180,7 +179,7 @@ pub fn draw_map(map: &Map, ctx: &mut Rltk) {
                     fg = RGB::from_f32(0.0, 0.5, 0.5);
                 }
                 TileType::Wall => {
-                    glyph = get_wall_glyph(&map, x, y);
+                    glyph = get_wall_glyph(map, x, y);
                     fg = RGB::from_f32(0., 1.0, 0.);
                 }
                 TileType::DownStairs => {
