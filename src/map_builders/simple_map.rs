@@ -10,6 +10,7 @@ pub struct SimpleMapBuilder {
     map: Map,
     starting_position: Position,
     rooms: Vec<Rect>,
+    history: Vec<Map>,
 }
 
 impl MapBuilder for SimpleMapBuilder {
@@ -30,6 +31,20 @@ impl MapBuilder for SimpleMapBuilder {
     fn get_starting_position(&self) -> Position {
         self.starting_position.clone()
     }
+
+    fn get_snapshot_history(&self) -> Vec<Map> {
+        self.history.clone()
+    }
+
+    fn take_snapshot(&mut self) {
+        if crate::SHOW_MAPGEN_VISUALIZER {
+            let mut snapshot = self.map.clone();
+            for v in snapshot.revealed_tiles.iter_mut() {
+                *v = true;
+            }
+            self.history.push(snapshot);
+        }
+    }
 }
 
 impl SimpleMapBuilder {
@@ -38,6 +53,7 @@ impl SimpleMapBuilder {
             map: Map::new(new_depth),
             starting_position: Position { x: 0, y: 0 },
             rooms: Vec::new(),
+            history: Vec::new(),
         }
     }
 
@@ -65,6 +81,7 @@ impl SimpleMapBuilder {
             }
             if ok {
                 apply_room_to_map(&mut self.map, &new_room);
+                self.take_snapshot();
 
                 if !self.rooms.is_empty() {
                     let new_center = new_room.center();
@@ -98,7 +115,8 @@ impl SimpleMapBuilder {
                     }
                 }
 
-                self.rooms.push(new_room)
+                self.rooms.push(new_room);
+                self.take_snapshot();
             }
         }
 

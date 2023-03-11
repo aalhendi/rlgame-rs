@@ -1,5 +1,5 @@
 use rltk::{Point, RandomNumberGenerator, Rltk, RGB};
-use specs::{Entity, World};
+use specs::{Entity};
 use std::collections::HashSet;
 
 pub const MAPWIDTH: usize = 80;
@@ -165,8 +165,7 @@ impl Map {
     }
 }
 
-pub fn draw_map(ecs: &World, ctx: &mut Rltk) {
-    let map = ecs.fetch::<Map>();
+pub fn draw_map(map: &Map, ctx: &mut Rltk) {
 
     let mut y = 0;
     let mut x = 0;
