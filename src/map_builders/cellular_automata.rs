@@ -1,4 +1,7 @@
-use super::{Map, MapBuilder};
+use super::{
+    common::generate_voronoi_spawn_regions, common::remove_unreachable_areas_get_most_distant, Map,
+    MapBuilder,
+};
 use crate::{spawner, Position, TileType, SHOW_MAPGEN_VISUALIZER};
 use rltk::RandomNumberGenerator;
 use specs::World;
@@ -139,53 +142,15 @@ impl CellularAutomataBuilder {
                 .map
                 .xy_idx(self.starting_position.x, self.starting_position.y);
         }
+        self.take_snapshot();
 
-        // Find all tiles we can reach from the starting point
-        let map_starts: Vec<usize> = vec![start_idx];
-        let dijkstra_map = rltk::DijkstraMap::new(
-            self.map.width,
-            self.map.height,
-            &map_starts,
-            &self.map,
-            200.0,
-        );
-        let (mut exit_tile_idx, mut exit_tile_distance) = (0, 0.0f32);
-        for (i, tile) in self.map.tiles.iter_mut().enumerate() {
-            if *tile == TileType::Floor {
-                let distance_to_start = dijkstra_map.map[i];
-                // Unreachable tile -> Wall
-                if distance_to_start == std::f32::MAX {
-                    *tile = TileType::Wall;
-                } else if distance_to_start > exit_tile_distance {
-                    // Move exist if further than current exit
-                    exit_tile_idx = i;
-                    exit_tile_distance = distance_to_start;
-                }
-            }
-        }
+        let exit_tile_idx = remove_unreachable_areas_get_most_distant(&mut self.map, start_idx);
         self.take_snapshot();
 
         self.map.tiles[exit_tile_idx] = TileType::DownStairs;
         self.take_snapshot();
 
-        // Build noise map for spawning entities later <https://thebookofshaders.com/12/>
-        let mut noise = rltk::FastNoise::seeded(rng.roll_dice(1, 65536) as u64);
-        noise.set_noise_type(rltk::NoiseType::Cellular);
-        noise.set_frequency(0.08);
-        noise.set_cellular_distance_function(rltk::CellularDistanceFunction::Manhattan);
-
-        for y in 1..self.map.height - 1 {
-            for x in 1..self.map.width - 1 {
-                let idx = self.map.xy_idx(x, y);
-                if self.map.tiles[idx] == TileType::Floor {
-                    let cell_value_f = noise.get_noise(x as f32, y as f32) * 10240.0;
-
-                    self.noise_areas
-                        .entry(cell_value_f as i32)
-                        .or_default()
-                        .push(idx);
-                }
-            }
-        }
+        //Build noise map for spawning entities later
+        self.noise_areas = generate_voronoi_spawn_regions(&self.map, &mut rng);
     }
 }
