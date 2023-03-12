@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use super::{
     AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EntryTrigger,
     EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, IsSerialized,
-    Item, MagicMapper, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood,
-    ProvidesHealing, Ranged, Rect, Renderable, SingleActivation, Viewshed, MAPWIDTH,
+    Item, MagicMapper, Map, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood,
+    ProvidesHealing, Ranged, Rect, Renderable, SingleActivation, TileType, Viewshed, MAPWIDTH,
 };
 use crate::random_table::RandomTable;
 use rltk::{RandomNumberGenerator, RGB};
@@ -84,56 +84,80 @@ fn monster<S: ToString>(ecs: &mut World, pos: Position, glyph: rltk::FontCharTyp
         .build();
 }
 
-/// Spawns entites in rooms
-#[allow(clippy::map_entry)]
+/// Calls spawn_region() with all possible_targets (floor tiles) from given room
 pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
-    let spawn_table = room_table(map_depth);
-    let mut spawn_points: HashMap<usize, String> = HashMap::new();
-
+    let mut possible_targets: Vec<usize> = Vec::new();
     {
-        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
-        let num_spawns = rng.roll_dice(1, MAX_MONSTERS + 3) + (map_depth - 1) - 3;
-
-        // Generate spawn points
-        for _ in 0..num_spawns {
-            let mut tries = 0;
-            while tries < 20 {
-                let x = (room.x1 + rng.roll_dice(1, i32::abs(room.x2 - room.x1))) as usize;
-                let y = (room.y1 + rng.roll_dice(1, i32::abs(room.y2 - room.y1))) as usize;
-                let idx = (y * MAPWIDTH) + x;
-                if !spawn_points.contains_key(&idx) {
-                    spawn_points.insert(idx, spawn_table.roll(&mut rng));
-                    break;
-                } else {
-                    tries += 1;
+        // scope - keep access to map separated
+        let map = ecs.fetch::<Map>();
+        for y in room.y1 + 1..room.y2 {
+            for x in room.x1 + 1..room.x2 {
+                let idx = map.xy_idx(x, y);
+                if map.tiles[idx] == TileType::Floor {
+                    possible_targets.push(idx);
                 }
             }
         }
     }
 
-    // Spawning things
-    for (idx, name) in spawn_points.iter() {
-        let pos = Position {
-            x: (*idx % MAPWIDTH) as i32,
-            y: (*idx / MAPWIDTH) as i32,
-        };
+    spawn_region(ecs, &possible_targets, map_depth);
+}
 
-        match name.as_ref() {
-            "Goblin" => goblin(ecs, pos),
-            "Orc" => orc(ecs, pos),
-            "Health Potion" => health_potion(ecs, pos),
-            "Fireball Scroll" => fireball_scroll(ecs, pos),
-            "Confusion Scroll" => confusion_scroll(ecs, pos),
-            "Magic Missile Scroll" => magic_missile_scroll(ecs, pos),
-            "Dagger" => dagger(ecs, pos),
-            "Shield" => shield(ecs, pos),
-            "Longsword" => longsword(ecs, pos),
-            "Tower Shield" => tower_shield(ecs, pos),
-            "Rations" => rations(ecs, pos),
-            "Magic Mapping Scroll" => magic_mapping_scroll(ecs, pos),
-            "Bear Trap" => bear_trap(ecs, pos),
-            _ => {}
+pub fn spawn_region(ecs: &mut World, area: &[usize], map_depth: i32) {
+    let spawn_table = room_table(map_depth);
+    let mut spawn_points: HashMap<usize, String> = HashMap::new();
+    let mut areas: Vec<usize> = Vec::from(area);
+
+    {
+        let mut rng = ecs.write_resource::<RandomNumberGenerator>();
+        let num_spawns = i32::min(
+            areas.len() as i32,
+            rng.roll_dice(1, MAX_MONSTERS + 3) + (map_depth - 1) - 3,
+        );
+        if num_spawns == 0 {
+            return;
         }
+
+        for _ in 0..num_spawns {
+            let array_index: usize = if areas.len() == 1 {
+                0
+            } else {
+                (rng.roll_dice(1, areas.len() as i32) - 1) as usize
+            };
+            let map_idx = areas[array_index];
+            spawn_points.insert(map_idx, spawn_table.roll(&mut rng));
+            areas.remove(array_index);
+        }
+    }
+
+    // Spawning things
+    for spawn in spawn_points.iter() {
+        spawn_entity(ecs, &spawn);
+    }
+}
+
+/// Spawns a named entity at the location map[idx]
+fn spawn_entity(ecs: &mut World, (idx, name): &(&usize, &String)) {
+    let pos = Position {
+        x: (*idx % MAPWIDTH) as i32,
+        y: (*idx / MAPWIDTH) as i32,
+    };
+
+    match name.as_ref() {
+        "Goblin" => goblin(ecs, pos),
+        "Orc" => orc(ecs, pos),
+        "Health Potion" => health_potion(ecs, pos),
+        "Fireball Scroll" => fireball_scroll(ecs, pos),
+        "Confusion Scroll" => confusion_scroll(ecs, pos),
+        "Magic Missile Scroll" => magic_missile_scroll(ecs, pos),
+        "Dagger" => dagger(ecs, pos),
+        "Shield" => shield(ecs, pos),
+        "Longsword" => longsword(ecs, pos),
+        "Tower Shield" => tower_shield(ecs, pos),
+        "Rations" => rations(ecs, pos),
+        "Magic Mapping Scroll" => magic_mapping_scroll(ecs, pos),
+        "Bear Trap" => bear_trap(ecs, pos),
+        _ => {}
     }
 }
 
