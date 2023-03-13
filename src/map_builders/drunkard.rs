@@ -96,7 +96,7 @@ impl DrunkardsWalkBuilder {
     fn build(&mut self) {
         let mut rng = RandomNumberGenerator::new();
 
-        // Find a starting point; start at the middle and walk left until we find an open tile
+        // Set starting point; start at the middle
         self.starting_position = Position {
             x: self.map.width / 2,
             y: self.map.height / 2,

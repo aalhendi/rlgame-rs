@@ -9,6 +9,8 @@ mod cellular_automata;
 use cellular_automata::CellularAutomataBuilder;
 mod drunkard;
 use drunkard::DrunkardsWalkBuilder;
+mod maze;
+use maze::MazeBuilder;
 mod common;
 use specs::World;
 
@@ -23,12 +25,13 @@ pub trait MapBuilder {
 
 pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
     let mut rng = rltk::RandomNumberGenerator::new();
-    let builder = rng.roll_dice(1, 5);
+    let builder = rng.roll_dice(1, 6);
     match builder {
         1 => Box::new(SimpleMapBuilder::new(new_depth)),
         2 => Box::new(BspDungeonBuilder::new(new_depth)),
         3 => Box::new(BspInteriorBuilder::new(new_depth)),
         4 => Box::new(CellularAutomataBuilder::new(new_depth)),
+        5 => Box::new(MazeBuilder::new(new_depth)),
         _ => match rng.roll_dice(1, 3) {
             1 => Box::new(DrunkardsWalkBuilder::open_area(new_depth)),
             2 => Box::new(DrunkardsWalkBuilder::open_halls(new_depth)),
