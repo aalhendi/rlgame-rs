@@ -13,7 +13,7 @@ pub enum TileType {
     DownStairs,
 }
 
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Default)]
 pub struct Map {
     pub tiles: Vec<TileType>,
     pub width: i32,
