@@ -1,5 +1,7 @@
 use super::{
-    common::{generate_voronoi_spawn_regions, remove_unreachable_areas_get_most_distant},
+    common::{
+        generate_voronoi_spawn_regions, paint, remove_unreachable_areas_get_most_distant, Symmetry,
+    },
     Map, MapBuilder,
 };
 use crate::{spawner, Position, TileType, SHOW_MAPGEN_VISUALIZER};
@@ -67,6 +69,8 @@ impl DrunkardsWalkBuilder {
             spawn_mode: DrunkSpawnMode::StartingPoint,
             lifetime: 400,
             floor_ratio: 0.5,
+            symmetry: Symmetry::None,
+            brush_size: 1,
         };
         DrunkardsWalkBuilder::new(new_depth, settings)
     }
@@ -76,6 +80,8 @@ impl DrunkardsWalkBuilder {
             spawn_mode: DrunkSpawnMode::Random,
             lifetime: 400,
             floor_ratio: 0.5,
+            symmetry: Symmetry::None,
+            brush_size: 1,
         };
         DrunkardsWalkBuilder::new(new_depth, settings)
     }
@@ -85,6 +91,30 @@ impl DrunkardsWalkBuilder {
             spawn_mode: DrunkSpawnMode::Random,
             lifetime: 100,
             floor_ratio: 0.4,
+            symmetry: Symmetry::None,
+            brush_size: 1,
+        };
+        DrunkardsWalkBuilder::new(new_depth, settings)
+    }
+
+    pub fn fat_passages(new_depth: i32) -> DrunkardsWalkBuilder {
+        let settings = DrunkardSettings {
+            spawn_mode: DrunkSpawnMode::Random,
+            lifetime: 100,
+            floor_ratio: 0.4,
+            brush_size: 2,
+            symmetry: Symmetry::None,
+        };
+        DrunkardsWalkBuilder::new(new_depth, settings)
+    }
+
+    pub fn fearful_symmetry(new_depth: i32) -> DrunkardsWalkBuilder {
+        let settings = DrunkardSettings {
+            spawn_mode: DrunkSpawnMode::Random,
+            lifetime: 100,
+            floor_ratio: 0.4,
+            brush_size: 1,
+            symmetry: Symmetry::Both,
         };
         DrunkardsWalkBuilder::new(new_depth, settings)
     }
@@ -141,6 +171,13 @@ impl DrunkardsWalkBuilder {
                     did_something = true;
                 }
                 // Set as digger tile
+                paint(
+                    &mut self.map,
+                    self.settings.symmetry,
+                    self.settings.brush_size,
+                    drunk_pos.x,
+                    drunk_pos.y,
+                );
                 self.map.tiles[drunk_idx] = TileType::DownStairs;
 
                 match rng.roll_dice(1, 4) {
@@ -207,4 +244,6 @@ pub struct DrunkardSettings {
     pub spawn_mode: DrunkSpawnMode,
     pub lifetime: i32,
     pub floor_ratio: f32,
+    pub symmetry: Symmetry,
+    pub brush_size: i32,
 }

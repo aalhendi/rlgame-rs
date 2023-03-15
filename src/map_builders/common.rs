@@ -88,7 +88,7 @@ pub enum Symmetry {
     None,
     Horizontal,
     _Vertical,
-    _Both,
+    Both,
 }
 
 pub fn paint(map: &mut Map, mode: Symmetry, brush_size: i32, x: i32, y: i32) {
@@ -114,7 +114,7 @@ pub fn paint(map: &mut Map, mode: Symmetry, brush_size: i32, x: i32, y: i32) {
                 apply_paint(map, brush_size, x, center_y - dist_y);
             }
         }
-        Symmetry::_Both => {
+        Symmetry::Both => {
             let center_x = map.width / 2;
             let center_y = map.height / 2;
             if x == center_x && y == center_y {

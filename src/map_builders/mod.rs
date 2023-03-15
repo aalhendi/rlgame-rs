@@ -40,9 +40,11 @@ pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
             3 => Box::new(DLABuilder::central_attractor(new_depth)),
             _ => Box::new(DLABuilder::insectoid(new_depth)),
         },
-        _ => match rng.roll_dice(1, 3) {
+        _ => match rng.roll_dice(1, 5) {
             1 => Box::new(DrunkardsWalkBuilder::open_area(new_depth)),
             2 => Box::new(DrunkardsWalkBuilder::open_halls(new_depth)),
+            3 => Box::new(DrunkardsWalkBuilder::fat_passages(new_depth)),
+            4 => Box::new(DrunkardsWalkBuilder::fearful_symmetry(new_depth)),
             _ => Box::new(DrunkardsWalkBuilder::winding_passages(new_depth)),
         },
     }
