@@ -129,7 +129,7 @@ impl VoronoiCellBuilder {
             }
 
             voronoi_distance.sort_by(|(_a_seed, a_distance), (_b_seed, b_distance)| {
-                a_distance.partial_cmp(&b_distance).unwrap()
+                a_distance.partial_cmp(b_distance).unwrap()
             });
 
             *v_id = voronoi_distance[0].0 as i32;

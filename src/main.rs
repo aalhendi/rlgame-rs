@@ -31,6 +31,7 @@ mod hunger_system;
 pub mod map_builders;
 mod particle_system;
 mod random_table;
+mod rex_assets;
 mod saveload_system;
 mod trigger_system;
 
@@ -505,6 +506,7 @@ fn main() -> rltk::BError {
     // Resource Insertion
     let player_entity = spawner::player(&mut gs.ecs, Position { x: 0, y: 0 });
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
+    gs.ecs.insert(rex_assets::RexAssets::new());
     gs.ecs.insert(Map::new(1));
     gs.ecs.insert(Point::new(0, 0));
     gs.ecs.insert(player_entity);

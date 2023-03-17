@@ -6,7 +6,7 @@ pub const MAPWIDTH: usize = 80;
 pub const MAPHEIGHT: usize = 43;
 pub const MAPCOUNT: usize = MAPWIDTH * MAPHEIGHT;
 
-#[derive(PartialEq, Copy, Clone, serde::Serialize, serde::Deserialize)]
+#[derive(PartialEq, Eq, Hash, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub enum TileType {
     Wall,
     Floor,
