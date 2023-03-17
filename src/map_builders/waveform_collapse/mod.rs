@@ -1,4 +1,3 @@
-mod image_loader;
 use std::collections::HashMap;
 mod common;
 mod constraints;
@@ -15,19 +14,12 @@ use super::{
     MapBuilder,
 };
 
-#[derive(PartialEq, Copy, Clone)]
-pub enum WaveformMode {
-    TestMap,
-    Derived,
-}
-
 pub struct WaveformCollapseBuilder {
     map: Map,
     starting_position: Position,
     depth: i32,
     history: Vec<Map>,
     noise_areas: HashMap<i32, Vec<usize>>,
-    mode: WaveformMode,
     derive_from: Option<Box<dyn MapBuilder>>,
 }
 
@@ -68,7 +60,6 @@ impl MapBuilder for WaveformCollapseBuilder {
 impl WaveformCollapseBuilder {
     pub fn new(
         new_depth: i32,
-        mode: WaveformMode,
         derive_from: Option<Box<dyn MapBuilder>>,
     ) -> WaveformCollapseBuilder {
         WaveformCollapseBuilder {
@@ -77,29 +68,15 @@ impl WaveformCollapseBuilder {
             depth: new_depth,
             history: Vec::new(),
             noise_areas: HashMap::new(),
-            mode,
             derive_from,
         }
     }
 
-    pub fn test_map(new_depth: i32) -> WaveformCollapseBuilder {
-        WaveformCollapseBuilder::new(new_depth, WaveformMode::TestMap, None)
-    }
-
     pub fn derived_map(new_depth: i32, builder: Box<dyn MapBuilder>) -> WaveformCollapseBuilder {
-        WaveformCollapseBuilder::new(new_depth, WaveformMode::Derived, Some(builder))
+        WaveformCollapseBuilder::new(new_depth, Some(builder))
     }
 
     fn build(&mut self) {
-        if self.mode == WaveformMode::TestMap {
-            self.map = image_loader::load_rex_map(
-                self.depth,
-                &rltk::rex::XpFile::from_resource("../../resources/wfc-demo1.xp").unwrap(),
-            );
-            self.take_snapshot();
-            return;
-        }
-
         let mut rng = RandomNumberGenerator::new();
 
         const CHUNK_SIZE: i32 = 8;

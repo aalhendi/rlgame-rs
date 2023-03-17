@@ -19,6 +19,8 @@ use specs::World;
 use voronoi::VoronoiCellBuilder;
 mod waveform_collapse;
 use waveform_collapse::WaveformCollapseBuilder;
+mod prefab_builder;
+use prefab_builder::PrefabBuilder;
 
 pub trait MapBuilder {
     fn build_map(&mut self);
@@ -38,7 +40,7 @@ pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
         3 => Box::new(BspInteriorBuilder::new(new_depth)),
         4 => Box::new(CellularAutomataBuilder::new(new_depth)),
         5 => Box::new(MazeBuilder::new(new_depth)),
-        6 => Box::new(WaveformCollapseBuilder::test_map(new_depth)),
+        6 => Box::new(PrefabBuilder::new(new_depth)),
         7 => match rng.roll_dice(1, 3) {
             1 => Box::new(VoronoiCellBuilder::pythagoras(new_depth)),
             2 => Box::new(VoronoiCellBuilder::manhattan(new_depth)),

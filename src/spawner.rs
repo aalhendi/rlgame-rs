@@ -137,7 +137,7 @@ pub fn spawn_region(ecs: &mut World, area: &[usize], map_depth: i32) {
 }
 
 /// Spawns a named entity at the location map[idx]
-fn spawn_entity(ecs: &mut World, (idx, name): &(&usize, &String)) {
+pub fn spawn_entity(ecs: &mut World, (idx, name): &(&usize, &String)) {
     let pos = Position {
         x: (*idx % MAPWIDTH) as i32,
         y: (*idx / MAPWIDTH) as i32,
