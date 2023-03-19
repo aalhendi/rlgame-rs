@@ -4,7 +4,6 @@ use super::{
 };
 use crate::{spawner, Position, TileType, SHOW_MAPGEN_VISUALIZER};
 use rltk::RandomNumberGenerator;
-use specs::World;
 use std::collections::HashMap;
 
 #[derive(Copy, Clone)]
@@ -202,6 +201,7 @@ pub struct MazeBuilder {
     depth: i32,
     history: Vec<Map>,
     noise_areas: HashMap<i32, Vec<usize>>,
+    spawn_list: Vec<(usize, String)>,
 }
 
 impl MapBuilder for MazeBuilder {
@@ -221,12 +221,6 @@ impl MapBuilder for MazeBuilder {
         self.build();
     }
 
-    fn spawn_entities(&mut self, ecs: &mut World) {
-        for (_area_id, tile_ids) in self.noise_areas.iter() {
-            spawner::spawn_region(ecs, tile_ids, self.depth);
-        }
-    }
-
     fn take_snapshot(&mut self) {
         if SHOW_MAPGEN_VISUALIZER {
             let mut snapshot = self.map.clone();
@@ -235,6 +229,9 @@ impl MapBuilder for MazeBuilder {
             }
             self.history.push(snapshot);
         }
+    }
+    fn get_spawn_list(&self) -> &Vec<(usize, String)> {
+        &self.spawn_list
     }
 }
 
@@ -246,6 +243,7 @@ impl MazeBuilder {
             depth: new_depth,
             history: Vec::new(),
             noise_areas: HashMap::new(),
+            spawn_list: Vec::new(),
         }
     }
 
@@ -275,5 +273,16 @@ impl MazeBuilder {
 
         //Build noise map for spawning entities later
         self.noise_areas = generate_voronoi_spawn_regions(&self.map, &mut rng);
+
+        // Spawn entities
+        for area in self.noise_areas.iter() {
+            spawner::spawn_region(
+                &self.map,
+                &mut rng,
+                area.1,
+                self.depth,
+                &mut self.spawn_list,
+            );
+        }
     }
 }

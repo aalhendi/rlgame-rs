@@ -4,24 +4,18 @@ use super::{
 };
 use crate::{spawner, Position, Rect, TileType};
 use rltk::RandomNumberGenerator;
-use specs::World;
 
 pub struct SimpleMapBuilder {
     map: Map,
     starting_position: Position,
     rooms: Vec<Rect>,
     history: Vec<Map>,
+    spawn_list: Vec<(usize, String)>,
 }
 
 impl MapBuilder for SimpleMapBuilder {
     fn build_map(&mut self) {
         self.rooms_and_corridors();
-    }
-
-    fn spawn_entities(&mut self, ecs: &mut World) {
-        for room in self.rooms.iter().skip(1) {
-            spawner::spawn_room(ecs, room, self.map.depth);
-        }
     }
 
     fn get_map(&self) -> Map {
@@ -45,6 +39,10 @@ impl MapBuilder for SimpleMapBuilder {
             self.history.push(snapshot);
         }
     }
+
+    fn get_spawn_list(&self) -> &Vec<(usize, String)> {
+        &self.spawn_list
+    }
 }
 
 impl SimpleMapBuilder {
@@ -54,6 +52,7 @@ impl SimpleMapBuilder {
             starting_position: Position { x: 0, y: 0 },
             rooms: Vec::new(),
             history: Vec::new(),
+            spawn_list: Vec::new(),
         }
     }
 
@@ -126,5 +125,16 @@ impl SimpleMapBuilder {
         self.map.tiles[stairs_idx] = TileType::DownStairs;
 
         self.starting_position = self.rooms[0].center();
+
+        // Spawn entities
+        for room in self.rooms.iter().skip(1) {
+            spawner::spawn_room(
+                &self.map,
+                &mut rng,
+                room,
+                self.map.depth,
+                &mut self.spawn_list,
+            );
+        }
     }
 }

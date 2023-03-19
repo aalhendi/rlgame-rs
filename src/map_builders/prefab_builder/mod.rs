@@ -1,7 +1,6 @@
 use super::common::remove_unreachable_areas_get_most_distant;
 use super::{Map, MapBuilder};
-use crate::{spawner, Position, TileType, SHOW_MAPGEN_VISUALIZER};
-use specs::World;
+use crate::{Position, TileType, SHOW_MAPGEN_VISUALIZER};
 mod prefab_levels;
 mod prefab_sections;
 
@@ -14,6 +13,9 @@ pub enum PrefabMode {
     Constant {
         level: prefab_levels::PrefabLevel,
     },
+    Sectional {
+        section: prefab_sections::PrefabSection,
+    },
 }
 
 pub struct PrefabBuilder {
@@ -22,7 +24,8 @@ pub struct PrefabBuilder {
     _depth: i32,
     history: Vec<Map>,
     mode: PrefabMode,
-    spawns: Vec<(usize, String)>,
+    previous_builder: Option<Box<dyn MapBuilder>>,
+    spawn_list: Vec<(usize, String)>,
 }
 
 impl MapBuilder for PrefabBuilder {
@@ -42,12 +45,6 @@ impl MapBuilder for PrefabBuilder {
         self.build();
     }
 
-    fn spawn_entities(&mut self, ecs: &mut World) {
-        for (idx, name) in self.spawns.iter() {
-            spawner::spawn_entity(ecs, &(idx, name));
-        }
-    }
-
     fn take_snapshot(&mut self) {
         if SHOW_MAPGEN_VISUALIZER {
             let mut snapshot = self.map.clone();
@@ -57,10 +54,35 @@ impl MapBuilder for PrefabBuilder {
             self.history.push(snapshot);
         }
     }
+
+    fn get_spawn_list(&self) -> &Vec<(usize, String)> {
+        &self.spawn_list
+    }
 }
 
 impl PrefabBuilder {
-    pub fn new(new_depth: i32) -> PrefabBuilder {
+    pub fn new(new_depth: i32, previous_builder: Option<Box<dyn MapBuilder>>) -> PrefabBuilder {
+        PrefabBuilder {
+            map: Map::new(new_depth),
+            starting_position: Position { x: 0, y: 0 },
+            _depth: new_depth,
+            history: Vec::new(),
+            // mode: PrefabMode::Constant {
+            //     level: prefab_levels::WFC_POPULATED,
+            // },
+            mode: PrefabMode::Sectional {
+                section: prefab_sections::UNDERGROUND_FORT,
+            },
+
+            previous_builder,
+            spawn_list: Vec::new(),
+        }
+    }
+
+    pub fn prefab_level(
+        new_depth: i32,
+        previous_builder: Option<Box<dyn MapBuilder>>,
+    ) -> PrefabBuilder {
         PrefabBuilder {
             map: Map::new(new_depth),
             starting_position: Position { x: 0, y: 0 },
@@ -69,7 +91,8 @@ impl PrefabBuilder {
             mode: PrefabMode::Constant {
                 level: prefab_levels::WFC_POPULATED,
             },
-            spawns: Vec::new(),
+            previous_builder,
+            spawn_list: Vec::new(),
         }
     }
 
@@ -77,6 +100,7 @@ impl PrefabBuilder {
         match self.mode {
             PrefabMode::RexLevel { template } => self.load_rex_map(template),
             PrefabMode::Constant { level } => self.load_ascii_map(&level),
+            PrefabMode::Sectional { section } => self.apply_sectional(&section),
         }
         self.take_snapshot();
 
@@ -182,7 +206,7 @@ impl PrefabBuilder {
             _ => None,
         };
         if let Some(name) = spawn {
-            self.spawns.push((idx, name));
+            self.spawn_list.push((idx, name));
         }
 
         if ch == '@' {
@@ -191,5 +215,59 @@ impl PrefabBuilder {
             let y = idx as i32 / self.map.width;
             self.starting_position = Position { x, y };
         }
+    }
+
+    fn apply_sectional(&mut self, section: &prefab_sections::PrefabSection) {
+        use prefab_sections::*;
+
+        let string_vec = PrefabBuilder::read_ascii_to_vec(section.template);
+
+        // Place the new section
+        let chunk_x = match section.placement.0 {
+            HorizontalPlacement::Left => 0,
+            HorizontalPlacement::Center => (self.map.width / 2) - (section.width as i32 / 2),
+            HorizontalPlacement::Right => (self.map.width - 1) - section.width as i32,
+        };
+
+        let chunk_y = match section.placement.1 {
+            VerticalPlacement::Top => 0,
+            VerticalPlacement::Center => (self.map.height / 2) - (section.height as i32 / 2),
+            VerticalPlacement::Bottom => (self.map.height - 1) - section.height as i32,
+        };
+
+        // Build the map
+        let prev_builder = self.previous_builder.as_mut().unwrap();
+        prev_builder.build_map();
+        self.starting_position = prev_builder.get_starting_position();
+        self.map = prev_builder.get_map();
+        for e in prev_builder.get_spawn_list().iter() {
+            let idx = e.0;
+            let x = idx as i32 % self.map.width;
+            let y = idx as i32 / self.map.width;
+            if x < chunk_x
+                || x > (chunk_x + section.width as i32)
+                || y < chunk_y
+                || y > (chunk_y + section.height as i32)
+            {
+                self.spawn_list.push((idx, e.1.to_string()))
+            }
+        }
+        self.take_snapshot();
+
+        let mut i = 0;
+        for ty in 0..section.height {
+            for tx in 0..section.width {
+                if tx > 0
+                    && tx < self.map.width as usize - 1
+                    && ty < self.map.height as usize - 1
+                    && ty > 0
+                {
+                    let idx = self.map.xy_idx(tx as i32 + chunk_x, ty as i32 + chunk_y);
+                    self.char_to_map_tile(string_vec[i], idx);
+                }
+                i += 1;
+            }
+        }
+        self.take_snapshot();
     }
 }

@@ -6,7 +6,6 @@ use super::{
 };
 use crate::{spawner, Position, TileType, SHOW_MAPGEN_VISUALIZER};
 use rltk::RandomNumberGenerator;
-use specs::World;
 use std::collections::HashMap;
 
 #[derive(PartialEq, Copy, Clone, Default)]
@@ -29,6 +28,7 @@ pub struct DLABuilder {
     brush_size: i32,
     symmetry: Symmetry,
     floor_ratio: f32,
+    spawn_list: Vec<(usize, String)>,
 }
 
 impl MapBuilder for DLABuilder {
@@ -48,12 +48,6 @@ impl MapBuilder for DLABuilder {
         self.build();
     }
 
-    fn spawn_entities(&mut self, ecs: &mut World) {
-        for (_area_id, tile_ids) in self.noise_areas.iter() {
-            spawner::spawn_region(ecs, tile_ids, self.depth);
-        }
-    }
-
     fn take_snapshot(&mut self) {
         if SHOW_MAPGEN_VISUALIZER {
             let mut snapshot = self.map.clone();
@@ -62,6 +56,10 @@ impl MapBuilder for DLABuilder {
             }
             self.history.push(snapshot);
         }
+    }
+
+    fn get_spawn_list(&self) -> &Vec<(usize, String)> {
+        &self.spawn_list
     }
 }
 
@@ -270,5 +268,16 @@ impl DLABuilder {
         self.take_snapshot();
 
         self.noise_areas = generate_voronoi_spawn_regions(&self.map, &mut rng);
+
+        // Spawn entities
+        for area in self.noise_areas.iter() {
+            spawner::spawn_region(
+                &self.map,
+                &mut rng,
+                area.1,
+                self.depth,
+                &mut self.spawn_list,
+            );
+        }
     }
 }

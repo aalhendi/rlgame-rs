@@ -1,3 +1,5 @@
+use crate::spawner;
+
 use super::{Map, Position};
 mod simple_map;
 use simple_map::SimpleMapBuilder;
@@ -24,29 +26,39 @@ use prefab_builder::PrefabBuilder;
 
 pub trait MapBuilder {
     fn build_map(&mut self);
-    fn spawn_entities(&mut self, ecs: &mut World);
     fn get_map(&self) -> Map;
     fn get_starting_position(&self) -> Position;
     fn get_snapshot_history(&self) -> Vec<Map>;
     fn take_snapshot(&mut self);
+    fn get_spawn_list(&self) -> &Vec<(usize, String)>;
+
+    fn spawn_entities(&mut self, ecs: &mut World) {
+        for (idx, name) in self.get_spawn_list().iter() {
+            spawner::spawn_entity(ecs, &(idx, name));
+        }
+    }
 }
 
 pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
     let mut rng = rltk::RandomNumberGenerator::new();
-    let builder = rng.roll_dice(1, 9);
+    let builder = rng.roll_dice(1, 10);
     let mut result: Box<dyn MapBuilder> = match builder {
         1 => Box::new(SimpleMapBuilder::new(new_depth)),
         2 => Box::new(BspDungeonBuilder::new(new_depth)),
         3 => Box::new(BspInteriorBuilder::new(new_depth)),
         4 => Box::new(CellularAutomataBuilder::new(new_depth)),
         5 => Box::new(MazeBuilder::new(new_depth)),
-        6 => Box::new(PrefabBuilder::new(new_depth)),
-        7 => match rng.roll_dice(1, 3) {
+        6 => Box::new(PrefabBuilder::new(
+            new_depth,
+            Some(Box::new(CellularAutomataBuilder::new(new_depth))),
+        )),
+        7 => Box::new(PrefabBuilder::prefab_level(new_depth, None)),
+        8 => match rng.roll_dice(1, 3) {
             1 => Box::new(VoronoiCellBuilder::pythagoras(new_depth)),
             2 => Box::new(VoronoiCellBuilder::manhattan(new_depth)),
             _ => Box::new(VoronoiCellBuilder::chebyshev(new_depth)),
         },
-        8 => match rng.roll_dice(1, 4) {
+        9 => match rng.roll_dice(1, 4) {
             1 => Box::new(DLABuilder::walk_inwards(new_depth)),
             2 => Box::new(DLABuilder::walk_outwards(new_depth)),
             3 => Box::new(DLABuilder::central_attractor(new_depth)),
