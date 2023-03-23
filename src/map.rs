@@ -106,6 +106,11 @@ impl Map {
         (y * self.width + x) as usize
     }
 
+    /// Returns x, y coordinates given an array index
+    pub fn idx_xy(&self, idx: usize) -> (i32, i32) {
+        (idx as i32 % self.width, idx as i32 / self.height)
+    }
+
     // Clears the contents of tile_content field
     pub fn clear_content_index(&mut self) {
         for content in self.tile_content.iter_mut() {

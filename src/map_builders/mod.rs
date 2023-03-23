@@ -52,7 +52,10 @@ pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
             new_depth,
             Some(Box::new(CellularAutomataBuilder::new(new_depth))),
         )),
-        7 => Box::new(PrefabBuilder::prefab_level(new_depth, None)),
+        7 => Box::new(PrefabBuilder::constant(
+            new_depth,
+            prefab_builder::prefab_levels::WFC_POPULATED,
+        )),
         8 => match rng.roll_dice(1, 3) {
             1 => Box::new(VoronoiCellBuilder::pythagoras(new_depth)),
             2 => Box::new(VoronoiCellBuilder::manhattan(new_depth)),
@@ -77,5 +80,5 @@ pub fn random_builder(new_depth: i32) -> Box<dyn MapBuilder> {
         result = Box::new(WaveformCollapseBuilder::derived_map(new_depth, result));
     }
 
-    result
+    Box::new(PrefabBuilder::vaults(new_depth, result))
 }
