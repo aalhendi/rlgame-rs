@@ -73,7 +73,7 @@ impl<'a> System<'a> for ParticleSpawnSystem {
         for new_particle in particle_builder.requests.iter() {
             let particle = entities.create();
             positions
-                .insert(particle, new_particle.pos.clone())
+                .insert(particle, new_particle.pos)
                 .expect("Unable to insert position");
 
             renderables

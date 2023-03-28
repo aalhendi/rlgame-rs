@@ -22,14 +22,14 @@ pub struct PrefabSection {
     pub placement: (HorizontalPlacement, VerticalPlacement),
 }
 
-pub const _UNDERGROUND_FORT: PrefabSection = PrefabSection {
-    template: _RIGHT_FORT,
+pub const UNDERGROUND_FORT: PrefabSection = PrefabSection {
+    template: RIGHT_FORT,
     width: 15,
     height: 43,
     placement: (HorizontalPlacement::Right, VerticalPlacement::Top),
 };
 
-const _RIGHT_FORT: &str = "     #
+const RIGHT_FORT: &str = "     #
   #######
   #     #
   #     #######

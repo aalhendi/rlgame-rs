@@ -108,7 +108,7 @@ impl Map {
 
     /// Returns x, y coordinates given an array index
     pub fn idx_xy(&self, idx: usize) -> (i32, i32) {
-        (idx as i32 % self.width, idx as i32 / self.height)
+        (idx as i32 % self.width, idx as i32 / self.width)
     }
 
     // Clears the contents of tile_content field

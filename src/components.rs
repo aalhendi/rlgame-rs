@@ -7,7 +7,7 @@ use specs::{
 use specs_derive::*;
 use std::convert::Infallible as NoError;
 
-#[derive(Component, ConvertSaveload, Clone, Default)]
+#[derive(Component, ConvertSaveload, Clone, Default, Copy)]
 pub struct Position {
     pub x: i32,
     pub y: i32,

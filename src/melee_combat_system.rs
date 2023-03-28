@@ -70,7 +70,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
 
                     if let Some(pos) = positions.get(wants_melee.target) {
                         particle_builder.request(
-                            pos.clone(),
+                            *pos,
                             rltk::RGB::named(rltk::ORANGE),
                             rltk::RGB::named(rltk::BLACK),
                             rltk::to_cp437('‼'),

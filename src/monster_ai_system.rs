@@ -56,7 +56,7 @@ impl<'a> System<'a> for MonsterAI {
                 }
                 can_act = false;
                 particle_builder.request(
-                    pos.clone(),
+                    *pos,
                     rltk::RGB::named(rltk::MAGENTA),
                     rltk::RGB::named(rltk::BLACK),
                     rltk::to_cp437('?'),

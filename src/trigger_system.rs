@@ -55,7 +55,7 @@ impl<'a> System<'a> for TriggerSystem {
                     // Inflicts Damage
                     if let Some(damage) = inflicts_damage.get(*tile_entity) {
                         particle_builder.request(
-                            pos.clone(),
+                            *pos,
                             rltk::RGB::named(rltk::ORANGE),
                             rltk::RGB::named(rltk::BLACK),
                             rltk::to_cp437('‼'),

@@ -203,7 +203,7 @@ impl<'a> System<'a> for ItemUseSystem {
                         }
                         if let Some(pos) = positions.get(*mob) {
                             particle_builder.request(
-                                pos.clone(),
+                                *pos,
                                 rltk::RGB::named(rltk::RED),
                                 rltk::RGB::named(rltk::BLACK),
                                 rltk::to_cp437('‼'),
@@ -232,7 +232,7 @@ impl<'a> System<'a> for ItemUseSystem {
                         }
                         if let Some(pos) = positions.get(*target) {
                             particle_builder.request(
-                                pos.clone(),
+                                *pos,
                                 rltk::RGB::named(rltk::GREEN),
                                 rltk::RGB::named(rltk::BLACK),
                                 rltk::to_cp437('♥'),
@@ -259,7 +259,7 @@ impl<'a> System<'a> for ItemUseSystem {
                     }
                     if let Some(pos) = positions.get(*mob) {
                         particle_builder.request(
-                            pos.clone(),
+                            *pos,
                             rltk::RGB::named(rltk::MAGENTA),
                             rltk::RGB::named(rltk::BLACK),
                             rltk::to_cp437('?'),
@@ -323,7 +323,7 @@ impl<'a> System<'a> for ItemDropSystem {
         ) = data;
 
         for (entity, to_drop) in (&entities, &wants_drop).join() {
-            let dropper_pos = positions.get(entity).unwrap().clone();
+            let dropper_pos = *positions.get(entity).unwrap();
 
             positions
                 .insert(to_drop.item, dropper_pos)
