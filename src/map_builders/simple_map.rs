@@ -1,7 +1,4 @@
-use super::{
-    common::apply_horizontal_tunnel, common::apply_room_to_map, common::apply_vertical_tunnel,
-    BuilderMap, InitialMapBuilder,
-};
+use super::{common::apply_room_to_map, BuilderMap, InitialMapBuilder};
 use crate::Rect;
 use rltk::RandomNumberGenerator;
 
@@ -47,40 +44,7 @@ impl SimpleMapBuilder {
                 apply_room_to_map(&mut build_data.map, &new_room);
                 build_data.take_snapshot();
 
-                if !rooms.is_empty() {
-                    let new_center = new_room.center();
-                    let old_center = rooms[rooms.len() - 1].center();
-                    if rng.range(0, 2) == 1 {
-                        apply_horizontal_tunnel(
-                            &mut build_data.map,
-                            old_center.x,
-                            new_center.x,
-                            old_center.y,
-                        );
-                        apply_vertical_tunnel(
-                            &mut build_data.map,
-                            old_center.y,
-                            new_center.y,
-                            new_center.x,
-                        );
-                    } else {
-                        apply_vertical_tunnel(
-                            &mut build_data.map,
-                            old_center.y,
-                            new_center.y,
-                            new_center.x,
-                        );
-                        apply_horizontal_tunnel(
-                            &mut build_data.map,
-                            old_center.x,
-                            new_center.x,
-                            old_center.y,
-                        );
-                    }
-                }
-
                 rooms.push(new_room);
-                build_data.take_snapshot();
             }
         }
         build_data.rooms = Some(rooms);

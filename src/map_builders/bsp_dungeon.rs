@@ -1,7 +1,4 @@
-use super::{
-    common::{apply_room_to_map, draw_corridor},
-    BuilderMap, InitialMapBuilder, Map, Rect,
-};
+use super::{common::apply_room_to_map, BuilderMap, InitialMapBuilder, Map, Rect};
 use crate::TileType;
 use rltk::RandomNumberGenerator;
 
@@ -140,22 +137,6 @@ impl BspDungeonBuilder {
                 self.add_subrects(rect);
                 build_data.take_snapshot();
             }
-        }
-
-        rooms.sort_by(|a, b| a.x1.cmp(&b.x1));
-
-        for i in 0..rooms.len() - 1 {
-            let room = rooms[i];
-            let next_room = rooms[i + 1];
-
-            let start_x = room.x1 + (rng.roll_dice(1, i32::abs(room.x1 - room.x2)) - 1);
-            let start_y = room.y1 + (rng.roll_dice(1, i32::abs(room.y1 - room.y2)) - 1);
-            let end_x =
-                next_room.x1 + (rng.roll_dice(1, i32::abs(next_room.x1 - next_room.x2)) - 1);
-            let end_y =
-                next_room.y1 + (rng.roll_dice(1, i32::abs(next_room.y1 - next_room.y2)) - 1);
-            draw_corridor(&mut build_data.map, start_x, start_y, end_x, end_y);
-            build_data.take_snapshot();
         }
 
         build_data.rooms = Some(rooms);

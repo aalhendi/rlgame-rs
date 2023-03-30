@@ -1,4 +1,6 @@
-use super::{common::paint, common::Symmetry, BuilderMap, InitialMapBuilder, Position};
+use super::{
+    common::paint, common::Symmetry, BuilderMap, InitialMapBuilder, MetaMapBuilder, Position,
+};
 use crate::TileType;
 use rltk::RandomNumberGenerator;
 
@@ -25,6 +27,12 @@ impl InitialMapBuilder for DLABuilder {
     }
 }
 
+impl MetaMapBuilder for DLABuilder {
+    fn build_map(&mut self, rng: &mut rltk::RandomNumberGenerator, build_data: &mut BuilderMap) {
+        self.build(rng, build_data);
+    }
+}
+
 impl DLABuilder {
     pub fn walk_inwards() -> Box<DLABuilder> {
         Box::new(DLABuilder {
@@ -32,6 +40,15 @@ impl DLABuilder {
             brush_size: 1,
             symmetry: Symmetry::None,
             floor_ratio: 0.25,
+        })
+    }
+
+    pub fn heavy_erosion() -> Box<DLABuilder> {
+        Box::new(DLABuilder {
+            algorithm: DLAAlgorithm::WalkInwards,
+            brush_size: 2,
+            symmetry: Symmetry::None,
+            floor_ratio: 0.35,
         })
     }
 

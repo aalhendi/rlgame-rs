@@ -1,6 +1,6 @@
 use super::{
     common::{paint, Symmetry},
-    BuilderMap, InitialMapBuilder,
+    BuilderMap, InitialMapBuilder, MetaMapBuilder,
 };
 use crate::{Position, TileType};
 use rltk::RandomNumberGenerator;
@@ -10,6 +10,12 @@ pub struct DrunkardsWalkBuilder {
 }
 
 impl InitialMapBuilder for DrunkardsWalkBuilder {
+    fn build_map(&mut self, rng: &mut rltk::RandomNumberGenerator, build_data: &mut BuilderMap) {
+        self.build(rng, build_data);
+    }
+}
+
+impl MetaMapBuilder for DrunkardsWalkBuilder {
     fn build_map(&mut self, rng: &mut rltk::RandomNumberGenerator, build_data: &mut BuilderMap) {
         self.build(rng, build_data);
     }
