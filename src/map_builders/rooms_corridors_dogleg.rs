@@ -25,6 +25,7 @@ impl DoglegCorridors {
             panic!("Dogleg Corridors require a builder with room structures");
         }
 
+        let mut corridors = Vec::new();
         for (i, room) in rooms.iter().enumerate() {
             if i == 0 {
                 continue;
@@ -32,11 +33,15 @@ impl DoglegCorridors {
             let new = room.center();
             let prev = rooms[i - 1].center();
             if rng.range(0, 2) == 1 {
-                apply_horizontal_tunnel(&mut build_data.map, prev.x, new.x, prev.y);
-                apply_vertical_tunnel(&mut build_data.map, prev.y, new.y, new.x);
+                let mut c1 = apply_horizontal_tunnel(&mut build_data.map, prev.x, new.x, prev.y);
+                let mut c2 = apply_vertical_tunnel(&mut build_data.map, prev.y, new.y, new.x);
+                c1.append(&mut c2);
+                corridors.push(c1);
             } else {
-                apply_vertical_tunnel(&mut build_data.map, prev.y, new.y, new.x);
-                apply_horizontal_tunnel(&mut build_data.map, prev.x, new.x, prev.y);
+                let mut c1 = apply_vertical_tunnel(&mut build_data.map, prev.y, new.y, new.x);
+                let mut c2 = apply_horizontal_tunnel(&mut build_data.map, prev.x, new.x, prev.y);
+                c1.append(&mut c2);
+                corridors.push(c1);
             }
             build_data.take_snapshot();
         }

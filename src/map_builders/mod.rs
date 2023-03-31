@@ -8,12 +8,16 @@ use self::{
     room_based_stairs::RoomBasedStairs,
     room_based_starting_position::RoomBasedStartingPosition,
     room_corner_rounding::RoomCornerRounder,
+    room_corridor_spawner::CorridorSpawner,
     room_draw::RoomDrawer,
     room_exploder::RoomExploder,
     room_sorter::{RoomSort, RoomSorter},
     rooms_corridors_bsp::BspCorridors,
     rooms_corridors_dogleg::DoglegCorridors,
+    rooms_corridors_lines::StraightLineCorridors,
+    rooms_corridors_nearest::NearestCorridors,
     voronoi_spawning::VoronoiSpawning,
+    waveform_collapse::WaveformCollapseBuilder,
 };
 
 use super::{Map, Position};
@@ -35,9 +39,8 @@ mod common;
 mod voronoi;
 use specs::World;
 use voronoi::VoronoiCellBuilder;
-mod waveform_collapse;
-use waveform_collapse::WaveformCollapseBuilder;
 mod prefab_builder;
+mod waveform_collapse;
 use prefab_builder::PrefabBuilder;
 mod area_starting_points;
 mod cull_unreachable;
@@ -46,11 +49,14 @@ mod room_based_spawner;
 mod room_based_stairs;
 mod room_based_starting_position;
 mod room_corner_rounding;
+mod room_corridor_spawner;
 mod room_draw;
 mod room_exploder;
 mod room_sorter;
 mod rooms_corridors_bsp;
 mod rooms_corridors_dogleg;
+mod rooms_corridors_lines;
+mod rooms_corridors_nearest;
 mod voronoi_spawning;
 
 pub struct BuilderMap {
@@ -59,6 +65,7 @@ pub struct BuilderMap {
     pub starting_position: Option<Position>,
     pub rooms: Option<Vec<Rect>>,
     pub history: Vec<Map>,
+    pub corridors: Option<Vec<Vec<usize>>>,
 }
 
 pub struct BuilderChain {
@@ -78,6 +85,7 @@ impl BuilderChain {
                 starting_position: None,
                 rooms: None,
                 history: Vec::new(),
+                corridors: None,
             },
         }
     }
@@ -198,7 +206,14 @@ fn random_room_builder(rng: &mut rltk::RandomNumberGenerator, builder: &mut Buil
         let corridor_roll = rng.roll_dice(1, 2);
         match corridor_roll {
             1 => builder.with(DoglegCorridors::new()),
+            2 => builder.with(NearestCorridors::new()),
+            3 => builder.with(StraightLineCorridors::new()),
             _ => builder.with(BspCorridors::new()),
+        }
+
+        let corridor_spawn_roll = rng.roll_dice(1, 3);
+        if corridor_spawn_roll == 1 {
+            builder.with(CorridorSpawner::new());
         }
 
         let modifier_roll = rng.roll_dice(1, 6);
