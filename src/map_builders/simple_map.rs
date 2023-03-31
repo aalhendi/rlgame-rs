@@ -1,4 +1,4 @@
-use super::{common::apply_room_to_map, BuilderMap, InitialMapBuilder};
+use super::{BuilderMap, InitialMapBuilder};
 use crate::Rect;
 use rltk::RandomNumberGenerator;
 
@@ -41,9 +41,6 @@ impl SimpleMapBuilder {
                 }
             }
             if ok {
-                apply_room_to_map(&mut build_data.map, &new_room);
-                build_data.take_snapshot();
-
                 rooms.push(new_room);
             }
         }

@@ -1,4 +1,4 @@
-use super::{common::apply_room_to_map, BuilderMap, InitialMapBuilder, Map, Rect};
+use super::{BuilderMap, InitialMapBuilder, Map, Rect};
 use crate::TileType;
 use rltk::RandomNumberGenerator;
 
@@ -89,13 +89,19 @@ impl BspDungeonBuilder {
         result
     }
 
-    fn is_possible(&self, rect: Rect, map: &Map) -> bool {
+    fn is_possible(&self, rect: Rect, map: &Map, rooms: &[Rect]) -> bool {
         let expanded = Rect {
             x1: rect.x1 - 2,
             x2: rect.x2 + 2,
             y1: rect.y1 - 2,
             y2: rect.y2 + 2,
         };
+
+        for r in rooms.iter() {
+            if r.intersects(&rect) {
+                return false;
+            }
+        }
 
         for y in expanded.y1..=expanded.y2 {
             for x in expanded.x1..=expanded.x2 {
@@ -131,11 +137,9 @@ impl BspDungeonBuilder {
             let rect = self.get_random_rect(rng);
             let candidate = self.get_random_sub_rect(rect, rng);
 
-            if self.is_possible(candidate, &build_data.map) {
-                apply_room_to_map(&mut build_data.map, &candidate);
+            if self.is_possible(candidate, &build_data.map, &rooms) {
                 rooms.push(candidate);
                 self.add_subrects(rect);
-                build_data.take_snapshot();
             }
         }
 
