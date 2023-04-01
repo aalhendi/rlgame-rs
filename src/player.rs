@@ -1,6 +1,6 @@
 use super::{
-    EntityMoved, HungerClock, HungerState, Item, Map, Monster, Player, Position, RunState, State,
-    Viewshed, WantsToPickupItem,
+    BlocksTile, BlocksVisibility, Door, EntityMoved, HungerClock, HungerState, Item, Map, Monster,
+    Player, Position, Renderable, RunState, State, Viewshed, WantsToPickupItem,
 };
 use crate::components::CombatStats;
 use crate::components::WantsToMelee;
@@ -19,6 +19,10 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let entities = ecs.entities();
     let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
     let mut entity_moved = ecs.write_storage::<EntityMoved>();
+    let mut doors = ecs.write_storage::<Door>();
+    let mut blocks_visibility = ecs.write_storage::<BlocksVisibility>();
+    let mut blocks_movement = ecs.write_storage::<BlocksTile>();
+    let mut renderables = ecs.write_storage::<Renderable>();
 
     for (_player, pos, viewshed, entity) in
         (&mut players, &mut positions, &mut viewsheds, &entities).join()
@@ -45,6 +49,15 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
                     )
                     .expect("Add target failed");
                 return; // So we don't move after attacking
+            }
+
+            if let Some(door) = doors.get_mut(*potential_target) {
+                door.open = true;
+                blocks_visibility.remove(*potential_target);
+                blocks_movement.remove(*potential_target);
+                let door_renderable = renderables.get_mut(*potential_target).unwrap();
+                door_renderable.glyph = rltk::to_cp437('/');
+                viewshed.dirty = true;
             }
         }
 

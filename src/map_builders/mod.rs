@@ -4,6 +4,7 @@ use self::{
     area_starting_points::{AreaStartingPosition, XStart, YStart},
     cull_unreachable::CullUnreachable,
     distant_exit::DistantExit,
+    door_placement::DoorPlacement,
     room_based_spawner::RoomBasedSpawner,
     room_based_stairs::RoomBasedStairs,
     room_based_starting_position::RoomBasedStartingPosition,
@@ -45,6 +46,7 @@ use prefab_builder::PrefabBuilder;
 mod area_starting_points;
 mod cull_unreachable;
 mod distant_exit;
+mod door_placement;
 mod room_based_spawner;
 mod room_based_stairs;
 mod room_based_starting_position;
@@ -161,6 +163,7 @@ pub fn random_builder(new_depth: i32, rng: &mut rltk::RandomNumberGenerator) -> 
         ));
     }
 
+    builder.with(DoorPlacement::new());
     builder.with(PrefabBuilder::vaults());
 
     builder

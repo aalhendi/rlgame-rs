@@ -501,6 +501,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<EntryTrigger>();
     gs.ecs.register::<EntityMoved>();
     gs.ecs.register::<SingleActivation>();
+    gs.ecs.register::<BlocksVisibility>();
+    gs.ecs.register::<Door>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
 

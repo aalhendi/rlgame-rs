@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use super::{
-    AreaOfEffect, BlocksTile, CombatStats, Confusion, Consumable, DefenseBonus, EntryTrigger,
-    EquipmentSlot, Equippable, Hidden, HungerClock, HungerState, InflictsDamage, IsSerialized,
-    Item, MagicMapper, Map, MeleePowerBonus, Monster, Name, Player, Position, ProvidesFood,
-    ProvidesHealing, Ranged, Rect, Renderable, SingleActivation, TileType, Viewshed, MAPWIDTH,
+    AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable, DefenseBonus,
+    Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState,
+    InflictsDamage, IsSerialized, Item, MagicMapper, Map, MeleePowerBonus, Monster, Name, Player,
+    Position, ProvidesFood, ProvidesHealing, Ranged, Rect, Renderable, SingleActivation, TileType,
+    Viewshed, MAPWIDTH,
 };
 use crate::random_table::RandomTable;
 use rltk::{RandomNumberGenerator, RGB};
@@ -166,6 +167,7 @@ pub fn spawn_entity(ecs: &mut World, (idx, name): &(&usize, &String)) {
         "Rations" => rations(ecs, pos),
         "Magic Mapping Scroll" => magic_mapping_scroll(ecs, pos),
         "Bear Trap" => bear_trap(ecs, pos),
+        "Door" => door(ecs, pos),
         _ => {}
     }
 }
@@ -388,6 +390,25 @@ fn bear_trap(ecs: &mut World, pos: Position) {
         .with(EntryTrigger {})
         .with(SingleActivation {})
         .with(InflictsDamage { damage: 6 })
+        .marked::<SimpleMarker<IsSerialized>>()
+        .build();
+}
+
+fn door(ecs: &mut World, pos: Position) {
+    ecs.create_entity()
+        .with(pos)
+        .with(Renderable {
+            glyph: rltk::to_cp437('+'),
+            fg: RGB::named(rltk::CHOCOLATE),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 2,
+        })
+        .with(Name {
+            name: "Door".to_string(),
+        })
+        .with(BlocksTile {})
+        .with(BlocksVisibility {})
+        .with(Door { open: false })
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
 }
