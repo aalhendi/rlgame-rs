@@ -1,3 +1,5 @@
+use crate::camera;
+
 use super::{
     gamelog::Gamelog, CombatStats, Equipped, Hidden, HungerClock, HungerState, InBackpack, Map,
     Name, Owned, Player, Position, RunState, State, Viewshed, MAPHEIGHT, MAPWIDTH,
@@ -67,6 +69,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
 }
 
 fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
+    let (min_x, _max_x, min_y, _max_y) = camera::get_screen_bounds(ecs, ctx);
     let white = RGB::named(rltk::WHITE);
     let grey = RGB::named(rltk::GREY);
 
@@ -76,15 +79,26 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let hidden = ecs.read_storage::<Hidden>();
 
     let mouse_pos = ctx.mouse_pos();
+    let mut mouse_map_pos = mouse_pos;
+    mouse_map_pos.0 += min_x;
+    mouse_map_pos.1 += min_y;
+
     // Check if mouse is on map
-    if mouse_pos.0 >= map.width || mouse_pos.1 >= map.height {
+    if mouse_map_pos.0 >= map.width - 1
+        || mouse_map_pos.1 >= map.height - 1
+        || mouse_map_pos.0 < 1
+        || mouse_map_pos.1 < 1
+    {
         return;
     }
+    if !map.visible_tiles[map.xy_idx(mouse_map_pos.0, mouse_map_pos.1)] {
+        return;
+    }
+
     let mut tooltip: Vec<String> = Vec::new();
 
     for (name, pos, _hidden) in (&names, &positions, !&hidden).join() {
-        let idx = map.xy_idx(pos.x, pos.y);
-        if pos.x == mouse_pos.0 && pos.y == mouse_pos.1 && map.visible_tiles[idx] {
+        if pos.x == mouse_map_pos.0 && pos.y == mouse_map_pos.1 {
             tooltip.push(name.name.to_string());
         }
     }
@@ -232,6 +246,7 @@ pub fn ranged_target(
     ctx: &mut Rltk,
     range: i32,
 ) -> (ItemMenuResult, Option<Point>) {
+    let (min_x, max_x, min_y, max_y) = camera::get_screen_bounds(&gs.ecs, ctx);
     let player_entity = gs.ecs.fetch::<Entity>();
     let player_pos = gs.ecs.fetch::<Point>();
     let viewsheds = gs.ecs.read_storage::<Viewshed>();
@@ -251,8 +266,16 @@ pub fn ranged_target(
         for pt in p_viewshed.visible_tiles.iter() {
             let distance = rltk::DistanceAlg::Pythagoras.distance2d(*player_pos, *pt);
             if distance <= range as f32 {
-                ctx.set_bg(pt.x, pt.y, RGB::named(rltk::BLUE));
-                available_cells.push(pt);
+                let screen_x = pt.x - min_x;
+                let screen_y = pt.y - min_y;
+                if screen_x > 1
+                    && screen_x < (max_x - min_x) - 1
+                    && screen_y > 1
+                    && screen_y < (max_y - min_y) - 1
+                {
+                    ctx.set_bg(screen_x, screen_y, RGB::named(rltk::BLUE));
+                    available_cells.push(pt);
+                }
             }
         }
     } else {
@@ -260,23 +283,28 @@ pub fn ranged_target(
     }
 
     // Draw mouse cursor
-    let (mouse_x, mouse_y) = ctx.mouse_pos();
+    let mouse_pos = ctx.mouse_pos();
+    let mut mouse_map_pos = mouse_pos;
+    mouse_map_pos.0 += min_x;
+    mouse_map_pos.1 += min_y;
+
     let mut valid_target = false;
-    let mouse_pt = Point {
-        x: mouse_x,
-        y: mouse_y,
-    };
-    if available_cells.contains(&&mouse_pt) {
-        valid_target = true;
+    for idx in available_cells.iter() {
+        if idx.x == mouse_map_pos.0 && idx.y == mouse_map_pos.1 {
+            valid_target = true;
+        }
     }
 
     if valid_target {
-        ctx.set_bg(mouse_x, mouse_y, RGB::named(rltk::CYAN));
+        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::CYAN));
         if ctx.left_click {
-            return (ItemMenuResult::Selected, Some(Point::new(mouse_x, mouse_y)));
+            return (
+                ItemMenuResult::Selected,
+                Some(Point::new(mouse_map_pos.0, mouse_map_pos.1)),
+            );
         }
     } else {
-        ctx.set_bg(mouse_x, mouse_y, RGB::named(rltk::RED));
+        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::RED));
         if ctx.left_click {
             return (ItemMenuResult::Cancel, None);
         }

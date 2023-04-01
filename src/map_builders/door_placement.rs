@@ -21,9 +21,7 @@ impl DoorPlacement {
             for hall in halls.iter() {
                 if hall.len() > 2 && self.door_possible(build_data, hall[0]) {
                     // We aren't interested in tiny corridors
-                    build_data
-                        .spawn_list
-                        .push((hall[0], "Door".to_string()));
+                    build_data.spawn_list.push((hall[0], "Door".to_string()));
                 }
             }
         } else {
@@ -46,7 +44,7 @@ impl DoorPlacement {
         let w = build_data.map.width;
         let h = build_data.map.height;
 
-        for (spawn_idx, _spawn_name) in build_data.spawn_list.iter(){
+        for (spawn_idx, _spawn_name) in build_data.spawn_list.iter() {
             if spawn_idx == &idx {
                 return false;
             }

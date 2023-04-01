@@ -27,6 +27,7 @@ mod gui;
 pub mod inventory_system;
 pub mod spawner;
 use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
+pub mod camera;
 mod hunger_system;
 pub mod map_builders;
 mod particle_system;
@@ -228,30 +229,8 @@ impl GameState for State {
             RunState::MainMenu { .. } => {}
             RunState::GameOver => {}
             _ => {
-                draw_map(&self.ecs.fetch::<Map>(), ctx);
-                {
-                    let map = self.ecs.fetch::<Map>();
-                    let positions = self.ecs.read_storage::<Position>();
-                    let renderables = self.ecs.read_storage::<Renderable>();
-                    let hidden = self.ecs.read_storage::<Hidden>();
-
-                    let mut data = (&positions, &renderables, !&hidden)
-                        .join()
-                        .collect::<Vec<_>>();
-                    data.sort_by(
-                        |&(_a_pos, a_rndr, _a_hidden), &(_b_pos, b_rndr, _b_hidden)| {
-                            b_rndr.render_order.cmp(&a_rndr.render_order)
-                        },
-                    );
-                    for (pos, render, _hidden) in data.iter() {
-                        let idx = map.xy_idx(pos.x, pos.y);
-                        if map.visible_tiles[idx] {
-                            ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph)
-                        }
-                    }
-
-                    gui::draw_ui(&self.ecs, ctx);
-                }
+                camera::render_camera(&self.ecs, ctx);
+                gui::draw_ui(&self.ecs, ctx);
             }
         }
 
