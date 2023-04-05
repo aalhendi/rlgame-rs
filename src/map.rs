@@ -2,10 +2,6 @@ use rltk::{Point, RandomNumberGenerator, Rltk, RGB};
 use specs::Entity;
 use std::collections::HashSet;
 
-pub const MAPWIDTH: usize = 80;
-pub const MAPHEIGHT: usize = 43;
-pub const MAPCOUNT: usize = MAPWIDTH * MAPHEIGHT;
-
 #[derive(PartialEq, Eq, Hash, Copy, Clone, serde::Serialize, serde::Deserialize)]
 pub enum TileType {
     Wall,
@@ -50,8 +46,7 @@ impl rltk::BaseMap for Map {
 
     fn get_available_exits(&self, idx: usize) -> rltk::SmallVec<[(usize, f32); 10]> {
         let mut exits = rltk::SmallVec::new();
-        let x = idx as i32 % self.width;
-        let y = idx as i32 / self.width;
+        let (x, y) = self.idx_xy(idx);
         let w = self.width as usize;
 
         // Cardinal directions
@@ -88,15 +83,16 @@ impl rltk::BaseMap for Map {
 
 impl Map {
     /// Generates an empty map, consisting entirely of solid walls
-    pub fn new(new_depth: i32) -> Map {
+    pub fn new(new_depth: i32, width: i32, height: i32) -> Map {
+        let map_tile_count = (width * height) as usize;
         Map {
-            tiles: vec![TileType::Wall; MAPCOUNT],
-            width: MAPWIDTH as i32,
-            height: MAPHEIGHT as i32,
-            revealed_tiles: vec![false; MAPCOUNT],
-            visible_tiles: vec![false; MAPCOUNT],
-            blocked: vec![false; MAPCOUNT],
-            tile_content: vec![Vec::new(); MAPCOUNT],
+            tiles: vec![TileType::Wall; map_tile_count],
+            width,
+            height,
+            revealed_tiles: vec![false; map_tile_count],
+            visible_tiles: vec![false; map_tile_count],
+            blocked: vec![false; map_tile_count],
+            tile_content: vec![Vec::new(); map_tile_count],
             depth: new_depth,
             bloodstains: HashSet::new(),
             view_blocked: HashSet::new(),
@@ -139,7 +135,8 @@ impl Map {
 
     /// Returns a map with solid boundaries and 400 randomly placed wall tiles
     pub fn new_map_test(&self) -> Vec<TileType> {
-        let mut map = vec![TileType::Floor; MAPCOUNT];
+        let map_tile_count = (self.width * self.height) as usize;
+        let mut map = vec![TileType::Floor; map_tile_count];
 
         // Setting window boundaries as walls
         for x in 0..self.width {
@@ -205,7 +202,7 @@ pub fn draw_map(map: &Map, ctx: &mut Rltk) {
 
         // iter coordinates as well
         x += 1;
-        if x > map.width - 1 {
+        if x > (map.width * map.height) - 1 {
             x = 0;
             y += 1;
         }

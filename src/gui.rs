@@ -2,7 +2,7 @@ use crate::camera;
 
 use super::{
     gamelog::Gamelog, CombatStats, Equipped, Hidden, HungerClock, HungerState, InBackpack, Map,
-    Name, Owned, Player, Position, RunState, State, Viewshed, MAPHEIGHT, MAPWIDTH,
+    Name, Owned, Player, Position, RunState, State, Viewshed,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -10,8 +10,8 @@ use specs::prelude::*;
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     ctx.draw_box(
         0,
-        MAPHEIGHT,
-        MAPWIDTH - 1,
+        43,
+        79,
         6,
         RGB::named(rltk::WHITE),
         RGB::named(rltk::BLACK),

@@ -5,7 +5,7 @@ use super::{
     Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState,
     InflictsDamage, IsSerialized, Item, MagicMapper, Map, MeleePowerBonus, Monster, Name, Player,
     Position, ProvidesFood, ProvidesHealing, Ranged, Rect, Renderable, SingleActivation, TileType,
-    Viewshed, MAPWIDTH,
+    Viewshed,
 };
 use crate::random_table::RandomTable;
 use rltk::{RandomNumberGenerator, RGB};
@@ -147,9 +147,12 @@ pub fn spawn_region(
 
 /// Spawns a named entity at the location map[idx]
 pub fn spawn_entity(ecs: &mut World, (idx, name): &(&usize, &String)) {
+    let map = ecs.fetch::<Map>();
+    let (x,y) = map.idx_xy(**idx);
+    std::mem::drop(map); // TODO: Needed?
     let pos = Position {
-        x: (*idx % MAPWIDTH) as i32,
-        y: (*idx / MAPWIDTH) as i32,
+        x,
+        y,
     };
 
     match name.as_ref() {

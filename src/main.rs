@@ -36,7 +36,7 @@ mod rex_assets;
 mod saveload_system;
 mod trigger_system;
 
-const SHOW_MAPGEN_VISUALIZER: bool = true;
+const SHOW_MAPGEN_VISUALIZER: bool = false;
 
 // --- State Start ---
 #[derive(PartialEq, Clone, Copy)]
@@ -78,7 +78,7 @@ impl State {
         self.mapgen_timer = 0.0;
         self.mapgen_history.clear();
         let mut rng = self.ecs.write_resource::<rltk::RandomNumberGenerator>();
-        let mut builder = map_builders::random_builder(new_depth, &mut rng);
+        let mut builder = map_builders::random_builder(new_depth, &mut rng, 64, 64);
         builder.build_map(&mut rng);
         self.mapgen_history = builder.build_data.history.clone();
         let player_start = {
@@ -489,7 +489,7 @@ fn main() -> rltk::BError {
     let player_entity = spawner::player(&mut gs.ecs, Position { x: 0, y: 0 });
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     gs.ecs.insert(rex_assets::RexAssets::new());
-    gs.ecs.insert(Map::new(1));
+    gs.ecs.insert(Map::new(1, 64, 64));
     gs.ecs.insert(Point::new(0, 0));
     gs.ecs.insert(player_entity);
     if SHOW_MAPGEN_VISUALIZER {
