@@ -36,7 +36,7 @@ mod rex_assets;
 mod saveload_system;
 mod trigger_system;
 
-const SHOW_MAPGEN_VISUALIZER: bool = false;
+const SHOW_MAPGEN_VISUALIZER: bool = true;
 
 // --- State Start ---
 #[derive(PartialEq, Clone, Copy)]
@@ -78,7 +78,7 @@ impl State {
         self.mapgen_timer = 0.0;
         self.mapgen_history.clear();
         let mut rng = self.ecs.write_resource::<rltk::RandomNumberGenerator>();
-        let mut builder = map_builders::random_builder(new_depth, &mut rng, 64, 64);
+        let mut builder = map_builders::random_builder(new_depth, &mut rng, 80, 50);
         builder.build_map(&mut rng);
         self.mapgen_history = builder.build_data.history.clone();
         let player_start = {
@@ -405,7 +405,9 @@ impl GameState for State {
                     newrunstate = self.mapgen_next_state.unwrap();
                 }
                 ctx.cls();
-                draw_map(&self.mapgen_history[self.mapgen_index], ctx);
+                if self.mapgen_index < self.mapgen_history.len() {
+                    camera::render_debug_map(&self.mapgen_history[self.mapgen_index], ctx);
+                }
 
                 self.mapgen_timer += ctx.frame_time_ms;
                 if self.mapgen_timer > 300.0 {

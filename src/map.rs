@@ -1,4 +1,4 @@
-use rltk::{Point, RandomNumberGenerator, Rltk, RGB};
+use rltk::{Point, RandomNumberGenerator};
 use specs::Entity;
 use std::collections::HashSet;
 
@@ -169,45 +169,6 @@ impl Map {
     }
 }
 
-pub fn draw_map(map: &Map, ctx: &mut Rltk) {
-    let mut y = 0;
-    let mut x = 0;
-    for (idx, tile) in map.tiles.iter().enumerate() {
-        if map.revealed_tiles[idx] {
-            let glyph;
-            let mut fg;
-            let mut bg = RGB::from_f32(0., 0., 0.);
-            match tile {
-                TileType::Floor => {
-                    glyph = rltk::to_cp437('.');
-                    fg = RGB::from_f32(0.0, 0.5, 0.5);
-                }
-                TileType::Wall => {
-                    glyph = get_wall_glyph(map, x, y);
-                    fg = RGB::from_f32(0., 1.0, 0.);
-                }
-                TileType::DownStairs => {
-                    glyph = rltk::to_cp437('>');
-                    fg = RGB::from_f32(0.0, 1.0, 1.0);
-                }
-            }
-            if map.bloodstains.contains(&idx) {
-                bg = RGB::from_f32(0.75, 0.0, 0.0)
-            }
-            if !map.visible_tiles[idx] {
-                fg = fg.to_greyscale()
-            }
-            ctx.set(x, y, fg, bg, glyph);
-        }
-
-        // iter coordinates as well
-        x += 1;
-        if x > (map.width * map.height) - 1 {
-            x = 0;
-            y += 1;
-        }
-    }
-}
 
 pub fn get_wall_glyph(map: &Map, x: i32, y: i32) -> rltk::FontCharType {
     if x < 1 || x > map.width - 2 || y < 1 || y > map.height - 2 {
