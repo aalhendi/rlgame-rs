@@ -169,7 +169,6 @@ impl Map {
     }
 }
 
-
 pub fn get_wall_glyph(map: &Map, x: i32, y: i32) -> rltk::FontCharType {
     if x < 1 || x > map.width - 2 || y < 1 || y > map.height - 2 {
         return 35;

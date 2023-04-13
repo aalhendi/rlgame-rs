@@ -79,7 +79,7 @@ pub struct BuilderChain {
 }
 
 impl BuilderChain {
-    pub fn new(new_depth: i32, width: i32, height:i32) -> BuilderChain {
+    pub fn new(new_depth: i32, width: i32, height: i32) -> BuilderChain {
         BuilderChain {
             starter: None,
             builders: Vec::new(),
@@ -91,7 +91,7 @@ impl BuilderChain {
                 history: Vec::new(),
                 corridors: None,
                 width,
-                height
+                height,
             },
         }
     }
@@ -149,7 +149,12 @@ pub trait MetaMapBuilder {
     fn build_map(&mut self, rng: &mut rltk::RandomNumberGenerator, build_data: &mut BuilderMap);
 }
 
-pub fn random_builder(new_depth: i32, rng: &mut rltk::RandomNumberGenerator, width: i32, height:i32) -> BuilderChain {
+pub fn random_builder(
+    new_depth: i32,
+    rng: &mut rltk::RandomNumberGenerator,
+    width: i32,
+    height: i32,
+) -> BuilderChain {
     let mut builder = BuilderChain::new(new_depth, width, height);
     let type_roll = rng.roll_dice(1, 2);
     match type_roll {

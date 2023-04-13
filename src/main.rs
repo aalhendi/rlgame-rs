@@ -3,6 +3,8 @@ use specs::{
     prelude::*,
     saveload::{SimpleMarker, SimpleMarkerAllocator},
 };
+#[macro_use]
+extern crate lazy_static;
 
 pub mod map;
 use map::*;
@@ -32,6 +34,7 @@ mod hunger_system;
 pub mod map_builders;
 mod particle_system;
 mod random_table;
+mod raws;
 mod rex_assets;
 mod saveload_system;
 mod trigger_system;
@@ -486,6 +489,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Door>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
+    raws::load_raws();
 
     // Resource Insertion
     let player_entity = spawner::player(&mut gs.ecs, Position { x: 0, y: 0 });

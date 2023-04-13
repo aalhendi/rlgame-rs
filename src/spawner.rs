@@ -1,13 +1,16 @@
 use std::collections::HashMap;
 
 use super::{
-    AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable, DefenseBonus,
-    Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, HungerClock, HungerState,
-    InflictsDamage, IsSerialized, Item, MagicMapper, Map, MeleePowerBonus, Monster, Name, Player,
-    Position, ProvidesFood, ProvidesHealing, Ranged, Rect, Renderable, SingleActivation, TileType,
-    Viewshed,
+    CombatStats, HungerClock, HungerState, IsSerialized, Map, Name, Player, Position, Rect,
+    Renderable, TileType, Viewshed,
 };
-use crate::random_table::RandomTable;
+use crate::{
+    random_table::RandomTable,
+    raws::{
+        rawsmaster::{spawn_named_entity, SpawnType},
+        RAWS,
+    },
+};
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
     prelude::*,
@@ -47,42 +50,6 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         })
         .marked::<SimpleMarker<IsSerialized>>()
         .build()
-}
-
-fn orc(ecs: &mut World, pos: Position) {
-    monster(ecs, pos, rltk::to_cp437('o'), "Orc");
-}
-fn goblin(ecs: &mut World, pos: Position) {
-    monster(ecs, pos, rltk::to_cp437('g'), "Goblin");
-}
-
-fn monster<S: ToString>(ecs: &mut World, pos: Position, glyph: rltk::FontCharType, name: S) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph,
-            fg: RGB::named(rltk::RED),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 1,
-        })
-        .with(Monster {})
-        .with(Viewshed {
-            visible_tiles: Vec::new(),
-            range: 8,
-            dirty: true,
-        })
-        .with(Name {
-            name: name.to_string(),
-        })
-        .with(BlocksTile)
-        .with(CombatStats {
-            max_hp: 16,
-            hp: 16,
-            defense: 1,
-            power: 4,
-        })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
 }
 
 /// Calls spawn_region() with all possible_targets (floor tiles) from given room
@@ -148,272 +115,20 @@ pub fn spawn_region(
 /// Spawns a named entity at the location map[idx]
 pub fn spawn_entity(ecs: &mut World, (idx, name): &(&usize, &String)) {
     let map = ecs.fetch::<Map>();
-    let (x,y) = map.idx_xy(**idx);
+    let (x, y) = map.idx_xy(**idx);
     std::mem::drop(map); // TODO: Needed?
-    let pos = Position {
-        x,
-        y,
-    };
 
-    match name.as_ref() {
-        // TODO: match enum instead
-        "Goblin" => goblin(ecs, pos),
-        "Orc" => orc(ecs, pos),
-        "Health Potion" => health_potion(ecs, pos),
-        "Fireball Scroll" => fireball_scroll(ecs, pos),
-        "Confusion Scroll" => confusion_scroll(ecs, pos),
-        "Magic Missile Scroll" => magic_missile_scroll(ecs, pos),
-        "Dagger" => dagger(ecs, pos),
-        "Shield" => shield(ecs, pos),
-        "Longsword" => longsword(ecs, pos),
-        "Tower Shield" => tower_shield(ecs, pos),
-        "Rations" => rations(ecs, pos),
-        "Magic Mapping Scroll" => magic_mapping_scroll(ecs, pos),
-        "Bear Trap" => bear_trap(ecs, pos),
-        "Door" => door(ecs, pos),
-        _ => {}
+    let spawn_result = spawn_named_entity(
+        &RAWS.lock().unwrap(),
+        ecs.create_entity(),
+        name,
+        SpawnType::AtPosition { x, y },
+    );
+    if spawn_result.is_some() {
+        return;
     }
-}
 
-fn health_potion(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437('¡'),
-            fg: RGB::named(rltk::MAGENTA),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Health Potion".to_string(),
-        })
-        .with(Item {})
-        .with(ProvidesHealing { heal_amount: 8 })
-        .with(Consumable {})
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn magic_missile_scroll(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437(')'),
-            fg: RGB::named(rltk::CYAN),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Magic Missile Scroll".to_string(),
-        })
-        .with(Item {})
-        .with(Consumable {})
-        .with(Ranged { range: 6 })
-        .with(InflictsDamage { damage: 8 })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn fireball_scroll(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437(')'),
-            fg: RGB::named(rltk::ORANGE),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Fireball Scroll".to_string(),
-        })
-        .with(Item {})
-        .with(Consumable {})
-        .with(Ranged { range: 6 })
-        .with(InflictsDamage { damage: 20 })
-        .with(AreaOfEffect { radius: 3 })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn confusion_scroll(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437(')'),
-            fg: RGB::named(rltk::PINK),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Confusion Scroll".to_string(),
-        })
-        .with(Item {})
-        .with(Consumable {})
-        .with(Ranged { range: 6 })
-        .with(Confusion { turns: 4 })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn magic_mapping_scroll(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437(')'),
-            fg: RGB::named(rltk::CYAN3),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Scroll of Magic Mapping".to_string(),
-        })
-        .with(Item {})
-        .with(MagicMapper {})
-        .with(Consumable {})
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn dagger(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437('/'),
-            fg: RGB::named(rltk::CYAN),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Dagger".to_string(),
-        })
-        .with(Item {})
-        .with(Equippable {
-            slot: EquipmentSlot::Melee,
-        })
-        .with(MeleePowerBonus { amount: 2 })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn shield(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437('('),
-            fg: RGB::named(rltk::CYAN),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Shield".to_string(),
-        })
-        .with(Item {})
-        .with(Equippable {
-            slot: EquipmentSlot::Shield,
-        })
-        .with(DefenseBonus { amount: 1 })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn longsword(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437('/'),
-            fg: RGB::named(rltk::YELLOW),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Longsword".to_string(),
-        })
-        .with(Item {})
-        .with(Equippable {
-            slot: EquipmentSlot::Melee,
-        })
-        .with(MeleePowerBonus { amount: 4 })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn tower_shield(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437('('),
-            fg: RGB::named(rltk::YELLOW),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Tower Shield".to_string(),
-        })
-        .with(Item {})
-        .with(Equippable {
-            slot: EquipmentSlot::Shield,
-        })
-        .with(DefenseBonus { amount: 3 })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn rations(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437('%'),
-            fg: RGB::named(rltk::GREEN),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Rations".to_string(),
-        })
-        .with(Item {})
-        .with(ProvidesFood {})
-        .with(Consumable {})
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn bear_trap(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437('^'),
-            fg: RGB::named(rltk::RED),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Bear Trap".to_string(),
-        })
-        .with(Hidden {})
-        .with(EntryTrigger {})
-        .with(SingleActivation {})
-        .with(InflictsDamage { damage: 6 })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
-}
-
-fn door(ecs: &mut World, pos: Position) {
-    ecs.create_entity()
-        .with(pos)
-        .with(Renderable {
-            glyph: rltk::to_cp437('+'),
-            fg: RGB::named(rltk::CHOCOLATE),
-            bg: RGB::named(rltk::BLACK),
-            render_order: 2,
-        })
-        .with(Name {
-            name: "Door".to_string(),
-        })
-        .with(BlocksTile {})
-        .with(BlocksVisibility {})
-        .with(Door { open: false })
-        .marked::<SimpleMarker<IsSerialized>>()
-        .build();
+    rltk::console::log(format!("WARNING: Unable to spawn [{name}]!"));
 }
 
 fn room_table(map_depth: i32) -> RandomTable {
