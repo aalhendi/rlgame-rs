@@ -1,12 +1,15 @@
-use super::Raws;
-use crate::components::{
-    AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable, DefenseBonus,
-    Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InflictsDamage, Item, MagicMapper,
-    MeleePowerBonus, Monster, Name, Position, ProvidesFood, ProvidesHealing, Ranged,
-    SingleActivation, Viewshed,
+use super::{spawn_table_structs::SpawnTableEntry, Raws};
+use crate::{
+    components::{
+        AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable,
+        DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InflictsDamage, Item,
+        MagicMapper, MeleePowerBonus, Monster, Name, Position, ProvidesFood, ProvidesHealing,
+        Ranged, SingleActivation, Viewshed,
+    },
+    random_table::RandomTable,
 };
 use specs::{Builder, Entity, EntityBuilder};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub enum SpawnType {
     AtPosition { x: i32, y: i32 },
@@ -18,20 +21,52 @@ pub struct RawMaster {
     pub item_index: HashMap<String, usize>,
     pub mob_index: HashMap<String, usize>,
     pub prop_index: HashMap<String, usize>,
+    pub spawn_table: Vec<SpawnTableEntry>,
 }
 
 impl RawMaster {
     pub fn load(&mut self, raws: Raws) {
         self.raws = raws;
         self.item_index = HashMap::new();
+        let mut used_names: HashSet<String> = HashSet::new();
         for (i, item) in self.raws.items.iter().enumerate() {
+            if used_names.contains(&item.name) {
+                rltk::console::log(format!(
+                    "WARNING -  duplicate item name in raws [{}]",
+                    item.name
+                ));
+            }
             self.item_index.insert(item.name.clone(), i);
+            used_names.insert(item.name.clone());
         }
         for (i, mob) in self.raws.mobs.iter().enumerate() {
+            if used_names.contains(&mob.name) {
+                rltk::console::log(format!(
+                    "WARNING -  duplicate mob name in raws [{}]",
+                    mob.name
+                ));
+            }
             self.mob_index.insert(mob.name.clone(), i);
+            used_names.insert(mob.name.clone());
         }
         for (i, prop) in self.raws.props.iter().enumerate() {
+            if used_names.contains(&prop.name) {
+                rltk::console::log(format!(
+                    "WARNING -  duplicate prop name in raws [{}]",
+                    prop.name
+                ));
+            }
             self.prop_index.insert(prop.name.clone(), i);
+            used_names.insert(prop.name.clone());
+        }
+
+        for spawn in self.raws.spawn_table.iter() {
+            if !used_names.contains(&spawn.name) {
+                rltk::console::log(format!(
+                    "WARNING - Spawn tables references unspecified entity {}",
+                    spawn.name
+                ));
+            }
         }
     }
 }
@@ -267,4 +302,24 @@ fn get_renderable_component(
         bg: rltk::RGB::from_hex(&renderable.bg).expect("Invalid RGB"),
         render_order: renderable.order,
     }
+}
+
+pub fn get_spawn_table_for_depth(raws: &RawMaster, depth: i32) -> RandomTable {
+    let available_options: Vec<&SpawnTableEntry> = raws
+        .raws
+        .spawn_table
+        .iter()
+        .filter(|a| depth >= a.min_depth && depth <= a.max_depth)
+        .collect();
+
+    let mut rt = RandomTable::new();
+    for e in available_options.iter() {
+        let mut weight = e.weight;
+        if e.add_map_depth_to_weight == Some(true) {
+            weight += depth;
+        }
+        rt = rt.add(e.name.clone(), weight);
+    }
+
+    rt
 }

@@ -1,5 +1,5 @@
-use serde::Deserialize;
 use super::item_structs::Renderable;
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub struct Mob {
