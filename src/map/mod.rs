@@ -1,13 +1,10 @@
 use rltk::{Point, RandomNumberGenerator};
 use specs::Entity;
 use std::collections::HashSet;
+mod tiletype;
+pub use tiletype::{tile_opaque, tile_walkable, TileType};
 
-#[derive(PartialEq, Eq, Hash, Copy, Clone, serde::Serialize, serde::Deserialize)]
-pub enum TileType {
-    Wall,
-    Floor,
-    DownStairs,
-}
+use self::tiletype::tile_cost;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Default)]
 pub struct Map {
@@ -34,7 +31,11 @@ impl rltk::Algorithm2D for Map {
 
 impl rltk::BaseMap for Map {
     fn is_opaque(&self, idx: usize) -> bool {
-        self.tiles[idx] == TileType::Wall || self.view_blocked.contains(&idx)
+        if idx > 0 && idx < self.tiles.len() {
+            tile_opaque(self.tiles[idx]) || self.view_blocked.contains(&idx)
+        } else {
+            true
+        }
     }
 
     fn get_pathing_distance(&self, idx1: usize, idx2: usize) -> f32 {
@@ -48,33 +49,34 @@ impl rltk::BaseMap for Map {
         let mut exits = rltk::SmallVec::new();
         let (x, y) = self.idx_xy(idx);
         let w = self.width as usize;
+        let tt = self.tiles[idx];
 
         // Cardinal directions
         if self.is_exit_valid(x - 1, y) {
-            exits.push((idx - 1, 1.0))
+            exits.push((idx - 1, tile_cost(tt)))
         };
         if self.is_exit_valid(x + 1, y) {
-            exits.push((idx + 1, 1.0))
+            exits.push((idx + 1, tile_cost(tt)))
         };
         if self.is_exit_valid(x, y - 1) {
-            exits.push((idx - w, 1.0))
+            exits.push((idx - w, tile_cost(tt)))
         };
         if self.is_exit_valid(x, y + 1) {
-            exits.push((idx + w, 1.0))
+            exits.push((idx + w, tile_cost(tt)))
         };
 
         // Diagonal directions
         if self.is_exit_valid(x - 1, y - 1) {
-            exits.push((idx - w - 1, 1.45))
+            exits.push((idx - w - 1, tile_cost(tt) * 1.45))
         };
         if self.is_exit_valid(x + 1, y - 1) {
-            exits.push((idx - w + 1, 1.45))
+            exits.push((idx - w + 1, tile_cost(tt) * 1.45))
         };
         if self.is_exit_valid(x - 1, y + 1) {
-            exits.push((idx + w - 1, 1.45))
+            exits.push((idx + w - 1, tile_cost(tt) * 1.45))
         };
         if self.is_exit_valid(x + 1, y + 1) {
-            exits.push((idx + w + 1, 1.45))
+            exits.push((idx + w + 1, tile_cost(tt) * 1.45))
         };
 
         exits
@@ -129,7 +131,7 @@ impl Map {
     /// Sets tile as blocked if Wall tile.
     pub fn populate_blocked(&mut self) {
         for (i, tile) in self.tiles.iter_mut().enumerate() {
-            self.blocked[i] = *tile == TileType::Wall;
+            self.blocked[i] = !tile_walkable(*tile);
         }
     }
 
