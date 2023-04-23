@@ -1,21 +1,15 @@
-use super::{
-    area_starting_points::AreaStartingPosition, distant_exit::DistantExit, random_start_position,
-    BuilderChain, BuilderMap, InitialMapBuilder,
-};
-use crate::map::TileType;
+use super::{BuilderChain, BuilderMap, InitialMapBuilder};
+use crate::{components::Position, map::TileType};
 use std::collections::HashSet;
 
 pub fn town_builder(
     new_depth: i32,
-    rng: &mut rltk::RandomNumberGenerator,
+    _rng: &mut rltk::RandomNumberGenerator,
     width: i32,
     height: i32,
 ) -> BuilderChain {
     let mut builder = BuilderChain::new(new_depth, width, height);
     builder.start_with(TownBuilder::new());
-    let (start_x, start_y) = random_start_position(rng);
-    builder.with(AreaStartingPosition::new(start_x, start_y));
-    builder.with(DistantExit::new());
     builder
 }
 
@@ -43,14 +37,34 @@ impl TownBuilder {
     ) {
         self.grass_layer(build_data);
         self.water_and_piers(rng, build_data);
-        // let (mut available_building_tiles, wall_gap_y) = self.town_walls(rng, build_data);
-        self.town_walls(rng, build_data);
+        let (mut available_building_tiles, wall_gap_y) = self.town_walls(rng, build_data);
+        let mut buildings = self.buildings(rng, build_data, &mut available_building_tiles);
+        let doors = self.add_doors(rng, build_data, &mut buildings, wall_gap_y);
+        self.add_paths(build_data, &doors);
 
         // Set visible tiles for mapgen visualizer
         build_data.map.visible_tiles.iter_mut().for_each(|t| {
             *t = true;
         });
         build_data.take_snapshot();
+
+        // Set Exit
+        let exit_idx = build_data.map.xy_idx(build_data.width - 5, wall_gap_y);
+        build_data.map.tiles[exit_idx] = TileType::DownStairs;
+
+        // Sort buildings
+        let mut building_size: Vec<(usize, i32)> = Vec::new();
+        for (i, building) in buildings.iter().enumerate() {
+            building_size.push((i, building.w * building.h));
+        }
+        building_size.sort_by(|a, b| b.1.cmp(&a.1));
+
+        // Start in the pub
+        let pub_loc = &buildings[building_size[0].0];
+        build_data.starting_position = Some(Position {
+            x: pub_loc.x + (pub_loc.w / 2),
+            y: pub_loc.y + (pub_loc.h / 2),
+        });
     }
 
     /// Sets all tiles as ``TileType::Grass`` and takes snapshot
@@ -97,6 +111,7 @@ impl TownBuilder {
         build_data.take_snapshot();
     }
 
+    /// Generates and sets town border walls and a horizontal road.
     fn town_walls(
         &mut self,
         rng: &mut rltk::RandomNumberGenerator,
@@ -139,4 +154,149 @@ impl TownBuilder {
 
         (available_building_tiles, wall_gap_y)
     }
+
+    /// Generates and sets 12 buildings (rects) within town walls
+    fn buildings(
+        &mut self,
+        rng: &mut rltk::RandomNumberGenerator,
+        build_data: &mut BuilderMap,
+        available_building_tiles: &mut HashSet<usize>,
+    ) -> Vec<RoomEdges> {
+        let w = build_data.width as usize;
+        let mut buildings = Vec::new();
+        let mut n_buildings = 0;
+        while n_buildings < 12 {
+            let bx = rng.roll_dice(1, build_data.map.width - 32) + 30;
+            let by = rng.roll_dice(1, build_data.map.height) - 2;
+            let bw = rng.roll_dice(1, 8) + 4;
+            let bh = rng.roll_dice(1, 8) + 4;
+            let mut possible = true;
+            for y in by..by + bh {
+                for x in bx..bx + bw {
+                    if x < 0 || x > build_data.width - 1 || y < 0 || y > build_data.height - 1 {
+                        possible = false;
+                    } else {
+                        let idx = build_data.map.xy_idx(x, y);
+                        if !available_building_tiles.contains(&idx) {
+                            possible = false;
+                        }
+                    }
+                }
+            }
+            if possible {
+                n_buildings += 1;
+                buildings.push(RoomEdges {
+                    x: bx,
+                    y: by,
+                    w: bw,
+                    h: bh,
+                });
+
+                for y in by..by + bh {
+                    for x in bx..bx + bw {
+                        let idx = build_data.map.xy_idx(x, y);
+                        build_data.map.tiles[idx] = TileType::WoodFloor;
+                        available_building_tiles.remove(&idx);
+                        available_building_tiles.remove(&(idx + 1));
+                        available_building_tiles.remove(&(idx + w));
+                        available_building_tiles.remove(&(idx - 1));
+                        available_building_tiles.remove(&(idx - w));
+                    }
+                }
+                build_data.take_snapshot();
+            }
+        }
+        // Outline buildings
+        let mut mapclone = build_data.map.clone();
+        for y in 2..build_data.height - 2 {
+            for x in 32..build_data.width - 2 {
+                let idx = build_data.map.xy_idx(x, y);
+                if build_data.map.tiles[idx] == TileType::WoodFloor {
+                    let mut neighbors = 0;
+                    neighbors += (build_data.map.tiles[idx - 1] != TileType::WoodFloor) as i32;
+                    neighbors += (build_data.map.tiles[idx + 1] != TileType::WoodFloor) as i32;
+                    neighbors += (build_data.map.tiles[idx - w] != TileType::WoodFloor) as i32;
+                    neighbors += (build_data.map.tiles[idx + w] != TileType::WoodFloor) as i32;
+                    if neighbors > 0 {
+                        mapclone.tiles[idx] = TileType::Wall;
+                    }
+                }
+            }
+        }
+        build_data.map = mapclone;
+        build_data.take_snapshot();
+        buildings
+    }
+
+    fn add_doors(
+        &mut self,
+        rng: &mut rltk::RandomNumberGenerator,
+        build_data: &mut BuilderMap,
+        buildings: &mut [RoomEdges],
+        wall_gap_y: i32,
+    ) -> Vec<usize> {
+        let mut doors = Vec::new();
+        for building in buildings.iter() {
+            let door_x = building.x + 1 + rng.roll_dice(1, building.w - 3);
+            let center_y = building.y + (building.h / 2);
+            let idx = if center_y > wall_gap_y {
+                // Door on the north wall
+                build_data.map.xy_idx(door_x, building.y)
+            } else {
+                build_data.map.xy_idx(door_x, building.y + building.h - 1)
+            };
+            build_data.map.tiles[idx] = TileType::Floor;
+            build_data.spawn_list.push((idx, "Door".to_string()));
+            doors.push(idx);
+        }
+        build_data.take_snapshot();
+        doors
+    }
+
+    fn add_paths(&mut self, build_data: &mut BuilderMap, doors: &[usize]) {
+        let mut roads = Vec::new();
+        for y in 0..build_data.height {
+            for x in 0..build_data.width {
+                let idx = build_data.map.xy_idx(x, y);
+                if build_data.map.tiles[idx] == TileType::Road {
+                    roads.push(idx);
+                }
+            }
+        }
+
+        build_data.map.populate_blocked();
+        for door_idx in doors.iter() {
+            let mut nearest_roads: Vec<(usize, f32)> = Vec::new();
+            let (x, y) = build_data.map.idx_xy(*door_idx);
+            let door_pt = rltk::Point::new(x, y);
+            for r in roads.iter() {
+                let (x, y) = build_data.map.idx_xy(*r);
+                nearest_roads.push((
+                    *r,
+                    rltk::DistanceAlg::PythagorasSquared
+                        .distance2d(door_pt, rltk::Point::new(x, y)),
+                ));
+            }
+            nearest_roads
+                .sort_by(|(_a_idx, a_dist), (_b_idx, b_dist)| a_dist.partial_cmp(b_dist).unwrap());
+
+            let (dest, _dist) = nearest_roads[0];
+            let path = rltk::a_star_search(*door_idx, dest, &build_data.map);
+            if path.success {
+                for step in path.steps.iter() {
+                    let idx = *step;
+                    build_data.map.tiles[idx] = TileType::Road;
+                    roads.push(idx);
+                }
+            }
+            build_data.take_snapshot();
+        }
+    }
+}
+
+struct RoomEdges {
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
 }
