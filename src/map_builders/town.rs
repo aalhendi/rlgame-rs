@@ -339,7 +339,7 @@ impl TownBuilder {
                 BuildingTag::Alchemist => self.build_alchemist(b, build_data, rng),
                 BuildingTag::PlayerHouse => self.build_player_house(b, build_data, rng),
                 BuildingTag::Hovel => self.build_hovel(b, build_data, rng),
-                BuildingTag::Abandoned => self.build_abandoned_house(&b, build_data, rng),
+                BuildingTag::Abandoned => self.build_abandoned_house(b, build_data, rng),
                 BuildingTag::Unassigned => panic!("Unassigned building"),
             }
         }

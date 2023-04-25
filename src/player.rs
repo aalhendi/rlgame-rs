@@ -2,6 +2,7 @@ use super::{
     BlocksTile, BlocksVisibility, Door, EntityMoved, HungerClock, HungerState, Item, Map, Monster,
     Player, Position, Renderable, RunState, State, Viewshed, WantsToPickupItem,
 };
+use crate::components::Bystander;
 use crate::components::CombatStats;
 use crate::components::WantsToMelee;
 use crate::gamelog::Gamelog;
@@ -23,6 +24,8 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut blocks_visibility = ecs.write_storage::<BlocksVisibility>();
     let mut blocks_movement = ecs.write_storage::<BlocksTile>();
     let mut renderables = ecs.write_storage::<Renderable>();
+    let bystanders = ecs.read_storage::<Bystander>();
+    let mut swap_entities = Vec::new();
 
     for (_player, pos, viewshed, entity) in
         (&mut players, &mut positions, &mut viewsheds, &entities).join()
@@ -38,8 +41,18 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
         let dest_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
 
         for potential_target in map.tile_content[dest_idx].iter() {
-            let target = combat_stats.get(*potential_target);
-            if target.is_some() {
+            if bystanders.get(*potential_target).is_some() {
+                swap_entities.push((*potential_target, *pos));
+                pos.x = (pos.x + delta_x).clamp(0, map.width - 1);
+                pos.y = (pos.y + delta_y).clamp(0, map.height - 1);
+                entity_moved
+                    .insert(entity, EntityMoved {})
+                    .expect("Unable to insert marker");
+
+                viewshed.dirty = true;
+                ppos.x = pos.x;
+                ppos.y = pos.y;
+            } else if combat_stats.get(*potential_target).is_some() {
                 wants_to_melee
                     .insert(
                         entity,
@@ -69,10 +82,13 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
 
             viewshed.dirty = true;
         }
+    }
 
-        entity_moved
-            .insert(entity, EntityMoved {})
-            .expect("Unable to insert marker");
+    for (swappable_entity, swappable_pos) in swap_entities.iter() {
+        if let Some(e_pos) = positions.get_mut(*swappable_entity) {
+            e_pos.x = swappable_pos.x;
+            e_pos.y = swappable_pos.y;
+        }
     }
 }
 
