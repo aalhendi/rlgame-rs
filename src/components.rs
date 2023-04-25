@@ -13,6 +13,16 @@ pub struct Position {
     pub y: i32,
 }
 
+// TODO: Impl TryFrom and TryInto for Point/Position
+impl From<Position> for Point {
+    fn from(value: Position) -> Self {
+        Point {
+            x: value.x,
+            y: value.y,
+        }
+    }
+}
+
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Renderable {
     pub glyph: rltk::FontCharType,
@@ -33,6 +43,9 @@ pub struct Viewshed {
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Monster {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Bystander {}
 
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Name {

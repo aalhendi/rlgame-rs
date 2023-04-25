@@ -1,7 +1,7 @@
 use super::{spawn_table_structs::SpawnTableEntry, Raws};
 use crate::{
     components::{
-        AreaOfEffect, BlocksTile, BlocksVisibility, CombatStats, Confusion, Consumable,
+        AreaOfEffect, BlocksTile, BlocksVisibility, Bystander, CombatStats, Confusion, Consumable,
         DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InflictsDamage, Item,
         MagicMapper, MeleePowerBonus, Monster, Name, Position, ProvidesFood, ProvidesHealing,
         Ranged, SingleActivation, Viewshed,
@@ -196,11 +196,16 @@ pub fn spawn_named_mob(
         eb = eb.with(get_renderable_component(renderable));
     }
 
+    match mob_template.ai_type.as_ref() {
+        "melee" => eb = eb.with(Monster {}),
+        "bystander" => eb = eb.with(Bystander {}),
+        _ => panic!("Unexpected AI Type for mob"),
+    }
+
     eb = eb.with(Name {
         name: mob_template.name.clone(),
     });
 
-    eb = eb.with(Monster {});
     if mob_template.blocks_tile {
         eb = eb.with(BlocksTile {});
     }
