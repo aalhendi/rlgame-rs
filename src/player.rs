@@ -4,6 +4,7 @@ use super::{
 };
 use crate::components::Bystander;
 use crate::components::CombatStats;
+use crate::components::Vendor;
 use crate::components::WantsToMelee;
 use crate::gamelog::Gamelog;
 use crate::map::TileType;
@@ -25,6 +26,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut blocks_movement = ecs.write_storage::<BlocksTile>();
     let mut renderables = ecs.write_storage::<Renderable>();
     let bystanders = ecs.read_storage::<Bystander>();
+    let vendors = ecs.read_storage::<Vendor>();
     let mut swap_entities = Vec::new();
 
     for (_player, pos, viewshed, entity) in
@@ -41,7 +43,9 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
         let dest_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
 
         for potential_target in map.tile_content[dest_idx].iter() {
-            if bystanders.get(*potential_target).is_some() {
+            if bystanders.get(*potential_target).is_some()
+                || vendors.get(*potential_target).is_some()
+            {
                 swap_entities.push((*potential_target, *pos));
                 pos.x = (pos.x + delta_x).clamp(0, map.width - 1);
                 pos.y = (pos.y + delta_y).clamp(0, map.height - 1);

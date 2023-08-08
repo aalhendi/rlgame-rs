@@ -1,3 +1,4 @@
+use bystander_ai_system::BystanderAISystem;
 use rltk::{GameState, Point, Rltk};
 use specs::{
     prelude::*,
@@ -29,6 +30,7 @@ mod gui;
 pub mod inventory_system;
 pub mod spawner;
 use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
+pub mod bystander_ai_system;
 pub mod camera;
 mod hunger_system;
 pub mod map_builders;
@@ -192,6 +194,9 @@ impl State {
 
         let mut mapindex = MapIndexingSystem;
         mapindex.run_now(&self.ecs);
+
+        let mut bystander_ai_system = BystanderAISystem;
+        bystander_ai_system.run_now(&self.ecs);
 
         let mut melee_combat_system = MeleeCombatSystem;
         melee_combat_system.run_now(&self.ecs);
@@ -455,6 +460,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Bystander>();
+    gs.ecs.register::<Vendor>();
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<CombatStats>();
@@ -488,6 +494,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<SingleActivation>();
     gs.ecs.register::<BlocksVisibility>();
     gs.ecs.register::<Door>();
+    gs.ecs.register::<Quips>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

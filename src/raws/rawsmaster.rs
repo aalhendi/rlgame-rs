@@ -4,7 +4,7 @@ use crate::{
         AreaOfEffect, BlocksTile, BlocksVisibility, Bystander, CombatStats, Confusion, Consumable,
         DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InflictsDamage, Item,
         MagicMapper, MeleePowerBonus, Monster, Name, Position, ProvidesFood, ProvidesHealing,
-        Ranged, SingleActivation, Viewshed,
+        Quips, Ranged, SingleActivation, Vendor, Viewshed,
     },
     random_table::RandomTable,
 };
@@ -199,12 +199,19 @@ pub fn spawn_named_mob(
     match mob_template.ai_type.as_ref() {
         "melee" => eb = eb.with(Monster {}),
         "bystander" => eb = eb.with(Bystander {}),
+        "vendor" => eb = eb.with(Vendor {}),
         _ => panic!("Unexpected AI Type for mob"),
     }
 
     eb = eb.with(Name {
         name: mob_template.name.clone(),
     });
+
+    if let Some(quips) = &mob_template.quips {
+        eb = eb.with(Quips {
+            available: quips.clone(),
+        });
+    }
 
     if mob_template.blocks_tile {
         eb = eb.with(BlocksTile {});

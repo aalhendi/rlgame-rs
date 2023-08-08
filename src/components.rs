@@ -238,3 +238,11 @@ pub struct BlocksVisibility {}
 pub struct Door {
     pub open: bool,
 }
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Vendor {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Quips {
+    pub available : Vec<String>
+}
