@@ -48,11 +48,13 @@ impl TownBuilder {
         Box::new(TownBuilder {})
     }
 
+    // Main "build" function
     pub fn build_rooms(
         &mut self,
         rng: &mut rltk::RandomNumberGenerator,
         build_data: &mut BuilderMap,
     ) {
+        // Spawn layers
         self.grass_layer(build_data);
         self.water_and_piers(rng, build_data);
         let (mut available_building_tiles, wall_gap_y) = self.town_walls(rng, build_data);
@@ -60,20 +62,22 @@ impl TownBuilder {
         let doors = self.add_doors(rng, build_data, &mut buildings, wall_gap_y);
         self.add_paths(build_data, &doors);
 
+        // Set Exit
+        let exit_idx = build_data.map.xy_idx(build_data.width - 5, wall_gap_y);
+        build_data.map.tiles[exit_idx] = TileType::DownStairs;
+
+        // Also sets player spawn
+        let building_sizes = self.sort_buildings(&buildings);
+        self.building_factory(rng, build_data, &buildings, &building_sizes);
+
+        self.spawn_dockers(build_data, rng);
+        self.spawn_townsfolk(build_data, rng, &mut available_building_tiles);
+
         // Set visible tiles for mapgen visualizer
         build_data.map.visible_tiles.iter_mut().for_each(|t| {
             *t = true;
         });
         build_data.take_snapshot();
-
-        // Set Exit
-        let exit_idx = build_data.map.xy_idx(build_data.width - 5, wall_gap_y);
-        build_data.map.tiles[exit_idx] = TileType::DownStairs;
-
-        let building_sizes = self.sort_buildings(&buildings);
-
-        // Also sets player spawn
-        self.building_factory(rng, build_data, &buildings, &building_sizes);
     }
 
     fn sort_buildings(&mut self, buildings: &[RoomEdges]) -> Vec<(usize, i32, BuildingTag)> {
@@ -465,6 +469,44 @@ impl TownBuilder {
         let to_place: Vec<&str> = vec!["Table", "Chair", "Bed", "Peasant"];
 
         self.random_building_spawn(building, build_data, 0, rng, to_place);
+    }
+
+    fn spawn_dockers(
+        &mut self,
+        build_data: &mut BuilderMap,
+        rng: &mut rltk::RandomNumberGenerator,
+    ) {
+        for (idx, tt) in build_data.map.tiles.iter().enumerate() {
+            if *tt == TileType::Bridge && rng.roll_dice(1, 6) == 1 {
+                match rng.roll_dice(1, 3) {
+                    1 => build_data.spawn_list.push((idx, "Dock Worker".to_string())),
+                    2 => build_data
+                        .spawn_list
+                        .push((idx, "Wannabe Pirate".to_string())),
+                    _ => build_data.spawn_list.push((idx, "Fisher".to_string())),
+                }
+            }
+        }
+    }
+
+    fn spawn_townsfolk(
+        &mut self,
+        build_data: &mut BuilderMap,
+        rng: &mut rltk::RandomNumberGenerator,
+        available_building_tiles: &mut HashSet<usize>,
+    ) {
+        for idx in available_building_tiles.iter() {
+            if rng.roll_dice(1, 10) == 1 {
+                match rng.roll_dice(1, 4) {
+                    1 => build_data.spawn_list.push((*idx, "Peasant".to_string())),
+                    2 => build_data.spawn_list.push((*idx, "Drunk".to_string())),
+                    3 => build_data
+                        .spawn_list
+                        .push((*idx, "Dock Worker".to_string())),
+                    _ => build_data.spawn_list.push((*idx, "Fisher".to_string())),
+                }
+            }
+        }
     }
 
     fn random_building_spawn(
