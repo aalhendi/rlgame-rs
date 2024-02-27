@@ -97,7 +97,8 @@ pub fn save_game(ecs: &mut World) {
             BlocksVisibility,
             Door,
             Vendor,
-            Quips
+            Quips,
+            Attributes
         );
     }
 
@@ -170,7 +171,8 @@ pub fn load_game(ecs: &mut World) {
             BlocksVisibility,
             Door,
             Vendor,
-            Quips
+            Quips,
+            Attributes
         );
     }
 

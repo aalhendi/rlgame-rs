@@ -249,7 +249,10 @@
         "power": 4
       },
       "vision_range": 4,
-      "ai_type": "vendor"
+      "ai_type": "vendor",
+      "attributes": {
+        "intelligence": 13
+      }
     },
 
     {
@@ -268,7 +271,8 @@
         "power": 4
       },
       "vision_range": 4,
-      "ai_type": "vendor"
+      "ai_type": "vendor",
+      "attributes" : {}
     },
 
     {
@@ -288,6 +292,7 @@
       },
       "vision_range": 4,
       "ai_type": "bystander",
+      "attributes" : {},
       "quips": [
         "Quiet down, it's too early!",
         "Oh my, I drank too much.",
@@ -311,7 +316,8 @@
         "power": 4
       },
       "vision_range": 4,
-      "ai_type": "bystander"
+      "ai_type": "bystander",
+      "attributes" : {}
     },
 
     {
@@ -331,6 +337,7 @@
       },
       "vision_range": 4,
       "ai_type": "bystander",
+      "attributes" : {},
       "quips": [
         "Great to see a new face here!",
         "I hear there's going to be a good sermon on tea",
@@ -354,7 +361,8 @@
         "power": 4
       },
       "vision_range": 4,
-      "ai_type": "vendor"
+      "ai_type": "vendor",
+      "attributes" : {}
     },
 
     {
@@ -373,7 +381,8 @@
         "power": 4
       },
       "vision_range": 4,
-      "ai_type": "vendor"
+      "ai_type": "vendor",
+      "attributes" : {}
     },
 
     {
@@ -392,6 +401,7 @@
         "power": 4
       },
       "vision_range": 4,
+      "attributes" : {},
       "ai_type": "vendor"
     },
 
@@ -412,6 +422,7 @@
       },
       "vision_range": 4,
       "ai_type": "bystander",
+      "attributes" : {},
       "quips": [
         "Hello, dear",
         "Off saving the world again?",
@@ -437,6 +448,7 @@
       },
       "vision_range": 4,
       "ai_type": "bystander",
+      "attributes" : {},
       "quips": ["Lovely day, eh?", "Nice weather", "Hello"]
     },
 
@@ -457,6 +469,7 @@
       },
       "vision_range": 4,
       "ai_type": "bystander",
+      "attributes" : {},
       "quips": [
         "They're biting today!",
         "I caught something, but it wasn't a fish!",
@@ -481,6 +494,7 @@
       },
       "vision_range": 4,
       "ai_type": "bystander",
+      "attributes" : {},
       "quips": ["Arrr", "Grog!", "Booze!"]
     },
 
@@ -501,6 +515,7 @@
       },
       "vision_range": 4,
       "ai_type": "bystander",
+      "attributes" : {},
       "quips": ["Hic", "Need... more... booze!", "Spare a copper?"]
     },
 
@@ -521,6 +536,7 @@
       },
       "vision_range": 4,
       "ai_type": "bystander",
+      "attributes" : {},
       "quips": ["Why are you in my house?"]
     },
 
@@ -540,6 +556,7 @@
         "power": 4
       },
       "vision_range": 8,
+      "attributes" : {},
       "ai_type": "melee"
     },
 
@@ -559,6 +576,7 @@
         "power": 3
       },
       "vision_range": 8,
+      "attributes" : {},
       "ai_type": "melee"
     },
 
@@ -578,7 +596,8 @@
         "power": 2
       },
       "vision_range": 4,
-      "ai_type": "melee"
+      "ai_type": "melee",
+      "attributes" : {}
     },
 
     {
@@ -597,7 +616,8 @@
         "power": 3
       },
       "vision_range": 8,
-      "ai_type": "melee"
+      "ai_type": "melee",
+      "attributes" : {}
     }
   ],
 

@@ -10,6 +10,7 @@ use crate::{
         rawsmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType},
         RAWS,
     },
+    Attribute, Attributes,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
@@ -47,6 +48,28 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         .with(HungerClock {
             state: HungerState::WellFed,
             duration: 20,
+        })
+        .with(Attributes {
+            might: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: 0,
+            },
+            fitness: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: 0,
+            },
+            quickness: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: 0,
+            },
+            intelligence: Attribute {
+                base: 11,
+                modifiers: 0,
+                bonus: 0,
+            },
         })
         .marked::<SimpleMarker<IsSerialized>>()
         .build()

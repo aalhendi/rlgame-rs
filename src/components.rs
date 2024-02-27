@@ -244,5 +244,21 @@ pub struct Vendor {}
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Quips {
-    pub available : Vec<String>
+    pub available: Vec<String>,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+// Not actually a component, its just used by one. Doesn't need to be registered in saveload and main
+pub struct Attribute {
+    pub base: i32,
+    pub modifiers: i32,
+    pub bonus: i32,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Attributes {
+    pub might: Attribute,
+    pub fitness: Attribute,
+    pub quickness: Attribute,
+    pub intelligence: Attribute,
 }

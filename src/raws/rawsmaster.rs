@@ -7,6 +7,7 @@ use crate::{
         Quips, Ranged, SingleActivation, Vendor, Viewshed,
     },
     random_table::RandomTable,
+    Attribute, Attributes,
 };
 use specs::{Builder, Entity, EntityBuilder};
 use std::collections::{HashMap, HashSet};
@@ -227,6 +228,63 @@ pub fn spawn_named_mob(
         range: mob_template.vision_range,
         dirty: true,
     });
+
+    let mut attrs = Attributes {
+        might: Attribute {
+            base: 11,
+            modifiers: 0,
+            bonus: 0,
+        },
+        fitness: Attribute {
+            base: 11,
+            modifiers: 0,
+            bonus: 0,
+        },
+        quickness: Attribute {
+            base: 11,
+            modifiers: 0,
+            bonus: 0,
+        },
+        intelligence: Attribute {
+            base: 11,
+            modifiers: 0,
+            bonus: 0,
+        },
+    };
+
+    if let Some(m) = mob_template.attributes.might {
+        attrs.might = Attribute {
+            base: m,
+            modifiers: 0,
+            bonus: 0,
+        }
+    }
+
+    if let Some(f) = mob_template.attributes.fitness {
+        attrs.fitness = Attribute {
+            base: f,
+            modifiers: 0,
+            bonus: 0,
+        }
+    }
+
+    if let Some(q) = mob_template.attributes.quickness {
+        attrs.quickness = Attribute {
+            base: q,
+            modifiers: 0,
+            bonus: 0,
+        }
+    }
+
+    if let Some(i) = mob_template.attributes.intelligence {
+        attrs.intelligence = Attribute {
+            base: i,
+            modifiers: 0,
+            bonus: 0,
+        }
+    }
+
+    eb = eb.with(attrs);
 
     Some(eb.build())
 }
