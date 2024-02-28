@@ -68,7 +68,7 @@ pub fn build_patterns(
 
     if dedupe {
         let set: HashSet<Vec<TileType>> = patterns.drain(..).collect(); // dedup
-        patterns.extend(set.into_iter());
+        patterns.extend(set);
     }
 
     patterns
@@ -136,7 +136,7 @@ pub fn patterns_to_constraints(patterns: Vec<Vec<TileType>>, chunk_size: i32) ->
         let mut n_exits = 0;
         // Check cardinal-bound directions for exits
         for x in 0..chunk_size {
-            let coords = vec![(x, 0), (x, chunk_size - 1), (0, x), (chunk_size - 1, x)];
+            let coords = [(x, 0), (x, chunk_size - 1), (0, x), (chunk_size - 1, x)];
             for (exit_idx, c) in coords.iter().enumerate() {
                 let idx = tile_idx_in_chunk(chunk_size, c.0, c.1);
                 if new_chunk.pattern[idx] == TileType::Floor {

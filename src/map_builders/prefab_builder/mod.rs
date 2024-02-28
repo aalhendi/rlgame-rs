@@ -236,7 +236,7 @@ impl PrefabBuilder {
         };
 
         // NOTE: place-holder, will be moved out of this function
-        let master_vault_list = vec![TOTALLY_NOT_A_TRAP, SILLY_SMILE, CHECKERBOARD];
+        let master_vault_list = [TOTALLY_NOT_A_TRAP, SILLY_SMILE, CHECKERBOARD];
 
         // Filter vault list by current depth
         let mut possible_vaults: Vec<&PrefabRoom> = master_vault_list
