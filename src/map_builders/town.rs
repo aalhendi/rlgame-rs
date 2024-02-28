@@ -334,8 +334,9 @@ impl TownBuilder {
         buildings: &[RoomEdges],
         buildings_data: &[(usize, i32, BuildingTag)],
     ) {
-        for (i, b) in buildings.iter().enumerate() {
-            match &buildings_data[i].2 {
+        for (i, _size, building_tag) in buildings_data.iter() {
+            let b = &buildings[*i];
+            match building_tag {
                 BuildingTag::Pub => self.build_pub(b, build_data, rng),
                 BuildingTag::Temple => self.build_temple(b, build_data, rng),
                 BuildingTag::Blacksmith => self.build_smith(b, build_data, rng),
