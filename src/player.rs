@@ -3,11 +3,11 @@ use super::{
     Player, Position, Renderable, RunState, State, Viewshed, WantsToPickupItem,
 };
 use crate::components::Bystander;
-use crate::components::CombatStats;
 use crate::components::Vendor;
 use crate::components::WantsToMelee;
 use crate::gamelog::Gamelog;
 use crate::map::TileType;
+use crate::Pools;
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 
@@ -16,7 +16,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
     let mut positions = ecs.write_storage::<Position>();
     let mut players = ecs.write_storage::<Player>();
     let mut viewsheds = ecs.write_storage::<Viewshed>();
-    let combat_stats = ecs.read_storage::<CombatStats>();
+    let pools = ecs.read_storage::<Pools>();
     let map = ecs.fetch::<Map>();
     let entities = ecs.entities();
     let mut wants_to_melee = ecs.write_storage::<WantsToMelee>();
@@ -56,7 +56,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) {
                 viewshed.dirty = true;
                 ppos.x = pos.x;
                 ppos.y = pos.y;
-            } else if combat_stats.get(*potential_target).is_some() {
+            } else if pools.get(*potential_target).is_some() {
                 wants_to_melee
                     .insert(
                         entity,
@@ -216,8 +216,11 @@ fn skip_turn(ecs: &mut World) -> RunState {
     }
 
     // Heal Player
-    let mut combat_stats = ecs.write_storage::<CombatStats>();
-    let player_stats = combat_stats.get_mut(*player_entity).unwrap();
-    player_stats.hp = i32::min(player_stats.hp + 1, player_stats.max_hp);
+    let mut pools = ecs.write_storage::<Pools>();
+    let player_stats = pools.get_mut(*player_entity).unwrap();
+    player_stats.hit_points.current = i32::min(
+        player_stats.hit_points.current + 1,
+        player_stats.hit_points.max,
+    );
     RunState::PlayerTurn
 }

@@ -1,13 +1,14 @@
 use super::{spawn_table_structs::SpawnTableEntry, Raws};
 use crate::{
     components::{
-        AreaOfEffect, BlocksTile, BlocksVisibility, Bystander, CombatStats, Confusion, Consumable,
+        AreaOfEffect, BlocksTile, BlocksVisibility, Bystander, Confusion, Consumable,
         DefenseBonus, Door, EntryTrigger, EquipmentSlot, Equippable, Hidden, InflictsDamage, Item,
         MagicMapper, MeleePowerBonus, Monster, Name, Position, ProvidesFood, ProvidesHealing,
         Quips, Ranged, SingleActivation, Vendor, Viewshed,
     },
+    gamesystem::{attr_bonus, mana_at_level, npc_hp},
     random_table::RandomTable,
-    Attribute, Attributes,
+    Attribute, Attributes, Pool, Pools, Skill, Skills,
 };
 use specs::{Builder, Entity, EntityBuilder};
 use std::collections::{HashMap, HashSet};
@@ -217,12 +218,7 @@ pub fn spawn_named_mob(
     if mob_template.blocks_tile {
         eb = eb.with(BlocksTile {});
     }
-    eb = eb.with(CombatStats {
-        max_hp: mob_template.stats.max_hp,
-        hp: mob_template.stats.hp,
-        power: mob_template.stats.power,
-        defense: mob_template.stats.defense,
-    });
+
     eb = eb.with(Viewshed {
         visible_tiles: Vec::new(),
         range: mob_template.vision_range,
@@ -252,27 +248,32 @@ pub fn spawn_named_mob(
         },
     };
 
+    let mut mob_fitness = 11;
+    let mut mob_int = 11;
+
     if let Some(m) = mob_template.attributes.might {
         attrs.might = Attribute {
             base: m,
             modifiers: 0,
-            bonus: 0,
+            bonus: attr_bonus(m),
         }
     }
 
+    // TODO(aalhendi): Refactor
     if let Some(f) = mob_template.attributes.fitness {
         attrs.fitness = Attribute {
             base: f,
             modifiers: 0,
-            bonus: 0,
-        }
+            bonus: attr_bonus(f),
+        };
+        mob_fitness = f;
     }
 
     if let Some(q) = mob_template.attributes.quickness {
         attrs.quickness = Attribute {
             base: q,
             modifiers: 0,
-            bonus: 0,
+            bonus: attr_bonus(q),
         }
     }
 
@@ -280,11 +281,58 @@ pub fn spawn_named_mob(
         attrs.intelligence = Attribute {
             base: i,
             modifiers: 0,
-            bonus: 0,
-        }
+            bonus: attr_bonus(i),
+        };
+        mob_int = i;
     }
 
     eb = eb.with(attrs);
+
+    let mut skills = Skills::default();
+    for skill in [Skill::Melee, Skill::Defense, Skill::Magic] {
+        skills.skills.insert(skill, 1);
+    }
+    if let Some(mobskills) = &mob_template.skills {
+        for (skill_name, skill_value) in mobskills.iter() {
+            match skill_name.as_str() {
+                "Melee" => {
+                    skills.skills.insert(Skill::Melee, *skill_value);
+                }
+                "Defense" => {
+                    skills.skills.insert(Skill::Defense, *skill_value);
+                }
+                "Magic" => {
+                    skills.skills.insert(Skill::Magic, *skill_value);
+                }
+                _ => {
+                    rltk::console::log(format!("Unknown skill referenced: [{}]", skill_name));
+                }
+            }
+        }
+    }
+    eb = eb.with(skills);
+
+    let mob_level = if let Some(level) = mob_template.level {
+        level
+    } else {
+        1
+    };
+    let mob_hp = npc_hp(mob_fitness, mob_level);
+    let mob_mana = mana_at_level(mob_int, mob_level);
+
+    let pools = Pools {
+        level: mob_level,
+        xp: 0,
+        hit_points: Pool {
+            current: mob_hp,
+            max: mob_hp,
+        },
+        mana: Pool {
+            current: mob_mana,
+            max: mob_mana,
+        },
+    };
+    eb = eb.with(pools);
 
     Some(eb.build())
 }

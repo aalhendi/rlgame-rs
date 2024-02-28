@@ -1,8 +1,8 @@
-use crate::camera;
+use crate::{camera, Pools};
 
 use super::{
-    gamelog::Gamelog, CombatStats, Equipped, Hidden, HungerClock, HungerState, InBackpack, Map,
-    Name, Owned, Player, Position, RunState, State, Viewshed,
+    gamelog::Gamelog, Equipped, Hidden, HungerClock, HungerState, InBackpack, Map, Name, Owned,
+    Player, Position, RunState, State, Viewshed,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -19,7 +19,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
 
     // TODO: If player is a resource in the ECS, can't we just fetch it insead of
     // player entity and combat_stats component read calls?
-    let combat_stats = ecs.read_storage::<CombatStats>();
+    let pools = ecs.read_storage::<Pools>();
     let players = ecs.read_storage::<Player>();
     let log = ecs.fetch::<Gamelog>();
     let hunger = ecs.read_storage::<HungerClock>();
@@ -40,15 +40,23 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let orange = RGB::named(rltk::ORANGE);
     let white = RGB::named(rltk::WHITE);
 
-    for (_player, stats, hc) in (&players, &combat_stats, &hunger).join() {
+    for (_player, stats, hc) in (&players, &pools, &hunger).join() {
         let health = format!(
             " HP: {hp} / {max_hp} ",
-            hp = stats.hp,
-            max_hp = stats.max_hp
+            hp = stats.hit_points.current,
+            max_hp = stats.hit_points.max
         );
         ctx.print_color(12, 43, yellow, black, &health);
 
-        ctx.draw_bar_horizontal(28, 43, 51, stats.hp, stats.max_hp, red, black);
+        ctx.draw_bar_horizontal(
+            28,
+            43,
+            51,
+            stats.hit_points.current,
+            stats.hit_points.max,
+            red,
+            black,
+        );
 
         match hc.state {
             HungerState::WellFed => ctx.print_color(71, 42, green, black, "Well Fed"),

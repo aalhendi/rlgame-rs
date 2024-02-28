@@ -1,16 +1,17 @@
 use std::collections::HashMap;
 
 use super::{
-    CombatStats, HungerClock, HungerState, IsSerialized, Map, Name, Player, Position, Rect,
-    Renderable, TileType, Viewshed,
+    HungerClock, HungerState, IsSerialized, Map, Name, Player, Position, Rect, Renderable,
+    TileType, Viewshed,
 };
 use crate::{
+    gamesystem::{attr_bonus, mana_at_level, player_hp_at_level},
     random_table::RandomTable,
     raws::{
         rawsmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType},
         RAWS,
     },
-    Attribute, Attributes,
+    Attribute, Attributes, Pool, Pools, Skill, Skills,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
@@ -22,6 +23,11 @@ const MAX_MONSTERS: i32 = 4;
 
 /// Spawns the player and returns its entity object
 pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
+    let mut skills = Skills::default();
+    for skill in [Skill::Melee, Skill::Defense, Skill::Magic] {
+        skills.skills.insert(skill, 1);
+    }
+
     ecs.create_entity()
         .with(player_pos)
         .with(Renderable {
@@ -39,12 +45,6 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         .with(Name {
             name: "Player".to_string(),
         })
-        .with(CombatStats {
-            max_hp: 30,
-            hp: 30,
-            defense: 2,
-            power: 5,
-        })
         .with(HungerClock {
             state: HungerState::WellFed,
             duration: 20,
@@ -53,23 +53,36 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             might: Attribute {
                 base: 11,
                 modifiers: 0,
-                bonus: 0,
+                bonus: attr_bonus(11),
             },
             fitness: Attribute {
                 base: 11,
                 modifiers: 0,
-                bonus: 0,
+                bonus: attr_bonus(11),
             },
             quickness: Attribute {
                 base: 11,
                 modifiers: 0,
-                bonus: 0,
+                bonus: attr_bonus(11),
             },
             intelligence: Attribute {
                 base: 11,
                 modifiers: 0,
-                bonus: 0,
+                bonus: attr_bonus(11),
             },
+        })
+        .with(skills)
+        .with(Pools {
+            hit_points: Pool {
+                current: player_hp_at_level(11, 1),
+                max: player_hp_at_level(11, 1),
+            },
+            mana: Pool {
+                current: mana_at_level(11, 1),
+                max: mana_at_level(11, 1),
+            },
+            xp: 0,
+            level: 1,
         })
         .marked::<SimpleMarker<IsSerialized>>()
         .build()

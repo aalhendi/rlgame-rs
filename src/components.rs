@@ -5,7 +5,7 @@ use specs::{
     saveload::{ConvertSaveload, Marker},
 };
 use specs_derive::*;
-use std::convert::Infallible as NoError;
+use std::{collections::HashMap, convert::Infallible as NoError};
 
 #[derive(Component, ConvertSaveload, Clone, Default, Copy)]
 pub struct Position {
@@ -54,14 +54,6 @@ pub struct Name {
 
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct BlocksTile;
-
-#[derive(Component, Debug, ConvertSaveload, Clone)]
-pub struct CombatStats {
-    pub max_hp: i32,
-    pub hp: i32,
-    pub defense: i32,
-    pub power: i32,
-}
 
 #[derive(Component, Debug, ConvertSaveload, Clone)]
 pub struct WantsToMelee {
@@ -261,4 +253,32 @@ pub struct Attributes {
     pub fitness: Attribute,
     pub quickness: Attribute,
     pub intelligence: Attribute,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+// Not actually a component, its just used by one. Doesn't need to be registered in saveload and main
+pub enum Skill {
+    Melee,
+    Defense,
+    Magic,
+}
+
+#[derive(Default, Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Skills {
+    pub skills: HashMap<Skill, i32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+// Not actually a component, its just used by one. Doesn't need to be registered in saveload and main
+pub struct Pool {
+    pub max: i32,
+    pub current: i32
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Pools {
+    pub hit_points : Pool,
+    pub mana : Pool,
+    pub xp : i32,
+    pub level : i32
 }

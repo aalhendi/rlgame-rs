@@ -70,7 +70,6 @@ pub fn save_game(ecs: &mut World) {
             Bystander,
             Name,
             BlocksTile,
-            CombatStats,
             SufferDamage,
             WantsToMelee,
             Item,
@@ -98,7 +97,9 @@ pub fn save_game(ecs: &mut World) {
             Door,
             Vendor,
             Quips,
-            Attributes
+            Attributes,
+            Skills,
+            Pools
         );
     }
 
@@ -144,7 +145,6 @@ pub fn load_game(ecs: &mut World) {
             Bystander,
             Name,
             BlocksTile,
-            CombatStats,
             SufferDamage,
             WantsToMelee,
             Item,
@@ -172,7 +172,9 @@ pub fn load_game(ecs: &mut World) {
             Door,
             Vendor,
             Quips,
-            Attributes
+            Attributes,
+            Skills,
+            Pools
         );
     }
 

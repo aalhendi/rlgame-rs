@@ -1,8 +1,10 @@
+use crate::Pools;
+
 use super::{
-    gamelog::Gamelog, particle_system::ParticleBuilder, AreaOfEffect, CombatStats, Confusion,
-    Consumable, Equippable, Equipped, HungerClock, HungerState, InBackpack, InflictsDamage,
-    MagicMapper, Map, Name, Position, ProvidesFood, ProvidesHealing, RunState, SufferDamage,
-    WantsToDropItem, WantsToPickupItem, WantsToRemoveItem, WantsToUseItem,
+    gamelog::Gamelog, particle_system::ParticleBuilder, AreaOfEffect, Confusion, Consumable,
+    Equippable, Equipped, HungerClock, HungerState, InBackpack, InflictsDamage, MagicMapper, Map,
+    Name, Position, ProvidesFood, ProvidesHealing, RunState, SufferDamage, WantsToDropItem,
+    WantsToPickupItem, WantsToRemoveItem, WantsToUseItem,
 };
 use specs::prelude::*;
 
@@ -59,7 +61,7 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadStorage<'a, Name>,
         ReadStorage<'a, ProvidesHealing>,
         ReadStorage<'a, InflictsDamage>,
-        WriteStorage<'a, CombatStats>,
+        WriteStorage<'a, Pools>,
         ReadExpect<'a, Map>,
         WriteStorage<'a, SufferDamage>,
         ReadStorage<'a, AreaOfEffect>,
@@ -85,7 +87,7 @@ impl<'a> System<'a> for ItemUseSystem {
             names,
             healers,
             damagers,
-            mut combat_stats,
+            mut pools,
             map,
             mut suffer_damage,
             aoe,
@@ -191,7 +193,7 @@ impl<'a> System<'a> for ItemUseSystem {
             // Damaging Item
             if let Some(damager) = damagers.get(wants_use.item) {
                 for mob in targets.iter() {
-                    if combat_stats.get(*mob).is_some() {
+                    if pools.get(*mob).is_some() {
                         SufferDamage::new_damage(&mut suffer_damage, *mob, damager.damage);
                         if entity == *player_entity {
                             gamelog.entries.push(format!(
@@ -217,13 +219,18 @@ impl<'a> System<'a> for ItemUseSystem {
             // Healing Item
             if let Some(healer) = healers.get(wants_use.item) {
                 for target in targets.iter() {
-                    if let Some(stats) = combat_stats.get_mut(*target) {
-                        let amount = if stats.hp + healer.heal_amount > stats.max_hp {
-                            stats.max_hp - stats.hp
+                    if let Some(stats) = pools.get_mut(*target) {
+                        let amount = if stats.hit_points.current + healer.heal_amount
+                            > stats.hit_points.max
+                        {
+                            stats.hit_points.max - stats.hit_points.current
                         } else {
                             healer.heal_amount
                         };
-                        stats.hp = i32::min(stats.max_hp, stats.hp + healer.heal_amount);
+                        stats.hit_points.current = i32::min(
+                            stats.hit_points.max,
+                            stats.hit_points.current + healer.heal_amount,
+                        );
                         if entity == *player_entity {
                             gamelog.entries.push(format!(
                                 "You drink the {potion_name}, healing {amount} hp.",
