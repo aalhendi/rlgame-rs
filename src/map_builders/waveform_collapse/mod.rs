@@ -43,7 +43,8 @@ impl WaveformCollapseBuilder {
             } // If it has hit an impossible condition, try again
         }
 
-        build_data.spawn_list.clear();
+        // NOTE(aalhendi): no more metabuilders added in random_builder to redo the spawnlist... Is this needed?
+        // build_data.spawn_list.clear();
     }
 
     fn render_tile_gallery(

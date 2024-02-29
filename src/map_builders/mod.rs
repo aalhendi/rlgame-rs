@@ -225,7 +225,7 @@ fn random_room_builder(rng: &mut rltk::RandomNumberGenerator, builder: &mut Buil
         // Apply floor tiles to map at rooms locs
         builder.with(RoomDrawer::new());
 
-        let corridor_roll = rng.roll_dice(1, 2);
+        let corridor_roll = rng.roll_dice(1, 4);
         match corridor_roll {
             1 => builder.with(DoglegCorridors::new()),
             2 => builder.with(NearestCorridors::new()),
@@ -233,7 +233,7 @@ fn random_room_builder(rng: &mut rltk::RandomNumberGenerator, builder: &mut Buil
             _ => builder.with(BspCorridors::new()),
         }
 
-        let corridor_spawn_roll = rng.roll_dice(1, 3);
+        let corridor_spawn_roll = rng.roll_dice(1, 2);
         if corridor_spawn_roll == 1 {
             builder.with(CorridorSpawner::new());
         }
@@ -242,7 +242,6 @@ fn random_room_builder(rng: &mut rltk::RandomNumberGenerator, builder: &mut Buil
         match modifier_roll {
             1 => builder.with(RoomExploder::new()),
             2 => builder.with(RoomCornerRounder::new()),
-            3 => builder.with(DLABuilder::heavy_erosion()),
             _ => {}
         }
     }
@@ -270,7 +269,7 @@ fn random_room_builder(rng: &mut rltk::RandomNumberGenerator, builder: &mut Buil
 }
 
 fn random_shape_builder(rng: &mut rltk::RandomNumberGenerator, builder: &mut BuilderChain) {
-    let builder_roll = rng.roll_dice(1, 17);
+    let builder_roll = rng.roll_dice(1, 18);
     match builder_roll {
         1 => builder.start_with(CellularAutomataBuilder::new()),
         2 => builder.start_with(DrunkardsWalkBuilder::open_area()),
@@ -283,9 +282,10 @@ fn random_shape_builder(rng: &mut rltk::RandomNumberGenerator, builder: &mut Bui
         9 => builder.start_with(DLABuilder::walk_outwards()),
         10 => builder.start_with(DLABuilder::central_attractor()),
         11 => builder.start_with(DLABuilder::insectoid()),
-        12 => builder.start_with(VoronoiCellBuilder::pythagoras()),
-        13 => builder.start_with(VoronoiCellBuilder::manhattan()),
-        14 => builder.start_with(VoronoiCellBuilder::chebyshev()),
+        12 => builder.start_with(DLABuilder::heavy_erosion()),
+        13 => builder.start_with(VoronoiCellBuilder::pythagoras()),
+        14 => builder.start_with(VoronoiCellBuilder::manhattan()),
+        15 => builder.start_with(VoronoiCellBuilder::chebyshev()),
         _ => builder.start_with(PrefabBuilder::constant(
             prefab_builder::prefab_levels::WFC_POPULATED,
         )),

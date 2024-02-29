@@ -38,12 +38,13 @@ impl DoglegCorridors {
                 c1.append(&mut c2);
                 corridors.push(c1);
             } else {
-                let mut c1 = apply_vertical_tunnel(&mut build_data.map, prev.y, new.y, new.x);
-                let mut c2 = apply_horizontal_tunnel(&mut build_data.map, prev.x, new.x, prev.y);
+                let mut c1 = apply_vertical_tunnel(&mut build_data.map, prev.y, new.y, prev.x);
+                let mut c2 = apply_horizontal_tunnel(&mut build_data.map, prev.x, new.x, new.y);
                 c1.append(&mut c2);
                 corridors.push(c1);
             }
             build_data.take_snapshot();
         }
+        build_data.corridors = Some(corridors);
     }
 }
