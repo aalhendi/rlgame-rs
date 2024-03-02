@@ -1,8 +1,10 @@
-use crate::{gamesystem::skill_bonus, Attributes, Pools, Skill, Skills};
+use crate::{
+    gamesystem::skill_bonus, Attributes, EquipmentSlot, Pools, Skill, Skills, WeaponAttribute,
+};
 
 use super::{
-    gamelog::Gamelog, particle_system::ParticleBuilder, DefenseBonus, Equipped, HungerClock,
-    HungerState, MeleePowerBonus, Name, Position, SufferDamage, WantsToMelee,
+    gamelog::Gamelog, particle_system::ParticleBuilder, Equipped, HungerClock, HungerState,
+    MeleeWeapon, Name, Position, SufferDamage, WantsToMelee, Wearable,
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
@@ -18,8 +20,8 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Skills>,
         WriteStorage<'a, SufferDamage>,
         WriteExpect<'a, Gamelog>,
-        ReadStorage<'a, MeleePowerBonus>,
-        ReadStorage<'a, DefenseBonus>,
+        ReadStorage<'a, MeleeWeapon>,
+        ReadStorage<'a, Wearable>,
         ReadStorage<'a, Equipped>,
         WriteExpect<'a, ParticleBuilder>,
         ReadStorage<'a, Position>,
@@ -36,9 +38,9 @@ impl<'a> System<'a> for MeleeCombatSystem {
             skills,
             mut inflict_damage,
             mut log,
-            _melee_power_bonuses,
-            _defense_bonuses,
-            _equipped,
+            melee_weapons,
+            wearables,
+            equipped,
             mut particle_builder,
             positions,
             hunger_clock,
@@ -66,8 +68,28 @@ impl<'a> System<'a> for MeleeCombatSystem {
 
             let target_name = names.get(wants_melee.target).unwrap();
 
+            // Default weapon.
+            // TODO(aalhendi): Refactor into MeleeWeapon::default()?
+            let mut weapon_info = MeleeWeapon {
+                attribute: WeaponAttribute::Might,
+                damage_n_dice: 1,
+                damage_die_type: 4,
+                damage_bonus: 0,
+                hit_bonus: 0,
+            };
+
+            // If melee weapon, update its data
+            for (equipment, melee) in (&equipped, &melee_weapons).join() {
+                if equipment.owner == entity && equipment.slot == EquipmentSlot::Melee {
+                    weapon_info = melee.clone();
+                }
+            }
+
             let natural_roll = rng.roll_dice(1, 20);
-            let attribute_hit_bonus = attacker_attributes.might.bonus;
+            let attribute_hit_bonus = match weapon_info.attribute {
+                WeaponAttribute::Might => attacker_attributes.might.bonus,
+                WeaponAttribute::Quickness => attacker_attributes.quickness.bonus,
+            };
             let skill_hit_bonus = skill_bonus(Skill::Melee, attacker_skills);
             let weapon_hit_bonus = 0; // TODO(aalhendi): Once weapons support this
             let mut status_hit_bonus = 0;
@@ -83,10 +105,19 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 + weapon_hit_bonus
                 + status_hit_bonus;
 
+            // Calculate total armor item bonus
+            // NOTE: Floats because D&D armor is per set. Here we can equip items seperately.
+            let mut armor_item_bonus = 0_f32;
+            for (equipment, armor) in (&equipped, &wearables).join() {
+                if equipment.owner == wants_melee.target {
+                    armor_item_bonus += armor.armor_class;
+                }
+            }
+
             let base_armor_class = 10;
             let armor_quickness_bonus = target_attributes.quickness.bonus;
             let armor_skill_bonus = skill_bonus(Skill::Defense, target_skills);
-            let armor_item_bonus = 0; // TODO(aalhendi): Once armor supports this
+            let armor_item_bonus = armor_item_bonus as i32;
             let armor_class =
                 base_armor_class + armor_quickness_bonus + armor_skill_bonus + armor_item_bonus;
 
@@ -109,12 +140,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     }
                 }
 
-                // Target hit! Until we support weapons, we're going with 1d4
+                // Target hit!
                 _ if natural_roll == 20 || modified_hit_roll > armor_class => {
-                    let base_damage = rng.roll_dice(1, 4);
+                    let base_damage =
+                        rng.roll_dice(weapon_info.damage_n_dice, weapon_info.damage_die_type);
                     let attr_damage_bonus = attacker_attributes.might.bonus;
                     let skill_damage_bonus = skill_bonus(Skill::Melee, attacker_skills);
-                    let weapon_damage_bonus = 0;
+                    let weapon_damage_bonus = weapon_info.damage_bonus;
 
                     let damage = i32::max(
                         0,

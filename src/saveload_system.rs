@@ -99,7 +99,9 @@ pub fn save_game(ecs: &mut World) {
             Quips,
             Attributes,
             Skills,
-            Pools
+            Pools,
+            MeleeWeapon,
+            Wearable
         );
     }
 
@@ -174,7 +176,9 @@ pub fn load_game(ecs: &mut World) {
             Quips,
             Attributes,
             Skills,
-            Pools
+            Pools,
+            MeleeWeapon,
+            Wearable
         );
     }
 

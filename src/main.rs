@@ -475,8 +475,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Equipped>();
     gs.ecs.register::<SimpleMarker<IsSerialized>>();
     gs.ecs.register::<SerializationHelper>();
-    gs.ecs.register::<MeleePowerBonus>();
-    gs.ecs.register::<DefenseBonus>();
+    gs.ecs.register::<MeleeWeapon>();
+    gs.ecs.register::<Wearable>();
     gs.ecs.register::<ParticleLifetime>();
     gs.ecs.register::<HungerClock>();
     gs.ecs.register::<ProvidesFood>();

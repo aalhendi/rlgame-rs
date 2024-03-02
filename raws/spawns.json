@@ -617,6 +617,34 @@
     },
 
     {
+      "name": "Dried Sausage",
+      "renderable": {
+        "glyph": "%",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "consumable": {
+        "effects": {
+          "food": ""
+        }
+      }
+    },
+
+    {
+      "name": "Beer",
+      "renderable": {
+        "glyph": "!",
+        "fg": "#FF00FF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "consumable": {
+        "effects": { "provides_healing": "4" }
+      }
+    },
+
+    {
       "name": "Dagger",
       "renderable": {
         "glyph": "/",
@@ -626,7 +654,9 @@
       },
       "weapon": {
         "range": "melee",
-        "power_bonus": 2
+        "attribute": "Quickness",
+        "base_damage": "1d4",
+        "hit_bonus": 0
       }
     },
 
@@ -640,33 +670,25 @@
       },
       "weapon": {
         "range": "melee",
-        "power_bonus": 4
+        "attribute": "Might",
+        "base_damage": "1d8",
+        "hit_bonus": 0
       }
     },
 
     {
-      "name": "Shield",
+      "name": "Rusty Longsword",
       "renderable": {
-        "glyph": "[",
-        "fg": "#00AAFF",
+        "glyph": "/",
+        "fg": "#BB77BB",
         "bg": "#000000",
         "order": 2
       },
-      "shield": {
-        "defense_bonus": 1
-      }
-    },
-
-    {
-      "name": "Tower Shield",
-      "renderable": {
-        "glyph": "[",
-        "fg": "#00FFFF",
-        "bg": "#000000",
-        "order": 2
-      },
-      "shield": {
-        "defense_bonus": 3
+      "weapon": {
+        "range": "melee",
+        "attribute": "Might",
+        "base_damage": "1d8-1",
+        "hit_bonus": -1
       }
     },
 
@@ -680,7 +702,79 @@
       },
       "weapon": {
         "range": "melee",
-        "power_bonus": 5
+        "attribute": "Might",
+        "base_damage": "1d8+1",
+        "hit_bonus": 0
+      }
+    },
+
+    {
+      "name": "Shield",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00AAFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Shield",
+        "armor_class": 1.0
+      }
+    },
+
+    {
+      "name": "Tower Shield",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Shield",
+        "armor_class": 2.0
+      }
+    },
+
+    {
+      "name": "Stained Tunic",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Torso",
+        "armor_class": 0.1
+      }
+    },
+
+    {
+      "name": "Torn Trousers",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Legs",
+        "armor_class": 0.1
+      }
+    },
+
+    {
+      "name": "Old Boots",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#FF9999",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Legs",
+        "armor_class": 0.1
       }
     }
   ]

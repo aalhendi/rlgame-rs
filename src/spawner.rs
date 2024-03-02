@@ -28,7 +28,8 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         skills.skills.insert(skill, 1);
     }
 
-    ecs.create_entity()
+    let player = ecs
+        .create_entity()
         .with(player_pos)
         .with(Renderable {
             glyph: rltk::to_cp437('@'),
@@ -85,7 +86,38 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             level: 1,
         })
         .marked::<SimpleMarker<IsSerialized>>()
-        .build()
+        .build();
+
+    // Starting equipment
+    let raws = &RAWS.lock().unwrap();
+    spawn_named_entity(
+        raws,
+        ecs,
+        "Rusty Longsword",
+        SpawnType::Equipped { by: player },
+    );
+    spawn_named_entity(
+        raws,
+        ecs,
+        "Dried Sausage",
+        SpawnType::Carried { by: player },
+    );
+    spawn_named_entity(raws, ecs, "Beer", SpawnType::Carried { by: player });
+    spawn_named_entity(
+        raws,
+        ecs,
+        "Stained Tunic",
+        SpawnType::Equipped { by: player },
+    );
+    spawn_named_entity(
+        raws,
+        ecs,
+        "Torn Trousers",
+        SpawnType::Equipped { by: player },
+    );
+    spawn_named_entity(raws, ecs, "Old Boots", SpawnType::Equipped { by: player });
+
+    player
 }
 
 /// Calls spawn_region() with all possible_targets (floor tiles) from given room
@@ -156,7 +188,7 @@ pub fn spawn_entity(ecs: &mut World, (idx, name): &(&usize, &String)) {
 
     let spawn_result = spawn_named_entity(
         &RAWS.lock().unwrap(),
-        ecs.create_entity(),
+        ecs,
         name,
         SpawnType::AtPosition { x, y },
     );
