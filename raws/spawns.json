@@ -249,7 +249,8 @@
       },
       "skills": {
         "Melee": 2
-      }
+      },
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -263,7 +264,8 @@
       "blocks_tile": true,
       "vision_range": 4,
       "ai_type": "vendor",
-      "attributes": {}
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -282,7 +284,8 @@
         "Quiet down, it's too early!",
         "Oh my, I drank too much.",
         "Still saving the world, eh?"
-      ]
+      ],
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -296,7 +299,8 @@
       "blocks_tile": true,
       "vision_range": 4,
       "ai_type": "bystander",
-      "attributes": {}
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -315,7 +319,8 @@
         "Great to see a new face here!",
         "I hear there's going to be a good sermon on tea",
         "Want some cake?"
-      ]
+      ],
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -329,7 +334,8 @@
       "blocks_tile": true,
       "vision_range": 4,
       "ai_type": "vendor",
-      "attributes": {}
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -343,7 +349,8 @@
       "blocks_tile": true,
       "vision_range": 4,
       "ai_type": "vendor",
-      "attributes": {}
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -357,7 +364,8 @@
       "blocks_tile": true,
       "vision_range": 4,
       "attributes": {},
-      "ai_type": "vendor"
+      "ai_type": "vendor",
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -377,7 +385,8 @@
         "Off saving the world again?",
         "Be careful in the dungeon!",
         "Your father would be so proud, were he here."
-      ]
+      ],
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -392,7 +401,8 @@
       "vision_range": 4,
       "ai_type": "bystander",
       "attributes": {},
-      "quips": ["Lovely day, eh?", "Nice weather", "Hello"]
+      "quips": ["Lovely day, eh?", "Nice weather", "Hello"],
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -411,7 +421,8 @@
         "They're biting today!",
         "I caught something, but it wasn't a fish!",
         "Looks like rain"
-      ]
+      ],
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -426,7 +437,8 @@
       "vision_range": 4,
       "ai_type": "bystander",
       "attributes": {},
-      "quips": ["Arrr", "Grog!", "Booze!"]
+      "quips": ["Arrr", "Grog!", "Booze!"],
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -441,7 +453,8 @@
       "vision_range": 4,
       "ai_type": "bystander",
       "attributes": {},
-      "quips": ["Hic", "Need... more... booze!", "Spare a copper?"]
+      "quips": ["Hic", "Need... more... booze!", "Spare a copper?"],
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -456,7 +469,8 @@
       "vision_range": 4,
       "ai_type": "bystander",
       "attributes": {},
-      "quips": ["Why are you in my house?"]
+      "quips": ["Why are you in my house?"],
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
     },
 
     {
@@ -519,6 +533,10 @@
       "skills": {
         "Melee": -1,
         "Defense": -1
+      },
+      "natural": {
+        "armor_class": 11,
+        "attacks": [{ "name": "bite", "hit_bonus": 0, "damage": "1d4" }]
       }
     }
   ],
@@ -766,6 +784,64 @@
 
     {
       "name": "Old Boots",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#FF9999",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Legs",
+        "armor_class": 0.1
+      }
+    },
+
+    {
+      "name": "Cudgel",
+      "renderable": {
+        "glyph": "/",
+        "fg": "#A52A2A",
+        "bg": "#000000",
+        "order": 2
+      },
+      "weapon": {
+        "range": "melee",
+        "attribute": "Quickness",
+        "base_damage": "1d4",
+        "hit_bonus": 0
+      }
+    },
+
+    {
+      "name": "Cloth Tunic",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Torso",
+        "armor_class": 0.1
+      }
+    },
+
+    {
+      "name": "Cloth Pants",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Legs",
+        "armor_class": 0.1
+      }
+    },
+
+    {
+      "name": "Slippers",
       "renderable": {
         "glyph": "[",
         "fg": "#FF9999",

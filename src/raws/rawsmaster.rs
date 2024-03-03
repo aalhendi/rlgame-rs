@@ -8,8 +8,8 @@ use crate::{
     },
     gamesystem::{attr_bonus, mana_at_level, npc_hp},
     random_table::RandomTable,
-    Attribute, Attributes, Equipped, InBackpack, IsSerialized, Pool, Pools, Skill, Skills,
-    WeaponAttribute, Wearable,
+    Attribute, Attributes, Equipped, InBackpack, IsSerialized, NaturalAttack, NaturalAttackDefense,
+    Pool, Pools, Skill, Skills, WeaponAttribute, Wearable,
 };
 use regex::Regex;
 use specs::{
@@ -354,7 +354,43 @@ pub fn spawn_named_mob(
     };
     eb = eb.with(pools);
 
-    Some(eb.build())
+    if let Some(nat) = &mob_template.natural {
+        let attacks = nat
+            .attacks
+            .as_ref()
+            .map(|attacks| {
+                attacks
+                    .iter()
+                    .map(|nattack| {
+                        let (n, d, b) = parse_dice_string(&nattack.damage);
+                        NaturalAttack {
+                            name: nattack.name.clone(),
+                            hit_bonus: nattack.hit_bonus,
+                            damage_n_dice: n,
+                            damage_die_type: d,
+                            damage_bonus: b,
+                        }
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_else(Vec::new);
+
+        eb = eb.with(NaturalAttackDefense {
+            armor_class: nat.armor_class,
+            attacks,
+        });
+    }
+
+    let new_mob = eb.build();
+
+    // Wearables
+    if let Some(wielding) = &mob_template.equipped {
+        for tag in wielding.iter() {
+            spawn_named_entity(raws, ecs, tag, SpawnType::Equipped { by: new_mob });
+        }
+    }
+
+    Some(new_mob)
 }
 
 fn spawn_position<'a>(

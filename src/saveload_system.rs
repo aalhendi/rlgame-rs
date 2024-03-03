@@ -101,7 +101,8 @@ pub fn save_game(ecs: &mut World) {
             Skills,
             Pools,
             MeleeWeapon,
-            Wearable
+            Wearable,
+            NaturalAttackDefense
         );
     }
 
@@ -178,7 +179,8 @@ pub fn load_game(ecs: &mut World) {
             Skills,
             Pools,
             MeleeWeapon,
-            Wearable
+            Wearable,
+            NaturalAttackDefense
         );
     }
 

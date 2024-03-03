@@ -298,3 +298,19 @@ pub struct Pools {
     pub xp: i32,
     pub level: i32,
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+// Not actually a component, its just used by one. Doesn't need to be registered in saveload and main
+pub struct NaturalAttack {
+    pub name: String,
+    pub damage_n_dice: i32,
+    pub damage_die_type: i32,
+    pub damage_bonus: i32,
+    pub hit_bonus: i32,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct NaturalAttackDefense {
+    pub armor_class: Option<i32>,
+    pub attacks: Vec<NaturalAttack>,
+}

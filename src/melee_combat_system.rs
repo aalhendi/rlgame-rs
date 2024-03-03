@@ -1,5 +1,6 @@
 use crate::{
-    gamesystem::skill_bonus, Attributes, EquipmentSlot, Pools, Skill, Skills, WeaponAttribute,
+    gamesystem::skill_bonus, Attributes, EquipmentSlot, NaturalAttackDefense, Pools, Skill, Skills,
+    WeaponAttribute,
 };
 
 use super::{
@@ -27,6 +28,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Position>,
         ReadStorage<'a, HungerClock>,
         ReadStorage<'a, Pools>,
+        ReadStorage<'a, NaturalAttackDefense>,
         WriteExpect<'a, RandomNumberGenerator>,
     );
     fn run(&mut self, data: Self::SystemData) {
@@ -45,6 +47,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             positions,
             hunger_clock,
             pools,
+            naturals,
             mut rng,
         ) = data;
 
@@ -77,6 +80,19 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 damage_bonus: 0,
                 hit_bonus: 0,
             };
+
+            // Check for natural attacks, pick one at random, mutate the weapon to match it
+            if let Some(nat) = naturals.get(entity).filter(|nat| !nat.attacks.is_empty()) {
+                let attack_index = if nat.attacks.len() == 1 {
+                    0
+                } else {
+                    rng.roll_dice(1, nat.attacks.len() as i32) as usize - 1
+                };
+                weapon_info.hit_bonus = nat.attacks[attack_index].hit_bonus;
+                weapon_info.damage_n_dice = nat.attacks[attack_index].damage_n_dice;
+                weapon_info.damage_die_type = nat.attacks[attack_index].damage_die_type;
+                weapon_info.damage_bonus = nat.attacks[attack_index].damage_bonus;
+            }
 
             // If melee weapon, update its data
             for (equipment, melee) in (&equipped, &melee_weapons).join() {
@@ -114,7 +130,10 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 }
             }
 
-            let base_armor_class = 10;
+            let base_armor_class = match naturals.get(wants_melee.target) {
+                Some(nat) => nat.armor_class.unwrap_or(10),
+                None => 10,
+            };
             let armor_quickness_bonus = target_attributes.quickness.bonus;
             let armor_skill_bonus = skill_bonus(Skill::Defense, target_skills);
             let armor_item_bonus = armor_item_bonus as i32;
