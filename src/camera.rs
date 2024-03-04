@@ -3,6 +3,7 @@ use rltk::{Point, Rltk, RGB};
 use specs::{Join, World, WorldExt};
 
 const SHOW_BOUNDARIES: bool = true;
+pub const PANE_WIDTH: i32 = 44;
 
 pub fn render_debug_map(map: &Map, ctx: &mut Rltk) {
     let player_pos = Point::new(map.width / 2, map.height / 2);
@@ -157,17 +158,20 @@ fn get_tile_glyph(idx: usize, map: &Map) -> (rltk::FontCharType, RGB, RGB) {
     (glyph, fg, bg)
 }
 
-pub fn get_screen_bounds(ecs: &World, ctx: &mut Rltk) -> (i32, i32, i32, i32) {
+pub fn get_screen_bounds(ecs: &World, _ctx: &mut Rltk) -> (i32, i32, i32, i32) {
     let player_pos = ecs.fetch::<Point>();
-    let (x_chars, y_chars) = ctx.get_char_size();
+    // Reading the screen size
+    // let (x_chars, y_chars) = ctx.get_char_size();
+    // Custom viewport
+    let (x_chars, y_chars) = (PANE_WIDTH, PANE_WIDTH);
 
-    let center_x = (x_chars / 2) as i32;
-    let center_y = (y_chars / 2) as i32;
+    let center_x = x_chars / 2;
+    let center_y = y_chars / 2;
 
     let min_x = player_pos.x - center_x;
-    let max_x = min_x + x_chars as i32;
+    let max_x = min_x + x_chars;
     let min_y = player_pos.y - center_y;
-    let max_y = min_y + y_chars as i32;
+    let max_y = min_y + y_chars;
 
     (min_x, max_x, min_y, max_y)
 }

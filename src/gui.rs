@@ -1,93 +1,187 @@
-use crate::{camera, Pools};
+use crate::{
+    camera::{self, PANE_WIDTH},
+    Attribute, Attributes, Consumable, Pools,
+};
 
 use super::{
     gamelog::Gamelog, Equipped, Hidden, HungerClock, HungerState, InBackpack, Map, Name, Owned,
-    Player, Position, RunState, State, Viewshed,
+    Position, RunState, State, Viewshed,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
-    ctx.draw_box(
-        0,
-        43,
-        79,
-        6,
-        RGB::named(rltk::WHITE),
-        RGB::named(rltk::BLACK),
-    );
+    use rltk::to_cp437;
 
-    // TODO: If player is a resource in the ECS, can't we just fetch it insead of
-    // player entity and combat_stats component read calls?
+    let box_gray: RGB = RGB::from_hex("#999999").expect("Failed to convert hex to RGB.");
+    let black = RGB::named(rltk::BLACK);
+    let white = RGB::named(rltk::WHITE);
+    let red = RGB::named(rltk::RED);
+    let blue = RGB::named(rltk::BLUE);
+    let green = RGB::named(rltk::GREEN);
+    let yellow = RGB::named(rltk::YELLOW);
+    let orange = RGB::named(rltk::ORANGE);
+    let magenta = RGB::named(rltk::MAGENTA);
+
+    // Overall box
+    draw_hollow_box(ctx, 0, 0, 79, 59, box_gray, black);
+    // Map box
+    draw_hollow_box(ctx, 0, 0, 49, 45, box_gray, black);
+    // Log box
+    draw_hollow_box(ctx, 0, 45, 79, 14, box_gray, black);
+    // Top-right (Attributes) panel
+    draw_hollow_box(ctx, 49, 0, 30, 8, box_gray, black);
+
+    // Box connectors for style
+    ctx.set(0, 45, box_gray, black, to_cp437('├'));
+    ctx.set(49, 8, box_gray, black, to_cp437('├'));
+    ctx.set(49, 0, box_gray, black, to_cp437('┬'));
+    ctx.set(49, 45, box_gray, black, to_cp437('┴'));
+    ctx.set(79, 8, box_gray, black, to_cp437('┤'));
+    ctx.set(79, 45, box_gray, black, to_cp437('┤'));
+
+    // Town Name
+    let map = ecs.fetch::<Map>();
+    let name_length = (map.name.len() + 2) as i32; // +2 for wrapping char
+    let x_pos = PANE_WIDTH - (name_length / 2);
+    // Endcap / wrapping chars
+    ctx.set(x_pos, 0, box_gray, black, to_cp437('┤'));
+    ctx.set(x_pos + name_length, 0, box_gray, black, to_cp437('├'));
+    ctx.print_color(x_pos + 1, 0, white, black, &map.name);
+    std::mem::drop(map);
+
+    // Stats
+    let player_entity = ecs.fetch::<Entity>();
     let pools = ecs.read_storage::<Pools>();
-    let players = ecs.read_storage::<Player>();
-    let log = ecs.fetch::<Gamelog>();
-    let hunger = ecs.read_storage::<HungerClock>();
+    let player_pools = pools.get(*player_entity).unwrap();
 
-    let mut y = 44;
+    let health_curr = player_pools.hit_points.current;
+    let health_max = player_pools.hit_points.max;
+    let health = format!("Health: {health_curr}/{health_max}",);
+
+    let mana_curr = player_pools.mana.current;
+    let mana_max = player_pools.mana.max;
+    let mana = format!("Mana: {mana_curr}/{mana_max}",);
+
+    ctx.print_color(50, 1, white, black, &health);
+    ctx.print_color(50, 2, white, black, &mana);
+    ctx.draw_bar_horizontal(64, 1, 14, health_curr, health_max, red, black);
+    ctx.draw_bar_horizontal(64, 2, 14, mana_curr, mana_max, blue, black);
+
+    // Attributes
+    let attributes = ecs.read_storage::<Attributes>();
+    let p_attr = attributes.get(*player_entity).unwrap();
+    draw_attribute("Might:", &p_attr.might, 4, ctx);
+    draw_attribute("Quickness:", &p_attr.quickness, 5, ctx);
+    draw_attribute("Fitness:", &p_attr.fitness, 6, ctx);
+    draw_attribute("Intelligence:", &p_attr.intelligence, 7, ctx);
+
+    // Wearables / Equipped
+    let mut y = 9; // Starting pt
+    let equipped = ecs.read_storage::<Equipped>();
+    let name = ecs.read_storage::<Name>();
+    for (equipped_by, item_name) in (&equipped, &name).join() {
+        if equipped_by.owner == *player_entity {
+            ctx.print_color(50, y, white, black, &item_name.name);
+            y += 1;
+        }
+    }
+
+    // Consumables
+    y += 1;
+    let consumables = ecs.read_storage::<Consumable>();
+    let backpack = ecs.read_storage::<InBackpack>();
+    let mut index = 1;
+    for (carried_by, _consumable, item_name) in (&backpack, &consumables, &name).join() {
+        if carried_by.owner == *player_entity && index < 10 {
+            ctx.print_color(50, y, yellow, black, &format!("↑{index}"));
+            ctx.print_color(53, y, green, black, &item_name.name);
+            y += 1;
+            index += 1;
+        }
+    }
+
+    // Status
+    let hunger = ecs.read_storage::<HungerClock>();
+    let hc = hunger.get(*player_entity).unwrap();
+    match hc.state {
+        HungerState::WellFed => ctx.print_color(50, PANE_WIDTH, green, black, "Well Fed"),
+        HungerState::Normal => ctx.print_color(50, PANE_WIDTH, white, black, "Normal"),
+        HungerState::Hungry => ctx.print_color(50, PANE_WIDTH, orange, black, "Hungry"),
+        HungerState::Starving => ctx.print_color(50, PANE_WIDTH, red, black, "Starving"),
+    }
+    // ctx.draw_box(0, 43, 79, 6, white, black);
+
+    // Log
+    let log = ecs.fetch::<Gamelog>();
+    let mut y = 46;
     for entry in log.entries.iter().rev() {
-        if y < 49 {
+        if y < 59 {
             ctx.print(2, y, entry);
         }
         y += 1;
     }
 
-    let yellow = RGB::named(rltk::YELLOW);
-    let black = RGB::named(rltk::BLACK);
-    let red = RGB::named(rltk::RED);
-    let magenta = RGB::named(rltk::MAGENTA);
-    let green = RGB::named(rltk::GREEN);
-    let orange = RGB::named(rltk::ORANGE);
-    let white = RGB::named(rltk::WHITE);
+    // Tooltips
+    draw_tooltips(ecs, ctx);
 
-    for (_player, stats, hc) in (&players, &pools, &hunger).join() {
-        let health = format!(
-            " HP: {hp} / {max_hp} ",
-            hp = stats.hit_points.current,
-            max_hp = stats.hit_points.max
-        );
-        ctx.print_color(12, 43, yellow, black, &health);
-
-        ctx.draw_bar_horizontal(
-            28,
-            43,
-            51,
-            stats.hit_points.current,
-            stats.hit_points.max,
-            red,
-            black,
-        );
-
-        match hc.state {
-            HungerState::WellFed => ctx.print_color(71, 42, green, black, "Well Fed"),
-            HungerState::Normal => ctx.print_color(71, 42, white, black, "Normal"),
-            HungerState::Hungry => ctx.print_color(71, 42, orange, black, "Hungry"),
-            HungerState::Starving => ctx.print_color(71, 42, red, black, "Starving"),
-        }
-    }
-
+    // Depth
     let map = ecs.fetch::<Map>();
     let depth = format!("Depth: {depth}", depth = map.depth);
-    ctx.print_color(2, 43, yellow, black, &depth);
+    ctx.print_color(2, PANE_WIDTH+1, yellow, black, &depth);
 
     // Draw mouse cursor
     let mouse_pos = ctx.mouse_pos();
     ctx.set_bg(mouse_pos.0, mouse_pos.1, magenta);
-    draw_tooltips(ecs, ctx);
+}
+
+/// Draws attribute at fixed x pos and given y pos in light gray
+fn draw_attribute(name: &str, attribute: &Attribute, y: i32, ctx: &mut Rltk) {
+    let black = RGB::named(rltk::BLACK);
+    let attr_gray: RGB = RGB::from_hex("#CCCCCC").expect("Couldn't parse color from hex.");
+    let (modifiers, base, bonus) = (attribute.modifiers, attribute.base, attribute.bonus);
+    let color = match modifiers.cmp(&0) {
+        std::cmp::Ordering::Less => RGB::named(rltk::RED),
+        std::cmp::Ordering::Equal => RGB::named(rltk::WHITE),
+        std::cmp::Ordering::Greater => RGB::named(rltk::GREEN),
+    };
+
+    // Name
+    ctx.print_color(50, y, attr_gray, black, name);
+
+    // Total
+    ctx.print_color(
+        67,
+        y,
+        color,
+        black,
+        &format!("{total}", total = base + modifiers),
+    );
+    // Bonus
+    ctx.print_color(73, y, color, black, &format!("{bonus}"));
+
+    // TODO(aalhendi): move glyph to color calc, add ('-')
+    if bonus > 0 {
+        ctx.set(72, y, color, black, rltk::to_cp437('+'));
+    }
 }
 
 fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let (min_x, _max_x, min_y, _max_y) = camera::get_screen_bounds(ecs, ctx);
     let white = RGB::named(rltk::WHITE);
-    let grey = RGB::named(rltk::GREY);
+    let box_gray: RGB = RGB::from_hex("#999999").expect("Could not parse color from hex");
 
     let map = ecs.fetch::<Map>();
     let names = ecs.read_storage::<Name>();
     let positions = ecs.read_storage::<Position>();
     let hidden = ecs.read_storage::<Hidden>();
+    let attributes = ecs.read_storage::<Attributes>();
+    let pools = ecs.read_storage::<Pools>();
+    let entities = ecs.entities();
 
     let mouse_pos = ctx.mouse_pos();
     let mut mouse_map_pos = mouse_pos;
+    // -1 compensate for map being offset from screen
     mouse_map_pos.0 += min_x;
     mouse_map_pos.1 += min_y;
 
@@ -99,56 +193,102 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     {
         return;
     }
+
     if !map.visible_tiles[map.xy_idx(mouse_map_pos.0, mouse_map_pos.1)] {
         return;
     }
 
-    let mut tooltip: Vec<String> = Vec::new();
+    // Check if mouse-pos is on an entity, add its TT
+    let mut tip_boxes: Vec<Tooltip> = Vec::new();
+    for (entity, name, position, _hidden) in (&entities, &names, &positions, !&hidden).join() {
+        if position.x == mouse_map_pos.0 && position.y == mouse_map_pos.1 {
+            let mut tip = Tooltip::new();
+            tip.add_line(name.name.clone());
 
-    for (name, pos, _hidden) in (&names, &positions, !&hidden).join() {
-        if pos.x == mouse_map_pos.0 && pos.y == mouse_map_pos.1 {
-            tooltip.push(name.name.to_string());
+            // Comment on attributes
+            if let Some(attr) = attributes.get(entity) {
+                let mut tip_text = String::new();
+
+                match attr.might.bonus.cmp(&0) {
+                    std::cmp::Ordering::Less => tip_text += "Weak. ",
+                    std::cmp::Ordering::Equal => (),
+                    std::cmp::Ordering::Greater => tip_text += "Strong. ",
+                }
+
+                match attr.quickness.bonus.cmp(&0) {
+                    std::cmp::Ordering::Less => tip_text += "Clumsy. ",
+                    std::cmp::Ordering::Equal => (),
+                    std::cmp::Ordering::Greater => tip_text += "Agile. ",
+                }
+
+                match attr.fitness.bonus.cmp(&0) {
+                    std::cmp::Ordering::Less => tip_text += "Unhealthy. ",
+                    std::cmp::Ordering::Equal => (),
+                    std::cmp::Ordering::Greater => tip_text += "Healthy. ",
+                }
+
+                match attr.intelligence.bonus.cmp(&0) {
+                    std::cmp::Ordering::Less => tip_text += "Unintelligent. ",
+                    std::cmp::Ordering::Equal => (),
+                    std::cmp::Ordering::Greater => tip_text += "Smart. ",
+                }
+
+                if tip_text.is_empty() {
+                    tip_text = "Quite average".to_string();
+                }
+
+                tip.add_line(tip_text);
+            }
+
+            // Comment on pools
+            let stat = pools.get(entity);
+            if let Some(stat) = stat {
+                tip.add_line(format!("Level: {lvl}", lvl = stat.level));
+            }
+
+            tip_boxes.push(tip);
         }
     }
 
-    if !tooltip.is_empty() {
-        let mut width = 0;
-        for s in tooltip.iter() {
-            if width < s.len() {
-                width = s.len();
-            }
-        }
-        width += 3;
+    // No TT on mouse-pos
+    if tip_boxes.is_empty() {
+        return;
+    }
 
-        if mouse_pos.0 > map.width / 2 {
-            // Left label
-            let arrow_pos = Point::new(mouse_pos.0 - 2, mouse_pos.1);
-            let left_x = mouse_pos.0 - width as i32;
-            let mut y = mouse_pos.1;
-            for s in tooltip.iter() {
-                ctx.print_color(left_x, y, white, grey, s);
-                let padding = (width - s.len()) - 1;
-                for i in 0..padding {
-                    ctx.print_color(arrow_pos.x - i as i32, y, white, grey, &" ".to_string());
-                }
-                y += 1;
-            }
-            ctx.print_color(arrow_pos.x, arrow_pos.y, white, grey, &"->".to_string());
+
+    // Determine if TT renders to right or left of the target
+    let arrow_y = mouse_pos.1;
+    let (arrow, arrow_x) = if mouse_pos.0 < 40 {
+        // Left
+        (rltk::to_cp437('→'), mouse_pos.0 - 1)
+    } else {
+        // Right
+        (rltk::to_cp437('←'), mouse_pos.0 + 1)
+    };
+
+    ctx.set(arrow_x, arrow_y, white, box_gray, arrow);
+
+    let mut total_height = 0;
+    for tt in tip_boxes.iter() {
+        total_height += tt.get_height();
+    }
+
+    // Shunt all boxes upwards to center the stack
+    let mut y = mouse_pos.1 - (total_height as i32 / 2);
+    while y + (total_height as i32 / 2) > 50 {
+        y -= 1;
+    }
+
+    // Draw the boxes
+    for tt in tip_boxes.iter() {
+        // -2 for border
+        let x = if mouse_pos.0 < (PANE_WIDTH - 2) {
+            mouse_pos.0 - (1 + tt.get_width() as i32)
         } else {
-            // Right label
-            let arrow_pos = Point::new(mouse_pos.0 + 1, mouse_pos.1);
-            let left_x = mouse_pos.0 + 3;
-            let mut y = mouse_pos.1;
-            for s in tooltip.iter() {
-                ctx.print_color(left_x + 1, y, white, grey, s);
-                let padding = (width - s.len()) - 1;
-                for i in 0..padding {
-                    ctx.print_color(arrow_pos.x + 1 + i as i32, y, white, grey, &" ".to_string());
-                }
-                y += 1;
-            }
-            ctx.print_color(arrow_pos.x, arrow_pos.y, white, grey, &"<-".to_string());
-        }
+            mouse_pos.0 + (1 + tt.get_width() as i32)
+        };
+        tt.render(ctx, x, y);
+        y += tt.get_height() as i32;
     }
 }
 
@@ -342,7 +482,7 @@ pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
         15,
         RGB::named(rltk::YELLOW),
         RGB::named(rltk::BLACK),
-        "Rust Roguelike Tutorial",
+        "Rust Roguelike!",
     );
 
     if let RunState::MainMenu {
@@ -506,5 +646,72 @@ pub fn game_over(ctx: &mut Rltk) -> GameOverResult {
     match ctx.key {
         None => GameOverResult::NoSelection,
         Some(_) => GameOverResult::QuitToMenu,
+    }
+}
+
+fn draw_hollow_box(
+    console: &mut Rltk,
+    sx: i32,
+    sy: i32,
+    width: i32,
+    height: i32,
+    fg: RGB,
+    bg: RGB,
+) {
+    use rltk::to_cp437;
+
+    console.set(sx, sy, fg, bg, to_cp437('┌'));
+    console.set(sx + width, sy, fg, bg, to_cp437('┐'));
+    console.set(sx, sy + height, fg, bg, to_cp437('└'));
+    console.set(sx + width, sy + height, fg, bg, to_cp437('┘'));
+    for x in sx + 1..sx + width {
+        console.set(x, sy, fg, bg, to_cp437('─'));
+        console.set(x, sy + height, fg, bg, to_cp437('─'));
+    }
+    for y in sy + 1..sy + height {
+        console.set(sx, y, fg, bg, to_cp437('│'));
+        console.set(sx + width, y, fg, bg, to_cp437('│'));
+    }
+}
+
+struct Tooltip {
+    lines: Vec<String>,
+}
+
+impl Tooltip {
+    fn new() -> Tooltip {
+        Tooltip { lines: Vec::new() }
+    }
+
+    fn add_line<T: Into<String>>(&mut self, line: T) {
+        self.lines.push(line.into());
+    }
+
+    /// Wrapping not supported, yet
+    fn get_width(&self) -> usize {
+        self.lines.iter().map(|s| s.len()).max().unwrap_or(0) + 2 // +2 for border
+    }
+
+    fn get_height(&self) -> usize {
+        self.lines.len() + 2 // +2 for border
+    }
+
+    fn render(&self, ctx: &mut Rltk, x: i32, y: i32) {
+        let box_gray: RGB = RGB::from_hex("#999999").expect("Oops");
+        let light_gray: RGB = RGB::from_hex("#DDDDDD").expect("Oops");
+        let white = RGB::named(rltk::WHITE);
+        let black = RGB::named(rltk::BLACK);
+        ctx.draw_box(
+            x,
+            y,
+            self.get_width() - 1,
+            self.get_height() - 1,
+            white,
+            box_gray,
+        );
+        for (i, s) in self.lines.iter().enumerate() {
+            let col = if i == 0 { white } else { light_gray };
+            ctx.print_color(x + 1, y + i as i32 + 1, col, black, s);
+        }
     }
 }

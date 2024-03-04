@@ -7,7 +7,11 @@ use crate::components::Vendor;
 use crate::components::WantsToMelee;
 use crate::gamelog::Gamelog;
 use crate::map::TileType;
+use crate::Consumable;
+use crate::InBackpack;
 use crate::Pools;
+use crate::Ranged;
+use crate::WantsToUseItem;
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 
@@ -101,6 +105,24 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
     // TODO: Replace with if let
     match ctx.key {
         None => return RunState::AwaitingInput,
+        // Hotkeys (Shift held down)
+        Some(key) if ctx.shift => {
+            let key_val = match key {
+                Key1 => Some(1),
+                Key2 => Some(2),
+                Key3 => Some(3),
+                Key4 => Some(4),
+                Key5 => Some(5),
+                Key6 => Some(6),
+                Key7 => Some(7),
+                Key8 => Some(8),
+                Key9 => Some(9),
+                _ => None,
+            };
+            if let Some(key_val) = key_val {
+                return use_consumable_hotkey(gs, key_val - 1);
+            }
+        }
         Some(key) => match key {
             // Skip turn
             Space | Numpad5 => return skip_turn(&mut gs.ecs),
@@ -135,6 +157,33 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
 
             _ => return RunState::AwaitingInput,
         },
+    }
+    RunState::PlayerTurn
+}
+
+fn use_consumable_hotkey(gs: &mut State, key: usize) -> RunState {
+    let consumables = gs.ecs.read_storage::<Consumable>();
+    let backpack = gs.ecs.read_storage::<InBackpack>();
+    let player_entity = gs.ecs.fetch::<Entity>();
+    let entities = gs.ecs.entities();
+
+    let mut carried_consumables = Vec::new();
+    for (entity, carried_by, _consumable) in (&entities, &backpack, &consumables).join() {
+        if carried_by.owner == *player_entity {
+            carried_consumables.push(entity);
+        }
+    }
+
+    if (key) < carried_consumables.len() {
+        if let Some(ranged) = gs.ecs.read_storage::<Ranged>().get(carried_consumables[key]) {
+            return RunState::ShowTargeting{ range: ranged.range, item: carried_consumables[key] };
+        }
+        let mut intent = gs.ecs.write_storage::<WantsToUseItem>();
+        intent.insert(
+            *player_entity,
+            WantsToUseItem{ item: carried_consumables[key], target: None }
+        ).expect("Unable to insert intent");
+        return RunState::PlayerTurn;
     }
     RunState::PlayerTurn
 }

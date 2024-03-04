@@ -433,8 +433,9 @@ impl GameState for State {
 
 fn main() -> rltk::BError {
     use rltk::RltkBuilder;
-    let context = RltkBuilder::simple80x50()
-        .with_title("Roguelike Tutorial")
+    let context = RltkBuilder::simple(80, 60)
+        .unwrap()
+        .with_title("Rust Roguelike !")
         .build()?;
 
     let mut gs = State {
@@ -500,7 +501,7 @@ fn main() -> rltk::BError {
     let player_entity = spawner::player(&mut gs.ecs, Position { x: 0, y: 0 });
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     gs.ecs.insert(rex_assets::RexAssets::new());
-    gs.ecs.insert(Map::new(1, 64, 64));
+    gs.ecs.insert(Map::new(1, 64, 64, "New Map"));
     gs.ecs.insert(Point::new(0, 0));
     gs.ecs.insert(player_entity);
     if SHOW_MAPGEN_VISUALIZER {
