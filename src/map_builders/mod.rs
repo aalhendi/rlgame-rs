@@ -62,6 +62,9 @@ mod rooms_corridors_nearest;
 mod town;
 mod voronoi_spawning;
 use town::town_builder;
+mod forest;
+use forest::forest_builder;
+mod yellow_brick_road;
 
 pub struct BuilderMap {
     pub spawn_list: Vec<(usize, String)>,
@@ -313,6 +316,7 @@ pub fn level_builder(
     rltk::console::log(format!("Depth: {new_depth}"));
     match new_depth {
         1 => town_builder(new_depth, rng, width, height),
+        2 => forest_builder(new_depth, rng, width, height),
         _ => random_builder(new_depth, rng, width, height),
     }
 }

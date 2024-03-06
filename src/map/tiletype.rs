@@ -12,6 +12,7 @@ pub enum TileType {
     Gravel,
 }
 
+// TODO(aalhendi): Refactor into impl
 pub fn tile_walkable(tt: TileType) -> bool {
     match tt {
         TileType::DeepWater | TileType::Wall => false,

@@ -62,9 +62,11 @@ impl TownBuilder {
         let doors = self.add_doors(rng, build_data, &mut buildings, wall_gap_y);
         self.add_paths(build_data, &doors);
 
-        // Set Exit
-        let exit_idx = build_data.map.xy_idx(build_data.width - 5, wall_gap_y);
-        build_data.map.tiles[exit_idx] = TileType::DownStairs;
+        // Set wall gap to be exit
+        for y in wall_gap_y - 3..wall_gap_y + 4 {
+            let exit_idx = build_data.map.xy_idx(build_data.width - 2, y);
+            build_data.map.tiles[exit_idx] = TileType::DownStairs;
+        }
 
         // Also sets player spawn
         let building_sizes = self.sort_buildings(&buildings);
