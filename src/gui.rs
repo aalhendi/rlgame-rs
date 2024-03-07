@@ -128,7 +128,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // Depth
     let map = ecs.fetch::<Map>();
     let depth = format!("Depth: {depth}", depth = map.depth);
-    ctx.print_color(2, PANE_WIDTH+1, yellow, black, &depth);
+    ctx.print_color(2, PANE_WIDTH + 1, yellow, black, &depth);
 
     // Draw mouse cursor
     let mouse_pos = ctx.mouse_pos();
@@ -254,7 +254,6 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     if tip_boxes.is_empty() {
         return;
     }
-
 
     // Determine if TT renders to right or left of the target
     let arrow_y = mouse_pos.1;

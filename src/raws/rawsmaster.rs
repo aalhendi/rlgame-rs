@@ -8,8 +8,8 @@ use crate::{
     },
     gamesystem::{attr_bonus, mana_at_level, npc_hp},
     random_table::RandomTable,
-    Attribute, Attributes, Equipped, InBackpack, IsSerialized, NaturalAttack, NaturalAttackDefense,
-    Pool, Pools, Skill, Skills, WeaponAttribute, Wearable,
+    Attribute, Attributes, Carnivore, Equipped, Herbivore, InBackpack, IsSerialized, LootTable,
+    NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills, WeaponAttribute, Wearable,
 };
 use regex::Regex;
 use specs::{
@@ -31,6 +31,7 @@ pub struct RawMaster {
     pub mob_index: HashMap<String, usize>,
     pub prop_index: HashMap<String, usize>,
     pub spawn_table: Vec<SpawnTableEntry>,
+    pub loot_index: HashMap<String, usize>,
 }
 
 impl RawMaster {
@@ -76,6 +77,10 @@ impl RawMaster {
                     spawn.name
                 ));
             }
+        }
+
+        for (i, loot) in self.raws.loot_tables.iter().enumerate() {
+            self.loot_index.insert(loot.name.clone(), i);
         }
     }
 }
@@ -222,6 +227,8 @@ pub fn spawn_named_mob(
         "melee" => eb = eb.with(Monster {}),
         "bystander" => eb = eb.with(Bystander {}),
         "vendor" => eb = eb.with(Vendor {}),
+        "carnivore" => eb = eb.with(Carnivore {}),
+        "herbivore" => eb = eb.with(Herbivore {}),
         _ => panic!("Unexpected AI Type for mob"),
     }
 
@@ -378,6 +385,13 @@ pub fn spawn_named_mob(
         eb = eb.with(NaturalAttackDefense {
             armor_class: nat.armor_class,
             attacks,
+        });
+    }
+
+    // Loot
+    if let Some(loot_table_name) = &mob_template.loot_table {
+        eb = eb.with(LootTable {
+            name: loot_table_name.clone(),
         });
     }
 
@@ -554,4 +568,24 @@ pub fn string_to_slot(slot: &str) -> EquipmentSlot {
             EquipmentSlot::Melee
         }
     }
+}
+
+/// Check if table with name exists, and return None if it doesn't.
+/// If it does exist, make a table of names and weights from the raw file information
+/// Then roll to determine a randomly weighted result to return
+pub fn get_item_drop(
+    raws: &RawMaster,
+    rng: &mut rltk::RandomNumberGenerator,
+    table: &str,
+) -> Option<String> {
+    raws.loot_index.get(table).map(|table_index| {
+        let available_options = &raws.raws.loot_tables[*table_index];
+        let rt = available_options
+            .drops
+            .iter()
+            .fold(RandomTable::new(), |acc, item| {
+                acc.add(item.name.clone(), item.weight)
+            });
+        rt.roll(rng)
+    })
 }

@@ -174,15 +174,27 @@ fn use_consumable_hotkey(gs: &mut State, key: usize) -> RunState {
         }
     }
 
-    if (key) < carried_consumables.len() {
-        if let Some(ranged) = gs.ecs.read_storage::<Ranged>().get(carried_consumables[key]) {
-            return RunState::ShowTargeting{ range: ranged.range, item: carried_consumables[key] };
+    if key < carried_consumables.len() {
+        if let Some(ranged) = gs
+            .ecs
+            .read_storage::<Ranged>()
+            .get(carried_consumables[key])
+        {
+            return RunState::ShowTargeting {
+                range: ranged.range,
+                item: carried_consumables[key],
+            };
         }
         let mut intent = gs.ecs.write_storage::<WantsToUseItem>();
-        intent.insert(
-            *player_entity,
-            WantsToUseItem{ item: carried_consumables[key], target: None }
-        ).expect("Unable to insert intent");
+        intent
+            .insert(
+                *player_entity,
+                WantsToUseItem {
+                    item: carried_consumables[key],
+                    target: None,
+                },
+            )
+            .expect("Unable to insert intent");
         return RunState::PlayerTurn;
     }
     RunState::PlayerTurn

@@ -1,3 +1,4 @@
+use animal_ai_system::AnimalAISystem;
 use bystander_ai_system::BystanderAISystem;
 use rltk::{GameState, Point, Rltk};
 use specs::{
@@ -30,6 +31,7 @@ mod gui;
 pub mod inventory_system;
 pub mod spawner;
 use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
+mod animal_ai_system;
 pub mod bystander_ai_system;
 pub mod camera;
 mod gamesystem;
@@ -188,6 +190,10 @@ impl State {
 
         let mut mapindex = MapIndexingSystem;
         mapindex.run_now(&self.ecs);
+
+        // TODO(aalhendi): Run order... currently have to attack deer's *next* position.
+        let mut animal_ai_system = AnimalAISystem;
+        animal_ai_system.run_now(&self.ecs);
 
         let mut bystander_ai_system = BystanderAISystem;
         bystander_ai_system.run_now(&self.ecs);
@@ -493,6 +499,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Skills>();
     gs.ecs.register::<Pools>();
     gs.ecs.register::<NaturalAttackDefense>();
+    gs.ecs.register::<LootTable>();
+    gs.ecs.register::<Carnivore>();
+    gs.ecs.register::<Herbivore>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

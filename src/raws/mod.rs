@@ -3,12 +3,15 @@ mod mob_structs;
 mod prop_structs;
 pub mod rawsmaster;
 mod spawn_table_structs;
-use self::{
-    item_structs::Item, mob_structs::Mob, prop_structs::Prop, spawn_table_structs::SpawnTableEntry,
-};
-use crate::raws::rawsmaster::RawMaster;
 use serde::Deserialize;
 use std::sync::Mutex;
+mod loot_structs;
+use item_structs::Item;
+use loot_structs::LootTable;
+use mob_structs::Mob;
+use prop_structs::Prop;
+use rawsmaster::RawMaster;
+use spawn_table_structs::SpawnTableEntry;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct Raws {
@@ -16,6 +19,7 @@ pub struct Raws {
     pub mobs: Vec<Mob>,
     pub props: Vec<Prop>,
     pub spawn_table: Vec<SpawnTableEntry>,
+    pub loot_tables: Vec<LootTable>,
 }
 
 rltk::embedded_resource!(RAW_FILE, "../../raws/spawns.json");

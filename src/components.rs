@@ -314,3 +314,14 @@ pub struct NaturalAttackDefense {
     pub armor_class: Option<i32>,
     pub attacks: Vec<NaturalAttack>,
 }
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct LootTable {
+    pub name: String
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Carnivore {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Herbivore {}

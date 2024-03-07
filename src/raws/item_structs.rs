@@ -29,11 +29,11 @@ pub struct Weapon {
     pub range: String,
     pub attribute: String,
     pub base_damage: String,
-    pub hit_bonus: i32
+    pub hit_bonus: i32,
 }
 
 #[derive(Deserialize, Debug)]
 pub struct Wearable {
-    pub armor_class : f32,
-    pub slot : String 
+    pub armor_class: f32,
+    pub slot: String,
 }
