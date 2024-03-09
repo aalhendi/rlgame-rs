@@ -30,6 +30,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Pools>,
         ReadStorage<'a, NaturalAttackDefense>,
         WriteExpect<'a, RandomNumberGenerator>,
+        ReadExpect<'a, Entity>,
     );
     fn run(&mut self, data: Self::SystemData) {
         let (
@@ -49,6 +50,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
             pools,
             naturals,
             mut rng,
+            player_entity,
         ) = data;
 
         for (entity, wants_melee, name, attacker_attributes, attacker_skills, attacker_pools) in (
@@ -175,7 +177,12 @@ impl<'a> System<'a> for MeleeCombatSystem {
                             + skill_damage_bonus
                             + weapon_damage_bonus,
                     );
-                    SufferDamage::new_damage(&mut inflict_damage, wants_melee.target, damage);
+                    SufferDamage::new_damage(
+                        &mut inflict_damage,
+                        wants_melee.target,
+                        damage,
+                        entity == *player_entity,
+                    );
                     log.entries.push(format!(
                         "{name} hits {target_name}, for {damage} hp.",
                         name = &name.name,

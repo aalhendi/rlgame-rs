@@ -22,6 +22,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let yellow = RGB::named(rltk::YELLOW);
     let orange = RGB::named(rltk::ORANGE);
     let magenta = RGB::named(rltk::MAGENTA);
+    let gold = RGB::named(rltk::GOLD);
 
     // Overall box
     draw_hollow_box(ctx, 0, 0, 79, 59, box_gray, black);
@@ -63,10 +64,16 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let mana_max = player_pools.mana.max;
     let mana = format!("Mana: {mana_curr}/{mana_max}",);
 
-    ctx.print_color(50, 1, white, black, &health);
-    ctx.print_color(50, 2, white, black, &mana);
+    let xp_level_start = (player_pools.level - 1) * 1000;
+    let xp_level_curr = player_pools.xp - xp_level_start;
+    let level = format!("Level: {lvl}", lvl = player_pools.level);
+
+    ctx.print_color(50, 1, white, black, health);
+    ctx.print_color(50, 2, white, black, mana);
+    ctx.print_color(50, 3, white, black, level);
     ctx.draw_bar_horizontal(64, 1, 14, health_curr, health_max, red, black);
     ctx.draw_bar_horizontal(64, 2, 14, mana_curr, mana_max, blue, black);
+    ctx.draw_bar_horizontal(64, 3, 14, xp_level_curr, 1000, gold, black);
 
     // Attributes
     let attributes = ecs.read_storage::<Attributes>();

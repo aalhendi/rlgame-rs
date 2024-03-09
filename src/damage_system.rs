@@ -1,12 +1,15 @@
 use crate::{
+    gamesystem::{mana_at_level, player_hp_at_level},
+    particle_system::ParticleBuilder,
     raws::{
         rawsmaster::{get_item_drop, spawn_named_item, SpawnType},
         RAWS,
     },
-    Equipped, InBackpack, LootTable, Pools,
+    Attributes, Equipped, InBackpack, LootTable, Pools,
 };
 
 use super::{gamelog::Gamelog, Map, Name, Player, Position, RunState, SufferDamage};
+use rltk::Point;
 use specs::prelude::*;
 
 pub struct DamageSystem;
@@ -18,18 +21,83 @@ impl<'a> System<'a> for DamageSystem {
         ReadStorage<'a, Position>,
         WriteExpect<'a, Map>,
         Entities<'a>,
+        ReadExpect<'a, Entity>,
+        ReadStorage<'a, Attributes>,
+        WriteExpect<'a, Gamelog>,
+        WriteExpect<'a, ParticleBuilder>,
+        ReadExpect<'a, Point>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut stats, mut damage, positions, mut map, entities) = data;
+        let (
+            mut stats,
+            mut damage,
+            positions,
+            mut map,
+            entities,
+            player_entity,
+            attributes,
+            mut log,
+            mut particles,
+            player_pos,
+        ) = data;
 
+        let mut xp_gain = 0;
+        // Iterating through each entity that has both stats and damage components.
         for (entity, stats, damage) in (&entities, &mut stats, &damage).join() {
-            stats.hit_points.current -= damage.amount.iter().sum::<i32>();
+            for (dmg_amount, is_dmg_from_player) in &damage.amount {
+                stats.hit_points.current -= dmg_amount;
 
-            // Inserting bloodstains
+                if stats.hit_points.current < 1 && *is_dmg_from_player {
+                    xp_gain += stats.level * 100;
+                }
+            }
+
+            // Inserting bloodstain if entity has Position component
             if let Some(pos) = positions.get(entity) {
                 let idx = map.xy_idx(pos.x, pos.y);
                 map.bloodstains.insert(idx);
+            }
+        }
+
+        if xp_gain != 0 {
+            let p_stats = stats.get_mut(*player_entity).unwrap();
+            p_stats.xp += xp_gain;
+            if p_stats.xp >= p_stats.level * 1000 {
+                let player_attributes = attributes.get(*player_entity).unwrap();
+                // We've gone up a level!
+                p_stats.level += 1;
+                let lvl_up_txt = format!("Congratulations, you are now level {}", p_stats.level);
+                log.entries.push(lvl_up_txt);
+
+                // Update stats
+                p_stats.hit_points.max = player_hp_at_level(
+                    player_attributes.fitness.base + player_attributes.fitness.modifiers,
+                    p_stats.level,
+                );
+                p_stats.hit_points.current = p_stats.hit_points.max;
+                p_stats.mana.max = mana_at_level(
+                    player_attributes.intelligence.base + player_attributes.intelligence.modifiers,
+                    p_stats.level,
+                );
+                p_stats.mana.current = p_stats.mana.max;
+
+                // Particles
+                for i in 0..10 {
+                    if player_pos.y - i > 1 {
+                        let particle_pos = Position {
+                            x: player_pos.x,
+                            y: player_pos.y - 1,
+                        };
+                        particles.request(
+                            particle_pos,
+                            rltk::RGB::named(rltk::GOLD),
+                            rltk::RGB::named(rltk::BLACK),
+                            rltk::to_cp437('░'),
+                            200.0,
+                        );
+                    }
+                }
             }
         }
 

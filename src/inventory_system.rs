@@ -194,7 +194,7 @@ impl<'a> System<'a> for ItemUseSystem {
             if let Some(damager) = damagers.get(wants_use.item) {
                 for mob in targets.iter() {
                     if pools.get(*mob).is_some() {
-                        SufferDamage::new_damage(&mut suffer_damage, *mob, damager.damage);
+                        SufferDamage::new_damage(&mut suffer_damage, *mob, damager.damage, true);
                         if entity == *player_entity {
                             gamelog.entries.push(format!(
                                 "You use {item_name} on {mob_name}, inflicting {amount} hp.",

@@ -73,7 +73,7 @@ impl<'a> System<'a> for HungerSystem {
                                 .to_string(),
                         );
                     }
-                    SufferDamage::new_damage(&mut inflict_damage, entity, 1);
+                    SufferDamage::new_damage(&mut inflict_damage, entity, 1, false);
                 }
             }
         }
