@@ -1,6 +1,7 @@
 use rltk::{Point, RandomNumberGenerator};
 use specs::Entity;
 use std::collections::HashSet;
+pub mod dungeon;
 pub mod themes;
 pub mod tiletype;
 pub use tiletype::{tile_opaque, tile_walkable, TileType};
@@ -15,7 +16,7 @@ pub struct Map {
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
     pub blocked: Vec<bool>,
-    pub depth: i32,
+    pub depth: i32, // TODO(aalhendi): usize
     pub bloodstains: HashSet<usize>,
     pub view_blocked: HashSet<usize>,
     pub name: String,

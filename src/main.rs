@@ -9,7 +9,10 @@ use specs::{
 extern crate lazy_static;
 
 pub mod map;
-use map::*;
+use map::{
+    dungeon::{freeze_level_entities, level_transition, thaw_level_entities},
+    *,
+};
 pub mod components;
 use components::*;
 pub mod player;
@@ -31,6 +34,7 @@ mod gui;
 pub mod inventory_system;
 pub mod spawner;
 use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
+use map::dungeon::MasterDungeonMap;
 mod animal_ai_system;
 pub mod bystander_ai_system;
 pub mod camera;
@@ -65,6 +69,7 @@ pub enum RunState {
     },
     SaveGame,
     NextLevel,
+    PreviousLevel,
     GameOver,
     MagicMapReveal {
         row: i32,
@@ -81,87 +86,28 @@ pub struct State {
 }
 
 impl State {
-    fn generate_world_map(&mut self, new_depth: i32) {
+    fn generate_world_map(&mut self, new_depth: i32, offset: i32) {
         self.mapgen_index = 0;
         self.mapgen_timer = 0.0;
         self.mapgen_history.clear();
-        let mut rng = self.ecs.write_resource::<rltk::RandomNumberGenerator>();
-        let mut builder = map_builders::level_builder(new_depth, &mut rng, 80, 50);
-        builder.build_map(&mut rng);
-        self.mapgen_history = builder.build_data.history.clone();
-        let player_start = {
-            let mut worldmap_resource = self.ecs.write_resource::<Map>();
-            *worldmap_resource = builder.build_data.map.clone();
-            *builder.build_data.starting_position.as_mut().unwrap()
-        };
-
-        // Spawn bad guys
-        std::mem::drop(rng);
-        builder.spawn_entities(&mut self.ecs);
-
-        // Place the player and update resources
-        let mut player_position = self.ecs.write_resource::<Point>();
-        *player_position = Point::new(player_start.x, player_start.y);
-        let mut position_components = self.ecs.write_storage::<Position>();
-        let player_entity = self.ecs.fetch::<Entity>();
-        if let Some(player_pos_comp) = position_components.get_mut(*player_entity) {
-            *player_pos_comp = player_start;
-        }
-
-        // Mark the player's visibility as dirty
-        let mut viewshed_components = self.ecs.write_storage::<Viewshed>();
-        if let Some(player_vs) = viewshed_components.get_mut(*player_entity) {
-            player_vs.dirty = true;
+        let map_building_info = level_transition(&mut self.ecs, new_depth, offset);
+        if let Some(history) = map_building_info {
+            self.mapgen_history = history;
+        } else {
+            thaw_level_entities(&mut self.ecs);
         }
     }
 
-    fn goto_next_level(&mut self) {
-        let to_delete = self.entities_to_remove_on_level_change();
-        for e in to_delete {
-            self.ecs.delete_entity(e).expect("Unable to delte entity");
-        }
+    fn goto_level(&mut self, offset: i32) {
+        freeze_level_entities(&mut self.ecs);
 
         // Build a new map and place the player
-        let current_depth = {
-            let worldmap_resource = self.ecs.fetch::<Map>();
-            worldmap_resource.depth
-        };
-        self.generate_world_map(current_depth + 1);
+        let new_depth = self.ecs.fetch::<Map>().depth + offset;
+        self.generate_world_map(new_depth, offset);
 
+        // Notify the player
         let mut gamelog = self.ecs.fetch_mut::<gamelog::Gamelog>();
-
-        gamelog
-            .entries
-            .push("You descend to the next level.".to_string());
-    }
-
-    fn entities_to_remove_on_level_change(&mut self) -> Vec<Entity> {
-        let entities = self.ecs.entities();
-        let player = self.ecs.read_storage::<Player>();
-        let backpack = self.ecs.read_storage::<InBackpack>();
-        let player_entity = self.ecs.fetch::<Entity>();
-        let equipped = self.ecs.read_storage::<Equipped>();
-
-        let mut to_delete: Vec<Entity> = Vec::new();
-
-        for e in entities.join() {
-            let is_in_player_backpack = match backpack.get(e) {
-                None => false,
-                Some(e) => e.owner == *player_entity,
-            };
-            let is_equipped = match equipped.get(e) {
-                None => false,
-                Some(e) => e.owner == *player_entity,
-            };
-
-            // Don't delete player or their items
-            if is_in_player_backpack || player.get(e).is_some() || is_equipped {
-                continue;
-            } else {
-                to_delete.push(e);
-            }
-        }
-        to_delete
+        gamelog.entries.push("You change level.".to_string());
     }
 
     fn game_over_cleanup(&mut self) {
@@ -174,8 +120,11 @@ impl State {
             *player_entity_writer = player_entity;
         }
 
+        // Replace the world maps
+        self.ecs.insert(MasterDungeonMap::new());
+
         // Build a new map and place the player
-        self.generate_world_map(1);
+        self.generate_world_map(1, 0);
     }
 
     fn run_systems(&mut self) {
@@ -381,8 +330,13 @@ impl GameState for State {
                 };
             }
             RunState::NextLevel => {
-                self.goto_next_level();
+                self.goto_level(1);
                 newrunstate = RunState::PreRun;
+            }
+            RunState::PreviousLevel => {
+                self.goto_level(-1);
+                self.mapgen_next_state = Some(RunState::PreRun);
+                newrunstate = RunState::MapGeneration;
             }
             RunState::GameOver => {
                 let game_over_result = gui::game_over(ctx);
@@ -502,6 +456,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<LootTable>();
     gs.ecs.register::<Carnivore>();
     gs.ecs.register::<Herbivore>();
+    gs.ecs.register::<OtherLevelPosition>();
+    gs.ecs.register::<DMSerializationHelper>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();
@@ -511,6 +467,7 @@ fn main() -> rltk::BError {
     gs.ecs.insert(rltk::RandomNumberGenerator::new());
     gs.ecs.insert(rex_assets::RexAssets::new());
     gs.ecs.insert(Map::new(1, 64, 64, "New Map"));
+    gs.ecs.insert(MasterDungeonMap::new());
     gs.ecs.insert(Point::new(0, 0));
     gs.ecs.insert(player_entity);
     if SHOW_MAPGEN_VISUALIZER {
@@ -525,7 +482,7 @@ fn main() -> rltk::BError {
     });
     gs.ecs.insert(particle_system::ParticleBuilder::new());
 
-    gs.generate_world_map(1);
+    gs.generate_world_map(1, 0);
 
     rltk::main_loop(context, gs)
 }

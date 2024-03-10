@@ -7,6 +7,8 @@ use specs::{
 use specs_derive::*;
 use std::{collections::HashMap, convert::Infallible as NoError};
 
+use crate::map;
+
 #[derive(Component, ConvertSaveload, Clone, Default, Copy)]
 pub struct Position {
     pub x: i32,
@@ -146,7 +148,12 @@ pub struct IsSerialized;
 // Special component that exists to help serialize the game data
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct SerializationHelper {
-    pub map: super::map::Map,
+    pub map: map::Map,
+}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct DMSerializationHelper {
+    pub map: map::dungeon::MasterDungeonMap,
 }
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
@@ -330,3 +337,11 @@ pub struct Carnivore {}
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Herbivore {}
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct OtherLevelPosition {
+    // TODO(aalhendi): Can this be a Position directly?
+    pub x: i32,
+    pub y: i32,
+    pub depth: i32,
+}

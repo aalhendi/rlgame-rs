@@ -10,6 +10,7 @@ pub enum TileType {
     WoodFloor,
     Bridge,
     Gravel,
+    UpStairs,
 }
 
 // TODO(aalhendi): Refactor into impl
@@ -23,6 +24,7 @@ pub fn tile_walkable(tt: TileType) -> bool {
         | TileType::ShallowWater
         | TileType::WoodFloor
         | TileType::Gravel
+        | TileType::UpStairs
         | TileType::Bridge => true,
     }
 }
