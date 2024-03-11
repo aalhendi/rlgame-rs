@@ -154,7 +154,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             // Item
             G => {
                 get_item(&mut gs.ecs);
-                RunState::AwaitingInput
+                RunState::PlayerTurn
             }
             I => RunState::ShowInventory,
             D => RunState::ShowDropItem,
@@ -162,6 +162,8 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
 
             // Main Menu
             Escape => RunState::SaveGame,
+            // Cheating!
+            Backslash => RunState::ShowCheatMenu,
             // Stairs
             Period => {
                 if try_next_level(&mut gs.ecs) {

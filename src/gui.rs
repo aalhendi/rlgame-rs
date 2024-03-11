@@ -329,7 +329,7 @@ pub fn show_menu<T: Owned + Component>(
         .enumerate()
     {
         let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
-        print_item_label(ctx, y, label_char, item_name);
+        print_item_label(ctx, y, label_char, &item_name.name);
         equippable.push(entity);
         y += 1;
     }
@@ -349,7 +349,7 @@ pub fn remove_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Opti
     show_menu::<Equipped>(gs, ctx)
 }
 
-fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &Name) {
+fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &String) {
     ctx.set(
         17,
         y,
@@ -372,7 +372,7 @@ fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &Name) {
         rltk::to_cp437(')'),
     );
 
-    ctx.print(21, y, &name.name.to_string());
+    ctx.print(21, y, name.to_string());
 }
 
 fn item_menu_input(
@@ -677,6 +677,38 @@ fn draw_hollow_box(
     for y in sy + 1..sy + height {
         console.set(sx, y, fg, bg, to_cp437('│'));
         console.set(sx + width, y, fg, bg, to_cp437('│'));
+    }
+}
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum CheatMenuResult {
+    NoResponse,
+    Cancel,
+    TeleportToExit,
+    MagicMapper,
+}
+
+pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
+    let yellow = RGB::named(rltk::YELLOW);
+    let white = RGB::named(rltk::WHITE);
+    let black = RGB::named(rltk::BLACK);
+    let count = 2;
+    let y = 25 - (count / 2);
+    ctx.draw_box(15, y - 2, 31, count + 3, white, black);
+    ctx.print_color(18, y - 2, yellow, black, "Cheating!");
+    ctx.print_color(18, y + count + 1, yellow, black, "ESCAPE to cancel");
+
+    print_item_label(ctx, y, 'T', &String::from("Teleport to exit"));
+    print_item_label(ctx, y, 'M', &String::from("Reveal map"));
+
+    match ctx.key {
+        None => CheatMenuResult::NoResponse,
+        Some(key) => match key {
+            VirtualKeyCode::T => CheatMenuResult::TeleportToExit,
+            VirtualKeyCode::M => CheatMenuResult::MagicMapper,
+            VirtualKeyCode::Escape => CheatMenuResult::Cancel,
+            _ => CheatMenuResult::NoResponse,
+        },
     }
 }
 

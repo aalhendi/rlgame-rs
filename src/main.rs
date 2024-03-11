@@ -75,6 +75,7 @@ pub enum RunState {
         row: i32,
     },
     MapGeneration,
+    ShowCheatMenu,
 }
 
 pub struct State {
@@ -377,6 +378,22 @@ impl GameState for State {
                     self.mapgen_index += 1;
                     if self.mapgen_index >= self.mapgen_history.len() {
                         newrunstate = self.mapgen_next_state.unwrap();
+                    }
+                }
+            }
+
+            RunState::ShowCheatMenu => {
+                let result = gui::show_cheat_mode(self, ctx);
+                match result {
+                    gui::CheatMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::CheatMenuResult::NoResponse => {}
+                    gui::CheatMenuResult::TeleportToExit => {
+                        self.goto_level(1);
+                        self.mapgen_next_state = Some(RunState::PreRun);
+                        newrunstate = RunState::MapGeneration;
+                    }
+                    gui::CheatMenuResult::MagicMapper => {
+                        newrunstate = RunState::MagicMapReveal { row: 0 }
                     }
                 }
             }
