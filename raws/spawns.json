@@ -42,12 +42,14 @@
     },
     { "name": "Bear Trap", "weight": 5, "min_depth": 0, "max_depth": 100 },
     { "name": "Battleaxe", "weight": 1, "min_depth": 2, "max_depth": 100 },
-    { "name": "Kobold", "weight": 15, "min_depth": 3, "max_depth": 3 },
-    { "name": "Rat", "weight": 15, "min_depth": 2, "max_depth": 3 },
-    { "name": "Mangy Wolf", "weight": 13, "min_depth": 2, "max_depth": 3 },
-    { "name": "Fox", "weight": 15, "min_depth": 2, "max_depth": 3 },
-    { "name": "Deer", "weight": 14, "min_depth": 2, "max_depth": 3 },
-    { "name": "Bandit", "weight": 9, "min_depth": 2, "max_depth": 3 }
+    { "name": "Kobold", "weight": 15, "min_depth": 3, "max_depth": 5 },
+    { "name": "Rat", "weight": 15, "min_depth": 2, "max_depth": 2 },
+    { "name": "Mangy Wolf", "weight": 13, "min_depth": 2, "max_depth": 2 },
+    { "name": "Deer", "weight": 14, "min_depth": 2, "max_depth": 2 },
+    { "name": "Bandit", "weight": 9, "min_depth": 2, "max_depth": 3 },
+    { "name": "Bat", "weight": 15, "min_depth": 3, "max_depth": 3 },
+    { "name": "Large Spider", "weight": 3, "min_depth": 3, "max_depth": 3 },
+    { "name": "Gelatinous Cube", "weight": 3, "min_depth": 3, "max_depth": 3 }
   ],
 
   "loot_tables": [
@@ -568,7 +570,13 @@
       "ai_type": "melee",
       "quips": ["Stand and deliver!", "Alright, hand it over"],
       "attributes": {},
-      "equipped": ["Shortsword", "Shield", "Leather Armor", "Leather Chaps", "Leather Boots"]
+      "equipped": [
+        "Shortsword",
+        "Shield",
+        "Leather Armor",
+        "Leather Chaps",
+        "Leather Boots"
+      ]
     },
 
     {
@@ -646,6 +654,67 @@
         "attacks": [{ "name": "bite", "hit_bonus": 0, "damage": "1d4" }]
       },
       "loot_table": "Animal"
+    },
+    {
+      "name": "Bat",
+      "renderable": {
+        "glyph": "b",
+        "fg": "#995555",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 6,
+      "ai_type": "herbivore",
+      "attributes": {
+        "Might": 3,
+        "Fitness": 3
+      },
+      "skills": {
+        "Melee": -1,
+        "Defense": -1
+      },
+      "natural": {
+        "armor_class": 11,
+        "attacks": [{ "name": "bite", "hit_bonus": 0, "damage": "1d4" }]
+      }
+    },
+    {
+      "name": "Large Spider",
+      "level": 2,
+      "attributes": {},
+      "renderable": {
+        "glyph": "s",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 6,
+      "ai_type": "carnivore",
+      "natural": {
+        "armor_class": 12,
+        "attacks": [{ "name": "bite", "hit_bonus": 1, "damage": "1d12" }]
+      }
+    },
+
+    {
+      "name": "Gelatinous Cube",
+      "level": 2,
+      "attributes": {},
+      "renderable": {
+        "glyph": "▄",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 4,
+      "ai_type": "carnivore",
+      "natural": {
+        "armor_class": 12,
+        "attacks": [{ "name": "engulf", "hit_bonus": 0, "damage": "1d8" }]
+      }
     }
   ],
 

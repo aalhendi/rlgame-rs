@@ -598,28 +598,12 @@ fn cycle_hovering(
 }
 
 fn print_item_menu(ctx: &mut Rltk, y: i32, count: usize, label: &str) {
-    ctx.draw_box(
-        15,
-        y - 2,
-        31,
-        (count + 3) as i32,
-        RGB::named(rltk::WHITE),
-        RGB::named(rltk::BLACK),
-    );
-    ctx.print_color(
-        18,
-        y - 2,
-        RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
-        label,
-    );
-    ctx.print_color(
-        18,
-        y + count as i32 + 1,
-        RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
-        "ESCAPE to cancel",
-    );
+    let yellow = RGB::named(rltk::YELLOW);
+    let white = RGB::named(rltk::WHITE);
+    let black = RGB::named(rltk::BLACK);
+    ctx.draw_box(15, y - 2, 31, (count + 3) as i32, white, black);
+    ctx.print_color(18, y - 2, yellow, black, label);
+    ctx.print_color(18, y + count as i32 + 1, yellow, black, "ESCAPE to cancel");
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -689,17 +673,12 @@ pub enum CheatMenuResult {
 }
 
 pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
-    let yellow = RGB::named(rltk::YELLOW);
-    let white = RGB::named(rltk::WHITE);
-    let black = RGB::named(rltk::BLACK);
     let count = 2;
     let y = 25 - (count / 2);
-    ctx.draw_box(15, y - 2, 31, count + 3, white, black);
-    ctx.print_color(18, y - 2, yellow, black, "Cheating!");
-    ctx.print_color(18, y + count + 1, yellow, black, "ESCAPE to cancel");
 
+    print_item_menu(ctx, y, count as usize, "Cheating!");
     print_item_label(ctx, y, 'T', &String::from("Teleport to exit"));
-    print_item_label(ctx, y, 'M', &String::from("Reveal map"));
+    print_item_label(ctx, y + 1, 'M', &String::from("Reveal map"));
 
     match ctx.key {
         None => CheatMenuResult::NoResponse,
