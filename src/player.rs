@@ -61,7 +61,6 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) -> RunState 
                 viewshed.dirty = true;
                 ppos.x = pos.x;
                 ppos.y = pos.y;
-                result = RunState::PlayerTurn;
             } else if pools.get(*potential_target).is_some() {
                 wants_to_melee
                     .insert(

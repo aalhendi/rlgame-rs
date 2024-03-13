@@ -12,10 +12,16 @@ pub fn tile_glyph(idx: usize, map: &Map) -> (FontCharType, RGB, RGB) {
     if map.bloodstains.contains(&idx) {
         bg = RGB::from_f32(0.75, 0., 0.);
     }
+
+    // If can't tile, use greyscales
     if !map.visible_tiles[idx] {
         fg = fg.to_greyscale();
         // Don't show stains out of visual range
         bg = RGB::from_f32(0., 0., 0.);
+    // If can see tile && outdoors is false - multiply colors light intensity
+    } else if !map.outdoors {
+        fg = fg * map.light_level_tiles[idx];
+        bg = bg * map.light_level_tiles[idx];
     }
 
     (glyph, fg, bg)

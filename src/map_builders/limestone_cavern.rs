@@ -87,5 +87,6 @@ impl CaveDecorator {
             };
         }
         build_data.take_snapshot();
+        build_data.map.outdoors = false; // Underground
     }
 }

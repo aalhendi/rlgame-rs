@@ -40,6 +40,7 @@ pub mod bystander_ai_system;
 pub mod camera;
 mod gamesystem;
 mod hunger_system;
+mod lighting_system;
 pub mod map_builders;
 mod particle_system;
 mod random_table;
@@ -47,6 +48,7 @@ mod raws;
 mod rex_assets;
 mod saveload_system;
 mod trigger_system;
+use lighting_system::LightingSystem;
 
 const SHOW_MAPGEN_VISUALIZER: bool = true;
 
@@ -171,6 +173,9 @@ impl State {
 
         let mut particle_system = particle_system::ParticleSpawnSystem;
         particle_system.run_now(&self.ecs);
+
+        let mut lighting_system = LightingSystem;
+        lighting_system.run_now(&self.ecs);
 
         self.ecs.maintain();
     }
@@ -475,6 +480,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Herbivore>();
     gs.ecs.register::<OtherLevelPosition>();
     gs.ecs.register::<DMSerializationHelper>();
+    gs.ecs.register::<LightSource>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

@@ -1,4 +1,4 @@
-use rltk::{Point, RandomNumberGenerator};
+use rltk::{Point, RandomNumberGenerator, RGB};
 use specs::Entity;
 use std::collections::HashSet;
 pub mod dungeon;
@@ -20,6 +20,8 @@ pub struct Map {
     pub bloodstains: HashSet<usize>,
     pub view_blocked: HashSet<usize>,
     pub name: String,
+    pub outdoors: bool,
+    pub light_level_tiles: Vec<RGB>,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -102,6 +104,8 @@ impl Map {
             bloodstains: HashSet::new(),
             view_blocked: HashSet::new(),
             name: name.into(),
+            outdoors: true,
+            light_level_tiles: vec![RGB::named(rltk::BLACK); map_tile_count],
         }
     }
 

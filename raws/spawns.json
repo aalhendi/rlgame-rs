@@ -576,7 +576,11 @@
         "Leather Armor",
         "Leather Chaps",
         "Leather Boots"
-      ]
+      ],
+      "light": {
+        "range": 6,
+        "color": "#FFFF55"
+      }
     },
 
     {
@@ -714,6 +718,10 @@
       "natural": {
         "armor_class": 12,
         "attacks": [{ "name": "engulf", "hit_bonus": 0, "damage": "1d8" }]
+      },
+      "light": {
+        "range": 4,
+        "color": "#550000"
       }
     }
   ],

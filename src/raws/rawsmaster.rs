@@ -8,8 +8,9 @@ use crate::{
     },
     gamesystem::{attr_bonus, mana_at_level, npc_hp},
     random_table::RandomTable,
-    Attribute, Attributes, Carnivore, Equipped, Herbivore, InBackpack, IsSerialized, LootTable,
-    NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills, WeaponAttribute, Wearable,
+    Attribute, Attributes, Carnivore, Equipped, Herbivore, InBackpack, IsSerialized, LightSource,
+    LootTable, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills, WeaponAttribute,
+    Wearable,
 };
 use regex::Regex;
 use specs::{
@@ -392,6 +393,13 @@ pub fn spawn_named_mob(
     if let Some(loot_table_name) = &mob_template.loot_table {
         eb = eb.with(LootTable {
             name: loot_table_name.clone(),
+        });
+    }
+
+    if let Some(light) = &mob_template.light {
+        eb = eb.with(LightSource {
+            range: light.range,
+            color: rltk::RGB::from_hex(&light.color).expect("Could not parse color"),
         });
     }
 
