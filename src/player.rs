@@ -70,7 +70,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) -> RunState 
                         },
                     )
                     .expect("Add target failed");
-                return RunState::PlayerTurn; // So we don't move after attacking
+                return RunState::Ticking; // So we don't move after attacking
             }
 
             if let Some(door) = doors.get_mut(*potential_target) {
@@ -80,7 +80,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) -> RunState 
                 let door_renderable = renderables.get_mut(*potential_target).unwrap();
                 door_renderable.glyph = rltk::to_cp437('/');
                 viewshed.dirty = true;
-                result = RunState::PlayerTurn;
+                result = RunState::Ticking;
             }
         }
 
@@ -98,7 +98,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) -> RunState 
             result = match map.tiles[dest_idx] {
                 TileType::DownStairs => RunState::NextLevel,
                 TileType::UpStairs => RunState::PreviousLevel,
-                _ => RunState::PlayerTurn,
+                _ => RunState::Ticking,
             };
         }
     }
@@ -153,7 +153,7 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             // Item
             G => {
                 get_item(&mut gs.ecs);
-                RunState::PlayerTurn
+                RunState::Ticking
             }
             I => RunState::ShowInventory,
             D => RunState::ShowDropItem,
@@ -168,14 +168,14 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
                 if try_next_level(&mut gs.ecs) {
                     RunState::NextLevel
                 } else {
-                    RunState::PlayerTurn
+                    RunState::Ticking
                 }
             }
             Comma => {
                 if try_previous_level(&mut gs.ecs) {
                     RunState::PreviousLevel
                 } else {
-                    RunState::PlayerTurn
+                    RunState::Ticking
                 }
             }
             _ => RunState::AwaitingInput,
@@ -219,9 +219,9 @@ fn use_consumable_hotkey(gs: &mut State, key: usize) -> RunState {
                 },
             )
             .expect("Unable to insert intent");
-        return RunState::PlayerTurn;
+        return RunState::Ticking;
     }
-    RunState::PlayerTurn
+    RunState::Ticking
 }
 
 fn get_item(ecs: &mut World) {
@@ -300,7 +300,7 @@ fn skip_turn(ecs: &mut World) -> RunState {
         let idx = map.xy_idx(tile.x, tile.y);
         for entity in map.tile_content[idx].iter() {
             if monsters.get(*entity).is_some() {
-                return RunState::PlayerTurn;
+                return RunState::Ticking;
             }
         }
     }
@@ -308,8 +308,8 @@ fn skip_turn(ecs: &mut World) -> RunState {
     let hunger_clocks = ecs.read_storage::<HungerClock>();
     if let Some(hc) = hunger_clocks.get(*player_entity) {
         match hc.state {
-            HungerState::Hungry => return RunState::PlayerTurn,
-            HungerState::Starving => return RunState::PlayerTurn,
+            HungerState::Hungry => return RunState::Ticking,
+            HungerState::Starving => return RunState::Ticking,
             _ => {}
         }
     }
@@ -321,5 +321,5 @@ fn skip_turn(ecs: &mut World) -> RunState {
         player_stats.hit_points.current + 1,
         player_stats.hit_points.max,
     );
-    RunState::PlayerTurn
+    RunState::Ticking
 }

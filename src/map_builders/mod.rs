@@ -64,8 +64,8 @@ mod voronoi_spawning;
 use town::town_builder;
 mod forest;
 use forest::forest_builder;
-mod yellow_brick_road;
 mod limestone_cavern;
+mod yellow_brick_road;
 use limestone_cavern::limestone_cavern_builder;
 
 pub struct BuilderMap {

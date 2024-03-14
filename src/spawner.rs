@@ -11,7 +11,7 @@ use crate::{
         rawsmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType},
         RAWS,
     },
-    Attribute, Attributes, LightSource, Pool, Pools, Skill, Skills,
+    Attribute, Attributes, Initiative, LightSource, Pool, Pools, Skill, Skills,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
@@ -90,6 +90,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             color: RGB::from_f32(1.0, 1.0, 0.5),
             range: 8,
         })
+        .with(Initiative { current: 0 })
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
 

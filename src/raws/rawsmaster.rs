@@ -8,9 +8,9 @@ use crate::{
     },
     gamesystem::{attr_bonus, mana_at_level, npc_hp},
     random_table::RandomTable,
-    Attribute, Attributes, Carnivore, Equipped, Herbivore, InBackpack, IsSerialized, LightSource,
-    LootTable, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills, WeaponAttribute,
-    Wearable,
+    Attribute, Attributes, Carnivore, Equipped, Herbivore, InBackpack, Initiative, IsSerialized,
+    LightSource, LootTable, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills,
+    WeaponAttribute, Wearable,
 };
 use regex::Regex;
 use specs::{
@@ -402,6 +402,8 @@ pub fn spawn_named_mob(
             color: rltk::RGB::from_hex(&light.color).expect("Could not parse color"),
         });
     }
+
+    eb = eb.with(Initiative { current: 2 });
 
     let new_mob = eb.build();
 

@@ -1,4 +1,4 @@
-use super::{gamelog::Gamelog, HungerClock, HungerState, RunState, SufferDamage};
+use super::{gamelog::Gamelog, HungerClock, HungerState, MyTurn, RunState, SufferDamage};
 use specs::prelude::*;
 
 pub struct HungerSystem;
@@ -11,36 +11,24 @@ impl<'a> System<'a> for HungerSystem {
         ReadExpect<'a, RunState>,
         WriteStorage<'a, SufferDamage>,
         WriteExpect<'a, Gamelog>,
+        ReadStorage<'a, MyTurn>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (entities, mut hunger_clock, player_entity, runstate, mut inflict_damage, mut log) =
-            data;
+        let (
+            entities,
+            mut hunger_clock,
+            player_entity,
+            _runstate,
+            mut inflict_damage,
+            mut log,
+            turns,
+        ) = data;
 
-        for (entity, clock) in (&entities, &mut hunger_clock).join() {
-            let mut proceed = false;
-
-            match *runstate {
-                RunState::PlayerTurn => {
-                    if entity == *player_entity {
-                        proceed = true;
-                    }
-                }
-                RunState::MonsterTurn => {
-                    if entity != *player_entity {
-                        proceed = true;
-                    }
-                }
-                _ => proceed = false,
-            }
-
-            if !proceed {
-                return;
-            }
-
+        for (entity, clock, _myturn) in (&entities, &mut hunger_clock, &turns).join() {
             clock.duration -= 1;
             if clock.duration >= 1 {
-                return;
+                continue;
             }
 
             match clock.state {

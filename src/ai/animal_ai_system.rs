@@ -2,7 +2,8 @@ use rltk::Point;
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
 use crate::{
-    Carnivore, EntityMoved, Herbivore, Item, Map, Position, RunState, Viewshed, WantsToMelee,
+    Carnivore, EntityMoved, Herbivore, Item, Map, MyTurn, Position, RunState, Viewshed,
+    WantsToMelee,
 };
 
 pub struct AnimalAISystem;
@@ -20,13 +21,14 @@ impl<'a> System<'a> for AnimalAISystem {
         WriteStorage<'a, WantsToMelee>,
         WriteStorage<'a, EntityMoved>,
         WriteStorage<'a, Position>,
+        ReadStorage<'a, MyTurn>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
         let (
             mut map,
             player_entity,
-            runstate,
+            _runstate,
             entities,
             mut viewshed,
             herbivores,
@@ -35,15 +37,12 @@ impl<'a> System<'a> for AnimalAISystem {
             mut wants_to_melee,
             mut entity_moved,
             mut position,
+            turns,
         ) = data;
 
-        if *runstate != RunState::MonsterTurn {
-            return;
-        }
-
         // Herbivores run away
-        for (entity, viewshed, _herbivore, pos) in
-            (&entities, &mut viewshed, &herbivores, &mut position).join()
+        for (entity, viewshed, _herbivore, pos, _turn) in
+            (&entities, &mut viewshed, &herbivores, &mut position, &turns).join()
         {
             let mut run_away_from = Vec::new();
             for other_tile in viewshed.visible_tiles.iter() {
@@ -80,8 +79,8 @@ impl<'a> System<'a> for AnimalAISystem {
         }
 
         // Carnivores attack everything
-        for (entity, viewshed, _carnivore, pos) in
-            (&entities, &mut viewshed, &carnivores, &mut position).join()
+        for (entity, viewshed, _carnivore, pos, _turn) in
+            (&entities, &mut viewshed, &carnivores, &mut position, &turns).join()
         {
             let mut run_towards: Vec<usize> = Vec::new();
             let mut attacked = false;

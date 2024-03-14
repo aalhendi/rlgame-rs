@@ -351,3 +351,11 @@ pub struct LightSource {
     pub color: RGB,
     pub range: i32,
 }
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Initiative {
+    pub current: i32,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct MyTurn {}
