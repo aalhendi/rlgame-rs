@@ -12,6 +12,8 @@ use mob_structs::Mob;
 use prop_structs::Prop;
 use rawsmaster::RawMaster;
 use spawn_table_structs::SpawnTableEntry;
+pub mod faction_structs;
+use faction_structs::FactionInfo;
 
 #[derive(Deserialize, Debug, Default)]
 pub struct Raws {
@@ -20,6 +22,7 @@ pub struct Raws {
     pub props: Vec<Prop>,
     pub spawn_table: Vec<SpawnTableEntry>,
     pub loot_tables: Vec<LootTable>,
+    pub faction_table: Vec<FactionInfo>,
 }
 
 rltk::embedded_resource!(RAW_FILE, "../../raws/spawns.json");

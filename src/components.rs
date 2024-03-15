@@ -43,12 +43,6 @@ pub struct Viewshed {
     pub dirty: bool,
 }
 
-#[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Monster {}
-
-#[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Bystander {}
-
 #[derive(Component, ConvertSaveload, Clone)]
 pub struct Name {
     pub name: String,
@@ -260,9 +254,6 @@ pub struct Door {
 }
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Vendor {}
-
-#[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Quips {
     pub available: Vec<String>,
 }
@@ -332,12 +323,6 @@ pub struct LootTable {
     pub name: String,
 }
 
-#[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Carnivore {}
-
-#[derive(Component, Debug, Serialize, Deserialize, Clone)]
-pub struct Herbivore {}
-
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct OtherLevelPosition {
     // TODO(aalhendi): Can this be a Position directly?
@@ -359,3 +344,35 @@ pub struct Initiative {
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct MyTurn {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Faction {
+    pub name: String,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct WantsToApproach {
+    pub idx: i32,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct WantsToFlee {
+    pub indices: Vec<usize>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Eq, PartialEq, Hash)]
+pub enum Movement {
+    Static,
+    Random,
+    RandomWaypoint { path: Option<Vec<usize>> },
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct MoveMode {
+    pub mode: Movement,
+}
+
+#[derive(Component, Debug, ConvertSaveload, Clone)]
+pub struct Chasing {
+    pub target: Entity,
+}

@@ -5,7 +5,6 @@ use crate::{Attributes, Initiative, MyTurn, Position, RunState};
 pub struct InitiativeSystem;
 
 impl<'a> System<'a> for InitiativeSystem {
-    #[allow(clippy::type_complexity)]
     type SystemData = (
         WriteStorage<'a, Initiative>,
         ReadStorage<'a, Position>,
@@ -15,6 +14,7 @@ impl<'a> System<'a> for InitiativeSystem {
         ReadStorage<'a, Attributes>,
         WriteExpect<'a, RunState>,
         ReadExpect<'a, Entity>,
+        ReadExpect<'a, rltk::Point>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -27,6 +27,7 @@ impl<'a> System<'a> for InitiativeSystem {
             attributes,
             mut runstate,
             player,
+            player_pos,
         ) = data;
 
         if *runstate != RunState::Ticking {
@@ -37,17 +38,15 @@ impl<'a> System<'a> for InitiativeSystem {
         turns.clear();
 
         // Roll initiative
-        for (entity, initiative, _pos) in (&entities, &mut initiatives, &positions).join() {
+        for (entity, initiative, pos) in (&entities, &mut initiatives, &positions).join() {
             initiative.current -= 1;
 
             // Not my turn
             if initiative.current >= 1 {
                 continue;
             }
-            // It's my turn!
-            turns
-                .insert(entity, MyTurn {})
-                .expect("Unable to insert turn");
+
+            let mut my_turn = true;
 
             // Re-roll (6 + 1d6 + Quickness Bonus)
             initiative.current = 6 + rng.roll_dice(1, 6);
@@ -60,6 +59,19 @@ impl<'a> System<'a> for InitiativeSystem {
             // If its the player, we want to go to an AwaitingInput state
             if entity == *player {
                 *runstate = RunState::AwaitingInput;
+            } else {
+                let e_pos = rltk::Point::new(pos.x, pos.y);
+                let distance = rltk::DistanceAlg::Pythagoras.distance2d(*player_pos, e_pos);
+                if distance > 20.0 {
+                    my_turn = false;
+                }
+            }
+
+            // It's my turn!
+            if my_turn {
+                turns
+                    .insert(entity, MyTurn {})
+                    .expect("Unable to insert turn");
             }
         }
     }

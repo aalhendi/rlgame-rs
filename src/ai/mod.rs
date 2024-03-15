@@ -1,6 +1,9 @@
-pub mod animal_ai_system;
-pub mod bystander_ai_system;
+pub mod adjacent_ai_system;
+pub mod approach_ai_system;
+pub mod chase_ai_system;
+pub mod default_move_ai;
+pub mod flee_ai_system;
 pub mod initiative_system;
-pub mod monster_ai_system;
 pub mod quip_system;
 pub mod turn_status_system;
+pub mod visible_ai_system;

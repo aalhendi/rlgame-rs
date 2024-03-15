@@ -1,4 +1,36 @@
 {
+  "faction_table": [
+    { "name": "Player", "responses": {} },
+    { "name": "Mindless", "responses": { "Default": "attack" } },
+    {
+      "name": "Townsfolk",
+      "responses": {
+        "Default": "flee",
+        "Player": "ignore",
+        "Townsfolk": "ignore"
+      }
+    },
+    {
+      "name": "Bandits",
+      "responses": { "Default": "attack", "Bandits": "ignore" }
+    },
+    {
+      "name": "Cave Goblins",
+      "responses": { "Default": "attack", "Cave Goblins": "ignore" }
+    },
+    {
+      "name": "Carnivores",
+      "responses": { "Default": "attack", "Carnivores": "ignore" }
+    },
+    {
+      "name": "Herbivores",
+      "responses": { "Default": "flee", "Herbivores": "ignore" }
+    },
+    {
+      "name": "Hungry Rodents",
+      "responses": { "Default": "attack", "Hungry Rodents": "ignore" }
+    }
+  ],
   "spawn_table": [
     { "name": "Goblin", "weight": 10, "min_depth": 3, "max_depth": 100 },
     {
@@ -260,14 +292,15 @@
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "vendor",
+      "movement": "static",
       "attributes": {
         "intelligence": 13
       },
       "skills": {
         "Melee": 2
       },
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
@@ -280,256 +313,227 @@
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "vendor",
+      "movement": "static",
       "attributes": {},
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
       "name": "Patron",
       "renderable": {
-        "glyph": "☺",
+        "glyph": "☻",
         "fg": "#AAAAAA",
         "bg": "#000000",
         "order": 1
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "bystander",
-      "attributes": {},
+      "movement": "random",
       "quips": [
         "Quiet down, it's too early!",
         "Oh my, I drank too much.",
         "Still saving the world, eh?"
       ],
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
       "name": "Priest",
       "renderable": {
-        "glyph": "☺",
+        "glyph": "☻",
         "fg": "#EE82EE",
         "bg": "#000000",
         "order": 1
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "bystander",
+      "movement": "static",
       "attributes": {},
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
       "name": "Parishioner",
       "renderable": {
-        "glyph": "☺",
+        "glyph": "☻",
         "fg": "#AAAAAA",
         "bg": "#000000",
         "order": 1
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "bystander",
-      "attributes": {},
+      "movement": "random",
       "quips": [
         "Great to see a new face here!",
         "I hear there's going to be a good sermon on tea",
         "Want some cake?"
       ],
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
       "name": "Blacksmith",
       "renderable": {
-        "glyph": "☺",
+        "glyph": "☻",
         "fg": "#EE82EE",
         "bg": "#000000",
         "order": 1
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "vendor",
+      "movement": "static",
       "attributes": {},
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
       "name": "Clothier",
       "renderable": {
-        "glyph": "☺",
+        "glyph": "☻",
         "fg": "#EE82EE",
         "bg": "#000000",
         "order": 1
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "vendor",
+      "movement": "static",
       "attributes": {},
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
       "name": "Alchemist",
       "renderable": {
-        "glyph": "☺",
+        "glyph": "☻",
         "fg": "#EE82EE",
         "bg": "#000000",
         "order": 1
       },
       "blocks_tile": true,
       "vision_range": 4,
+      "movement": "static",
       "attributes": {},
-      "ai_type": "vendor",
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
       "name": "Mom",
       "renderable": {
-        "glyph": "☺",
+        "glyph": "☻",
         "fg": "#FFAAAA",
         "bg": "#000000",
         "order": 1
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "bystander",
-      "attributes": {},
+      "movement": "static",
       "quips": [
         "Hello, dear",
         "Off saving the world again?",
         "Be careful in the dungeon!",
         "Your father would be so proud, were he here."
       ],
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
-    },
-
-    {
-      "name": "Dock Worker",
-      "renderable": {
-        "glyph": "☺",
-        "fg": "#999999",
-        "bg": "#000000",
-        "order": 1
-      },
-      "blocks_tile": true,
-      "vision_range": 4,
-      "ai_type": "bystander",
       "attributes": {},
-      "quips": ["Lovely day, eh?", "Nice weather", "Hello"],
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
-    },
-
-    {
-      "name": "Fisher",
-      "renderable": {
-        "glyph": "☺",
-        "fg": "#999999",
-        "bg": "#000000",
-        "order": 1
-      },
-      "blocks_tile": true,
-      "vision_range": 4,
-      "ai_type": "bystander",
-      "attributes": {},
-      "quips": [
-        "They're biting today!",
-        "I caught something, but it wasn't a fish!",
-        "Looks like rain"
-      ],
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
-    },
-
-    {
-      "name": "Wannabe Pirate",
-      "renderable": {
-        "glyph": "☺",
-        "fg": "#aa9999",
-        "bg": "#000000",
-        "order": 1
-      },
-      "blocks_tile": true,
-      "vision_range": 4,
-      "ai_type": "bystander",
-      "attributes": {},
-      "quips": ["Arrr", "Grog!", "Booze!"],
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
-    },
-
-    {
-      "name": "Drunk",
-      "renderable": {
-        "glyph": "☺",
-        "fg": "#aa9999",
-        "bg": "#000000",
-        "order": 1
-      },
-      "blocks_tile": true,
-      "vision_range": 4,
-      "ai_type": "bystander",
-      "attributes": {},
-      "quips": ["Hic", "Need... more... booze!", "Spare a copper?"],
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
       "name": "Peasant",
       "renderable": {
-        "glyph": "☺",
+        "glyph": "☻",
         "fg": "#999999",
         "bg": "#000000",
         "order": 1
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "bystander",
-      "attributes": {},
+      "movement": "random_waypoint",
       "quips": ["Why are you in my house?"],
-      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"]
-    },
-
-    {
-      "name": "Orc",
-      "renderable": {
-        "glyph": "o",
-        "fg": "#FF0000",
-        "bg": "#000000",
-        "order": 1
-      },
-      "blocks_tile": true,
-      "vision_range": 8,
       "attributes": {},
-      "ai_type": "melee"
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
-      "name": "Goblin",
+      "name": "Dock Worker",
       "renderable": {
-        "glyph": "g",
-        "fg": "#FF0000",
-        "bg": "#000000",
-        "order": 1
-      },
-      "blocks_tile": true,
-      "vision_range": 8,
-      "attributes": {},
-      "ai_type": "melee"
-    },
-
-    {
-      "name": "Kobold",
-      "renderable": {
-        "glyph": "k",
-        "fg": "#FF0000",
+        "glyph": "☻",
+        "fg": "#999999",
         "bg": "#000000",
         "order": 1
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "melee",
-      "attributes": {}
+      "movement": "random_waypoint",
+      "quips": ["Lovely day, eh?", "Nice weather", "Hello"],
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
+    },
+
+    {
+      "name": "Fisher",
+      "renderable": {
+        "glyph": "☻",
+        "fg": "#999999",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 4,
+      "movement": "random_waypoint",
+      "quips": [
+        "They're biting today!",
+        "I caught something, but it wasn't a fish!",
+        "Looks like rain"
+      ],
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
+    },
+
+    {
+      "name": "Wannabe Pirate",
+      "renderable": {
+        "glyph": "☻",
+        "fg": "#aa9999",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 4,
+      "movement": "random_waypoint",
+      "quips": ["Arrr", "Grog!", "Booze!"],
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
+    },
+
+    {
+      "name": "Drunk",
+      "renderable": {
+        "glyph": "☻",
+        "fg": "#aa9999",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 4,
+      "movement": "random",
+      "quips": ["Hic", "Need... more... booze!", "Spare a copper?"],
+      "attributes": {},
+      "equipped": ["Cudgel", "Cloth Tunic", "Cloth Pants", "Slippers"],
+      "faction": "Townsfolk"
     },
 
     {
@@ -542,7 +546,7 @@
       },
       "blocks_tile": true,
       "vision_range": 8,
-      "ai_type": "melee",
+      "movement": "static",
       "attributes": {
         "Might": 3,
         "Fitness": 3
@@ -554,33 +558,8 @@
       "natural": {
         "armor_class": 11,
         "attacks": [{ "name": "bite", "hit_bonus": 0, "damage": "1d4" }]
-      }
-    },
-
-    {
-      "name": "Bandit",
-      "renderable": {
-        "glyph": "☻",
-        "fg": "#FF0000",
-        "bg": "#000000",
-        "order": 1
       },
-      "blocks_tile": true,
-      "vision_range": 4,
-      "ai_type": "melee",
-      "quips": ["Stand and deliver!", "Alright, hand it over"],
-      "attributes": {},
-      "equipped": [
-        "Shortsword",
-        "Shield",
-        "Leather Armor",
-        "Leather Chaps",
-        "Leather Boots"
-      ],
-      "light": {
-        "range": 6,
-        "color": "#FFFF55"
-      }
+      "faction": "Hungry Rodents"
     },
 
     {
@@ -593,7 +572,7 @@
       },
       "blocks_tile": true,
       "vision_range": 8,
-      "ai_type": "carnivore",
+      "movement": "static",
       "attributes": {
         "Might": 3,
         "Fitness": 3
@@ -606,7 +585,8 @@
         "armor_class": 12,
         "attacks": [{ "name": "bite", "hit_bonus": 0, "damage": "1d6" }]
       },
-      "loot_table": "Animal"
+      "loot_table": "Animal",
+      "faction": "Carnivores"
     },
 
     {
@@ -619,7 +599,7 @@
       },
       "blocks_tile": true,
       "vision_range": 8,
-      "ai_type": "melee",
+      "movement": "static",
       "attributes": {
         "Might": 3,
         "Fitness": 3
@@ -631,7 +611,9 @@
       "natural": {
         "armor_class": 11,
         "attacks": [{ "name": "bite", "hit_bonus": 0, "damage": "1d4" }]
-      }
+      },
+      "loot_table": "Animal",
+      "faction": "Carnivores"
     },
 
     {
@@ -644,7 +626,7 @@
       },
       "blocks_tile": true,
       "vision_range": 8,
-      "ai_type": "herbivore",
+      "movement": "random",
       "attributes": {
         "Might": 3,
         "Fitness": 3
@@ -657,8 +639,76 @@
         "armor_class": 11,
         "attacks": [{ "name": "bite", "hit_bonus": 0, "damage": "1d4" }]
       },
-      "loot_table": "Animal"
+      "loot_table": "Animal",
+      "faction": "Herbivores"
     },
+
+    {
+      "name": "Bandit",
+      "renderable": {
+        "glyph": "☻",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 6,
+      "movement": "random_waypoint",
+      "quips": ["Stand and deliver!", "Alright, hand it over"],
+      "attributes": {},
+      "equipped": ["Dagger", "Shield", "Leather Armor", "Leather Boots"],
+      "light": {
+        "range": 6,
+        "color": "#FFFF55"
+      },
+      "faction": "Bandits"
+    },
+
+    {
+      "name": "Orc",
+      "renderable": {
+        "glyph": "o",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 8,
+      "movement": "static",
+      "attributes": {},
+      "faction": "Cave Goblins"
+    },
+
+    {
+      "name": "Goblin",
+      "renderable": {
+        "glyph": "g",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 8,
+      "movement": "static",
+      "attributes": {},
+      "faction": "Cave Goblins"
+    },
+
+    {
+      "name": "Kobold",
+      "renderable": {
+        "glyph": "k",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 4,
+      "movement": "static",
+      "attributes": {},
+      "faction": "Cave Goblins"
+    },
+
     {
       "name": "Bat",
       "renderable": {
@@ -669,7 +719,7 @@
       },
       "blocks_tile": true,
       "vision_range": 6,
-      "ai_type": "herbivore",
+      "movement": "random",
       "attributes": {
         "Might": 3,
         "Fitness": 3
@@ -681,8 +731,10 @@
       "natural": {
         "armor_class": 11,
         "attacks": [{ "name": "bite", "hit_bonus": 0, "damage": "1d4" }]
-      }
+      },
+      "faction": "Herbivores"
     },
+
     {
       "name": "Large Spider",
       "level": 2,
@@ -695,11 +747,12 @@
       },
       "blocks_tile": true,
       "vision_range": 6,
-      "ai_type": "carnivore",
+      "movement": "static",
       "natural": {
         "armor_class": 12,
         "attacks": [{ "name": "bite", "hit_bonus": 1, "damage": "1d12" }]
-      }
+      },
+      "faction": "Carnivores"
     },
 
     {
@@ -714,7 +767,7 @@
       },
       "blocks_tile": true,
       "vision_range": 4,
-      "ai_type": "carnivore",
+      "movement": "static",
       "natural": {
         "armor_class": 12,
         "attacks": [{ "name": "engulf", "hit_bonus": 0, "damage": "1d8" }]

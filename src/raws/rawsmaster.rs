@@ -1,15 +1,14 @@
-use super::{spawn_table_structs::SpawnTableEntry, Raws};
+use super::{faction_structs::Reaction, spawn_table_structs::SpawnTableEntry, Raws};
 use crate::{
     components::{
-        AreaOfEffect, BlocksTile, BlocksVisibility, Bystander, Confusion, Consumable, Door,
-        EntryTrigger, EquipmentSlot, Equippable, Hidden, InflictsDamage, Item, MagicMapper,
-        MeleeWeapon, Monster, Name, Position, ProvidesFood, ProvidesHealing, Quips, Ranged,
-        SingleActivation, Vendor, Viewshed,
+        AreaOfEffect, BlocksTile, BlocksVisibility, Confusion, Consumable, Door, EntryTrigger,
+        EquipmentSlot, Equippable, Hidden, InflictsDamage, Item, MagicMapper, MeleeWeapon, Name,
+        Position, ProvidesFood, ProvidesHealing, Quips, Ranged, SingleActivation, Viewshed,
     },
     gamesystem::{attr_bonus, mana_at_level, npc_hp},
     random_table::RandomTable,
-    Attribute, Attributes, Carnivore, Equipped, Herbivore, InBackpack, Initiative, IsSerialized,
-    LightSource, LootTable, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills,
+    Attribute, Attributes, Equipped, Faction, InBackpack, Initiative, IsSerialized, LightSource,
+    LootTable, MoveMode, Movement, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills,
     WeaponAttribute, Wearable,
 };
 use regex::Regex;
@@ -33,6 +32,7 @@ pub struct RawMaster {
     pub prop_index: HashMap<String, usize>,
     pub spawn_table: Vec<SpawnTableEntry>,
     pub loot_index: HashMap<String, usize>,
+    faction_index: HashMap<String, HashMap<String, Reaction>>,
 }
 
 impl RawMaster {
@@ -82,6 +82,23 @@ impl RawMaster {
 
         for (i, loot) in self.raws.loot_tables.iter().enumerate() {
             self.loot_index.insert(loot.name.clone(), i);
+        }
+
+        // iterates through all factions, then through reactions to other factions
+        // builds HashMap of reactions to each faction stored in faction_index
+        for faction in self.raws.faction_table.iter() {
+            let mut reactions: HashMap<String, Reaction> = HashMap::new();
+            for other in faction.responses.iter() {
+                reactions.insert(
+                    other.0.clone(),
+                    match other.1.as_str() {
+                        "ignore" => Reaction::Ignore,
+                        "flee" => Reaction::Flee,
+                        _ => Reaction::Attack,
+                    },
+                );
+            }
+            self.faction_index.insert(faction.name.clone(), reactions);
         }
     }
 }
@@ -224,13 +241,23 @@ pub fn spawn_named_mob(
         eb = eb.with(get_renderable_component(renderable));
     }
 
-    match mob_template.ai_type.as_ref() {
-        "melee" => eb = eb.with(Monster {}),
-        "bystander" => eb = eb.with(Bystander {}),
-        "vendor" => eb = eb.with(Vendor {}),
-        "carnivore" => eb = eb.with(Carnivore {}),
-        "herbivore" => eb = eb.with(Herbivore {}),
-        _ => panic!("Unexpected AI Type for mob"),
+    match mob_template.movement.as_ref() {
+        "random" => {
+            eb = eb.with(MoveMode {
+                mode: Movement::Random,
+            })
+        }
+        "random_waypoint" => {
+            eb = eb.with(MoveMode {
+                mode: Movement::RandomWaypoint { path: None },
+            })
+        }
+
+        _ => {
+            eb = eb.with(MoveMode {
+                mode: Movement::Static,
+            })
+        }
     }
 
     eb = eb.with(Name {
@@ -404,6 +431,16 @@ pub fn spawn_named_mob(
     }
 
     eb = eb.with(Initiative { current: 2 });
+
+    if let Some(faction) = &mob_template.faction {
+        eb = eb.with(Faction {
+            name: faction.clone(),
+        });
+    } else {
+        eb = eb.with(Faction {
+            name: "Mindless".to_string(),
+        })
+    }
 
     let new_mob = eb.build();
 
@@ -598,4 +635,17 @@ pub fn get_item_drop(
             });
         rt.roll(rng)
     })
+}
+
+pub fn faction_reaction(my_faction: &str, their_faction: &str, raws: &RawMaster) -> Reaction {
+    raws.faction_index
+        .get(my_faction)
+        .and_then(|reactions| {
+            reactions
+                .get(their_faction)
+                .or_else(|| reactions.get("Default"))
+        })
+        .copied()
+        //default to Ignore (shouldn't happen, since we default to Mindless)
+        .unwrap_or(Reaction::Ignore)
 }

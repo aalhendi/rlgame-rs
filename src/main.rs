@@ -1,7 +1,7 @@
 use ai::{
-    animal_ai_system::AnimalAISystem, bystander_ai_system::BystanderAISystem,
-    initiative_system::InitiativeSystem, monster_ai_system::MonsterAI, quip_system::QuipSystem,
-    turn_status_system::TurnStatusSystem,
+    adjacent_ai_system::AdjacentAI, approach_ai_system::ApproachAI, chase_ai_system::ChaseAI,
+    default_move_ai::DefaultMoveAI, initiative_system::InitiativeSystem, quip_system::QuipSystem,
+    turn_status_system::TurnStatusSystem, visible_ai_system::VisibleAI,
 };
 use rltk::{GameState, Point, Rltk};
 use specs::{
@@ -146,14 +146,20 @@ impl State {
         let mut quip_system = QuipSystem;
         quip_system.run_now(&self.ecs);
 
-        let mut mob = MonsterAI;
-        mob.run_now(&self.ecs);
+        let mut adjecent_ai_system = AdjacentAI;
+        adjecent_ai_system.run_now(&self.ecs);
 
-        let mut animal_ai_system = AnimalAISystem;
-        animal_ai_system.run_now(&self.ecs);
+        let mut visibile_ai_system = VisibleAI;
+        visibile_ai_system.run_now(&self.ecs);
 
-        let mut bystander_ai_system = BystanderAISystem;
-        bystander_ai_system.run_now(&self.ecs);
+        let mut approach_ai_system = ApproachAI;
+        approach_ai_system.run_now(&self.ecs);
+
+        let mut chase_ai_system = ChaseAI;
+        chase_ai_system.run_now(&self.ecs);
+
+        let mut default_move_ai = DefaultMoveAI;
+        default_move_ai.run_now(&self.ecs);
 
         let mut trigger_system = TriggerSystem;
         trigger_system.run_now(&self.ecs);
@@ -216,14 +222,17 @@ impl GameState for State {
                 newrunstate = player_input(self, ctx);
             }
             RunState::Ticking => {
-                self.run_systems();
-                self.ecs.maintain();
-                match *self.ecs.fetch::<RunState>() {
-                    RunState::AwaitingInput => newrunstate = RunState::AwaitingInput,
-                    RunState::MagicMapReveal { .. } => {
-                        newrunstate = RunState::MagicMapReveal { row: 0 }
+                // runs all initiative cycles until it's the player's turn
+                while newrunstate == RunState::Ticking {
+                    self.run_systems();
+                    self.ecs.maintain();
+                    match *self.ecs.fetch::<RunState>() {
+                        RunState::AwaitingInput => newrunstate = RunState::AwaitingInput,
+                        RunState::MagicMapReveal { .. } => {
+                            newrunstate = RunState::MagicMapReveal { row: 0 }
+                        }
+                        _ => newrunstate = RunState::Ticking,
                     }
-                    _ => newrunstate = RunState::Ticking,
                 }
             }
             RunState::ShowDropItem => {
@@ -439,9 +448,6 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Renderable>();
     gs.ecs.register::<Player>();
     gs.ecs.register::<Viewshed>();
-    gs.ecs.register::<Monster>();
-    gs.ecs.register::<Bystander>();
-    gs.ecs.register::<Vendor>();
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<WantsToMelee>();
@@ -480,13 +486,16 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Pools>();
     gs.ecs.register::<NaturalAttackDefense>();
     gs.ecs.register::<LootTable>();
-    gs.ecs.register::<Carnivore>();
-    gs.ecs.register::<Herbivore>();
     gs.ecs.register::<OtherLevelPosition>();
     gs.ecs.register::<DMSerializationHelper>();
     gs.ecs.register::<LightSource>();
     gs.ecs.register::<Initiative>();
     gs.ecs.register::<MyTurn>();
+    gs.ecs.register::<Faction>();
+    gs.ecs.register::<WantsToApproach>();
+    gs.ecs.register::<WantsToFlee>();
+    gs.ecs.register::<MoveMode>();
+    gs.ecs.register::<Chasing>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();
