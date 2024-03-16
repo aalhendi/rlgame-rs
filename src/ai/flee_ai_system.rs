@@ -1,7 +1,7 @@
 use rltk::DijkstraMap;
 use specs::{Entities, Join, System, WriteExpect, WriteStorage};
 
-use crate::{EntityMoved, Map, MyTurn, Position, Viewshed, WantsToFlee};
+use crate::{spatial, EntityMoved, Map, MyTurn, Position, Viewshed, WantsToFlee};
 
 pub struct FleeAI;
 
@@ -48,9 +48,8 @@ impl<'a> System<'a> for FleeAI {
                 100.0,
             );
             if let Some(flee_tgt_idx) = DijkstraMap::find_highest_exit(&flee_map, my_idx, &*map) {
-                if !map.blocked[flee_tgt_idx] {
-                    map.blocked[my_idx] = false;
-                    map.blocked[flee_tgt_idx] = true;
+                if !spatial::is_blocked(flee_tgt_idx) {
+                    spatial::move_entity(entity, my_idx, flee_tgt_idx);
                     viewshed.dirty = true;
                     let (x, y) = map.idx_xy(flee_tgt_idx);
                     pos.x = x;

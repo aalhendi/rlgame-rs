@@ -2,7 +2,7 @@ use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorag
 
 use crate::{
     raws::{faction_structs::Reaction, rawsmaster::faction_reaction, RAWS},
-    Chasing, Faction, Map, MyTurn, Position, Viewshed, WantsToApproach, WantsToFlee,
+    spatial, Chasing, Faction, Map, MyTurn, Position, Viewshed, WantsToApproach, WantsToFlee,
 };
 
 pub struct VisibleAI;
@@ -48,7 +48,7 @@ impl<'a> System<'a> for VisibleAI {
             for visible_tile in viewshed.visible_tiles.iter() {
                 let idx = map.xy_idx(visible_tile.x, visible_tile.y);
                 if my_idx != idx {
-                    evaluate(idx, &map, &factions, &my_faction.name, &mut reactions);
+                    evaluate(idx, &factions, &my_faction.name, &mut reactions);
                 }
             }
 
@@ -87,18 +87,17 @@ impl<'a> System<'a> for VisibleAI {
 
 fn evaluate(
     idx: usize,
-    map: &Map,
     factions: &ReadStorage<Faction>,
     my_fac: &str,
     reactions: &mut Vec<(usize, Reaction, Entity)>,
 ) {
-    for other_entity in map.tile_content[idx].iter() {
-        if let Some(faction) = factions.get(*other_entity) {
+    spatial::for_each_tile_content(idx, |other_entity| {
+        if let Some(faction) = factions.get(other_entity) {
             reactions.push((
                 idx,
                 faction_reaction(my_fac, &faction.name, &RAWS.lock().unwrap()),
-                *other_entity,
+                other_entity,
             ));
         }
-    }
+    });
 }

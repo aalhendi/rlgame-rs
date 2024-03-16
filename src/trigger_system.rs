@@ -1,3 +1,5 @@
+use crate::spatial;
+
 use super::{
     gamelog::Gamelog, particle_system::ParticleBuilder, EntityMoved, EntryTrigger, Hidden,
     InflictsDamage, Map, Name, Position, SingleActivation, SufferDamage,
@@ -42,10 +44,10 @@ impl<'a> System<'a> for TriggerSystem {
         let mut remove_entities: Vec<Entity> = Vec::new();
         for (entity, mut _entity_moved, pos) in (&entities, &mut entity_moved, &position).join() {
             let idx = map.xy_idx(pos.x, pos.y);
-            for tile_entity in map.tile_content[idx].iter() {
+            spatial::for_each_tile_content(idx, |tile_entity| {
                 // Is Triggerable
-                if entity != *tile_entity && entry_trigger.get(*tile_entity).is_some() {
-                    if let Some(name) = names.get(*tile_entity) {
+                if entity != tile_entity && entry_trigger.get(tile_entity).is_some() {
+                    if let Some(name) = names.get(tile_entity) {
                         log.entries.push(format!(
                             "{trigger_entity} triggers!",
                             trigger_entity = &name.name
@@ -53,7 +55,7 @@ impl<'a> System<'a> for TriggerSystem {
                     }
 
                     // Inflicts Damage
-                    if let Some(damage) = inflicts_damage.get(*tile_entity) {
+                    if let Some(damage) = inflicts_damage.get(tile_entity) {
                         particle_builder.request(
                             *pos,
                             rltk::RGB::named(rltk::ORANGE),
@@ -65,13 +67,13 @@ impl<'a> System<'a> for TriggerSystem {
                     }
 
                     // If it is single activation, it needs to be removed
-                    if single_activation.get(*tile_entity).is_some() {
-                        remove_entities.push(*tile_entity);
+                    if single_activation.get(tile_entity).is_some() {
+                        remove_entities.push(tile_entity);
                     }
 
-                    hidden.remove(*tile_entity); // The trap is no longer hidden
+                    hidden.remove(tile_entity); // The trap is no longer hidden
                 }
-            }
+            });
         }
 
         // Remove any single activation traps

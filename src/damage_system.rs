@@ -5,7 +5,7 @@ use crate::{
         rawsmaster::{get_item_drop, spawn_named_item, SpawnType},
         RAWS,
     },
-    Attributes, Equipped, InBackpack, LootTable, Pools,
+    spatial, Attributes, Equipped, InBackpack, LootTable, Pools,
 };
 
 use super::{gamelog::Gamelog, Map, Name, Player, Position, RunState, SufferDamage};
@@ -47,9 +47,14 @@ impl<'a> System<'a> for DamageSystem {
         for (entity, stats, damage) in (&entities, &mut stats, &damage).join() {
             for (dmg_amount, is_dmg_from_player) in &damage.amount {
                 stats.hit_points.current -= dmg_amount;
-
+                let pos = positions.get(entity);
+                // If dead from player
                 if stats.hit_points.current < 1 && *is_dmg_from_player {
                     xp_gain += stats.level * 100;
+                    if let Some(p) = pos {
+                        let idx = map.xy_idx(p.x, p.y);
+                        spatial::remove_entity(entity, idx);
+                    }
                 }
             }
 

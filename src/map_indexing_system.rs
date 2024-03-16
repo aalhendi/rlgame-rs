@@ -1,3 +1,5 @@
+use crate::{spatial, Pools};
+
 use super::{BlocksTile, Map, Position};
 use specs::prelude::*;
 
@@ -5,25 +7,27 @@ pub struct MapIndexingSystem;
 
 impl<'a> System<'a> for MapIndexingSystem {
     type SystemData = (
-        WriteExpect<'a, Map>,
+        ReadExpect<'a, Map>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, BlocksTile>,
+        ReadStorage<'a, Pools>,
         Entities<'a>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut map, positions, blockers, entities) = data;
+        let (map, positions, blockers, pools, entities) = data;
 
-        map.populate_blocked();
-        map.clear_content_index();
+        spatial::clear();
+        spatial::populate_blocked_from_map(&map);
         for (position, entity) in (&positions, &entities).join() {
-            let idx = map.xy_idx(position.x, position.y);
+            let alive = pools
+                .get(entity)
+                .map_or(true, |pools| pools.hit_points.current >= 1);
 
-            // Update blocked_tiles if theres a blocking entity
-            map.blocked[idx] = blockers.get(entity).is_some();
-
-            // Push the entity to appropriate index slot. Its a copy type (we dont want to move in or the ECS will lose it).
-            map.tile_content[idx].push(entity);
+            if alive {
+                let idx = map.xy_idx(position.x, position.y);
+                spatial::index_entity(entity, idx, blockers.get(entity).is_some());
+            }
         }
     }
 }

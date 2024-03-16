@@ -1,10 +1,11 @@
 use rltk::{Point, RandomNumberGenerator, RGB};
-use specs::Entity;
 use std::collections::HashSet;
 pub mod dungeon;
 pub mod themes;
 pub mod tiletype;
 pub use tiletype::{tile_opaque, tile_walkable, TileType};
+
+use crate::spatial;
 
 use self::tiletype::tile_cost;
 
@@ -15,17 +16,12 @@ pub struct Map {
     pub height: i32,
     pub revealed_tiles: Vec<bool>,
     pub visible_tiles: Vec<bool>,
-    pub blocked: Vec<bool>,
     pub depth: i32, // TODO(aalhendi): usize
     pub bloodstains: HashSet<usize>,
     pub view_blocked: HashSet<usize>,
     pub name: String,
     pub outdoors: bool,
     pub light_level_tiles: Vec<RGB>,
-
-    #[serde(skip_serializing)]
-    #[serde(skip_deserializing)]
-    pub tile_content: Vec<Vec<Entity>>,
 }
 
 impl rltk::Algorithm2D for Map {
@@ -92,14 +88,13 @@ impl Map {
     /// Generates an empty map, consisting entirely of solid walls
     pub fn new<T: Into<String>>(new_depth: i32, width: i32, height: i32, name: T) -> Map {
         let map_tile_count = (width * height) as usize;
+        spatial::set_size(map_tile_count);
         Map {
             tiles: vec![TileType::Wall; map_tile_count],
             width,
             height,
             revealed_tiles: vec![false; map_tile_count],
             visible_tiles: vec![false; map_tile_count],
-            blocked: vec![false; map_tile_count],
-            tile_content: vec![Vec::new(); map_tile_count],
             depth: new_depth,
             bloodstains: HashSet::new(),
             view_blocked: HashSet::new(),
@@ -121,9 +116,7 @@ impl Map {
 
     // Clears the contents of tile_content field
     pub fn clear_content_index(&mut self) {
-        for content in self.tile_content.iter_mut() {
-            content.clear();
-        }
+        spatial::clear();
     }
 
     /// Returns if a tile can be entered and is within bounds
@@ -133,14 +126,12 @@ impl Map {
             return false;
         }
         let idx = self.xy_idx(x, y);
-        !self.blocked[idx]
+        !spatial::is_blocked(idx)
     }
 
     /// Sets tile as blocked if Wall tile.
     pub fn populate_blocked(&mut self) {
-        for (i, tile) in self.tiles.iter_mut().enumerate() {
-            self.blocked[i] = !tile_walkable(*tile);
-        }
+        spatial::populate_blocked_from_map(self);
     }
 
     /// Returns a map with solid boundaries and 400 randomly placed wall tiles

@@ -23,11 +23,7 @@ impl MasterDungeonMap {
     }
 
     pub fn get_map(&self, depth: i32) -> Option<Map> {
-        self.maps.get(&depth).map(|map| {
-            let mut result = map.clone();
-            result.tile_content = vec![Vec::new(); (result.width * result.height) as usize];
-            result
-        })
+        self.maps.get(&depth).cloned()
     }
 }
 

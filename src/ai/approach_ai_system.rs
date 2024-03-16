@@ -1,6 +1,6 @@
 use specs::{Entities, Join, System, WriteExpect, WriteStorage};
 
-use crate::{EntityMoved, Map, MyTurn, Position, Viewshed, WantsToApproach};
+use crate::{spatial, EntityMoved, Map, MyTurn, Position, Viewshed, WantsToApproach};
 
 pub struct ApproachAI;
 
@@ -20,7 +20,7 @@ impl<'a> System<'a> for ApproachAI {
             mut turns,
             mut want_approach,
             mut positions,
-            mut map,
+            map,
             mut viewsheds,
             mut entity_moved,
             entities,
@@ -44,14 +44,13 @@ impl<'a> System<'a> for ApproachAI {
             let path = rltk::a_star_search(start_idx, end_idx, &*map);
             if path.success && path.steps.len() > 1 {
                 let idx = map.xy_idx(pos.x, pos.y);
-                map.blocked[idx] = false;
                 let (x, y) = map.idx_xy(path.steps[1]);
                 pos.x = x;
                 pos.y = y;
                 entity_moved
                     .insert(entity, EntityMoved {})
                     .expect("Unable to insert marker");
-                map.blocked[path.steps[1]] = true;
+                spatial::move_entity(entity, idx, path.steps[1]);
                 viewshed.dirty = true;
             }
         }

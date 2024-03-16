@@ -1,3 +1,5 @@
+use crate::spatial;
+
 use super::{gamelog::Gamelog, BlocksVisibility, Hidden, Map, Name, Player, Position, Viewshed};
 use rltk::{field_of_view, Point};
 use specs::prelude::*;
@@ -58,15 +60,15 @@ impl<'a> System<'a> for VisibilitySystem {
                         map.visible_tiles[idx] = true;
 
                         // Chance to reveal hidden things
-                        for e in map.tile_content[idx].iter() {
-                            if hidden.get(*e).is_some() && rng.roll_dice(1, 24) == 1 {
-                                if let Some(name) = names.get(*e) {
+                        spatial::for_each_tile_content(idx, |e| {
+                            if hidden.get(e).is_some() && rng.roll_dice(1, 24) == 1 {
+                                if let Some(name) = names.get(e) {
                                     log.entries
                                         .push(format!("You spotted a {name}.", name = &name.name));
                                 }
-                                hidden.remove(*e);
+                                hidden.remove(e);
                             }
-                        }
+                        });
                     }
                 }
                 viewshed.dirty = false;

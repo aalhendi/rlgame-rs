@@ -50,6 +50,7 @@ mod saveload_system;
 mod trigger_system;
 use lighting_system::LightingSystem;
 mod ai;
+pub mod spatial;
 
 const SHOW_MAPGEN_VISUALIZER: bool = true;
 
