@@ -86,6 +86,7 @@ pub enum RunState {
     SaveGame,
     NextLevel,
     PreviousLevel,
+    TownPortal,
     GameOver,
     MagicMapReveal {
         row: i32,
@@ -265,6 +266,7 @@ impl GameState for State {
                     self.ecs.maintain();
                     match *self.ecs.fetch::<RunState>() {
                         RunState::AwaitingInput => newrunstate = RunState::AwaitingInput,
+                        RunState::TownPortal => newrunstate = RunState::TownPortal,
                         RunState::MagicMapReveal { .. } => {
                             newrunstate = RunState::MagicMapReveal { row: 0 }
                         }
@@ -448,7 +450,30 @@ impl GameState for State {
                         newrunstate = RunState::MapGeneration;
                     }
                     gui::CheatMenuResult::MagicMapper => {
-                        newrunstate = RunState::MagicMapReveal { row: 0 }
+                        // newrunstate = RunState::MagicMapReveal { row: 0 }
+                        let mut map = self.ecs.fetch_mut::<Map>();
+                        map.revealed_tiles.iter_mut().for_each(|v| *v = true);
+                    }
+                    gui::CheatMenuResult::Heal => {
+                        let player = self.ecs.fetch::<Entity>();
+                        let mut pools = self.ecs.write_storage::<Pools>();
+                        let player_pools = pools.get_mut(*player).unwrap();
+                        player_pools.hit_points.current = player_pools.hit_points.max;
+                        newrunstate = RunState::AwaitingInput;
+                    }
+                    gui::CheatMenuResult::GodMode => {
+                        let player = self.ecs.fetch::<Entity>();
+                        let mut pools = self.ecs.write_storage::<Pools>();
+                        let player_pools = pools.get_mut(*player).unwrap();
+                        player_pools.god_mode = true;
+                        newrunstate = RunState::AwaitingInput;
+                    }
+                    gui::CheatMenuResult::GetRich => {
+                        let player = self.ecs.fetch::<Entity>();
+                        let mut pools = self.ecs.write_storage::<Pools>();
+                        let player_pools = pools.get_mut(*player).unwrap();
+                        player_pools.gold += 100_f32;
+                        newrunstate = RunState::AwaitingInput;
                     }
                 }
             }
@@ -489,6 +514,17 @@ impl GameState for State {
                     gui::VendorResult::BuyMode => newrunstate = RunState::buy_vendor(vendor),
                     gui::VendorResult::SellMode => newrunstate = RunState::sell_vendor(vendor),
                 }
+            }
+            RunState::TownPortal => {
+                // Spawn the portal
+                spawner::spawn_town_portal(&mut self.ecs);
+
+                // Transition
+                let map_depth = self.ecs.fetch::<Map>().depth;
+                let destination_offset = 0 - (map_depth - 1);
+                self.goto_level(destination_offset);
+                self.mapgen_next_state = Some(RunState::PreRun);
+                newrunstate = RunState::MapGeneration;
             }
         }
 
@@ -573,6 +609,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Chasing>();
     gs.ecs.register::<EquipmentChanged>();
     gs.ecs.register::<Vendor>();
+    gs.ecs.register::<TownPortal>();
+    gs.ecs.register::<TeleportTo>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

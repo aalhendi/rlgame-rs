@@ -5,14 +5,15 @@ use super::{
     TileType, Viewshed,
 };
 use crate::{
+    dungeon::MasterDungeonMap,
     gamesystem::{attr_bonus, mana_at_level, player_hp_at_level},
     random_table::RandomTable,
     raws::{
         rawsmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType},
         RAWS,
     },
-    Attribute, Attributes, EquipmentChanged, Faction, Initiative, LightSource, Pool, Pools, Skill,
-    Skills,
+    Attribute, Attributes, EntryTrigger, EquipmentChanged, Faction, Initiative, LightSource,
+    OtherLevelPosition, Pool, Pools, SingleActivation, Skill, Skills, TeleportTo,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
@@ -89,6 +90,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             total_weight: 0.0,
             total_initiative_penalty: 0.0,
             gold: 0.0,
+            god_mode: false,
         })
         // Slightly yellow torch
         .with(LightSource {
@@ -131,6 +133,12 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         SpawnType::Equipped { by: player },
     );
     spawn_named_entity(raws, ecs, "Old Boots", SpawnType::Equipped { by: player });
+    spawn_named_entity(
+        raws,
+        ecs,
+        "Town Portal Scroll",
+        SpawnType::Carried { by: player },
+    );
 
     player
 }
@@ -212,6 +220,56 @@ pub fn spawn_entity(ecs: &mut World, (idx, name): &(&usize, &String)) {
     }
 
     rltk::console::log(format!("WARNING: Unable to spawn [{name}]!"));
+}
+
+pub fn spawn_town_portal(ecs: &mut World) {
+    // Get current position & depth
+    let map = ecs.fetch::<Map>();
+    let player_depth = map.depth;
+    let player_pos = ecs.fetch::<rltk::Point>();
+    let player_x = player_pos.x;
+    let player_y = player_pos.y;
+    std::mem::drop(player_pos);
+    std::mem::drop(map);
+
+    // Find part of the town for the portal
+    let dm = ecs.fetch::<MasterDungeonMap>();
+    let town_map = dm.get_map(1).unwrap();
+    let mut stairs_idx = 0;
+    for (idx, tt) in town_map.tiles.iter().enumerate() {
+        if *tt == TileType::DownStairs {
+            stairs_idx = idx;
+        }
+    }
+    let (portal_x, portal_y) = town_map.idx_xy(stairs_idx);
+
+    std::mem::drop(dm);
+
+    // Spawn the portal itself
+    ecs.create_entity()
+        .with(OtherLevelPosition {
+            x: portal_x - 2,
+            y: portal_y,
+            depth: 1,
+        })
+        .with(Renderable {
+            glyph: rltk::to_cp437('♥'),
+            fg: RGB::named(rltk::CYAN),
+            bg: RGB::named(rltk::BLACK),
+            render_order: 0,
+        })
+        .with(EntryTrigger {})
+        .with(TeleportTo {
+            x: player_x,
+            y: player_y,
+            depth: player_depth,
+            player_only: true,
+        })
+        .with(Name {
+            name: "Town Portal".to_string(),
+        })
+        .with(SingleActivation {})
+        .build();
 }
 
 fn room_table(map_depth: i32) -> RandomTable {

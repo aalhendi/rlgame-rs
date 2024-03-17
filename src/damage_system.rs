@@ -48,7 +48,9 @@ impl<'a> System<'a> for DamageSystem {
         // Iterating through each entity that has both stats and damage components.
         for (entity, stats, damage) in (&entities, &mut stats, &damage).join() {
             for (dmg_amount, is_dmg_from_player) in &damage.amount {
-                stats.hit_points.current -= dmg_amount;
+                if !stats.god_mode {
+                    stats.hit_points.current -= dmg_amount;
+                }
                 let pos = positions.get(entity);
                 // If dead from player
                 if stats.hit_points.current < 1 && *is_dmg_from_player {

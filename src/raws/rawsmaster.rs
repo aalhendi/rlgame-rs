@@ -4,12 +4,7 @@ use crate::{
         AreaOfEffect, BlocksTile, BlocksVisibility, Confusion, Consumable, Door, EntryTrigger,
         EquipmentSlot, Equippable, Hidden, InflictsDamage, Item, MagicMapper, MeleeWeapon, Name,
         Position, ProvidesFood, ProvidesHealing, Quips, Ranged, SingleActivation, Viewshed,
-    },
-    gamesystem::{attr_bonus, mana_at_level, npc_hp},
-    random_table::RandomTable,
-    Attribute, Attributes, Equipped, Faction, InBackpack, Initiative, IsSerialized, LightSource,
-    LootTable, MoveMode, Movement, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills,
-    Vendor, WeaponAttribute, Wearable,
+    }, gamesystem::{attr_bonus, mana_at_level, npc_hp}, random_table::RandomTable, Attribute, Attributes, Equipped, Faction, InBackpack, Initiative, IsSerialized, LightSource, LootTable, MoveMode, Movement, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills, TownPortal, Vendor, WeaponAttribute, Wearable
 };
 use regex::Regex;
 use specs::{
@@ -212,6 +207,7 @@ pub fn spawn_named_item(
                 }
                 "magic_mapping" => eb = eb.with(MagicMapper {}),
                 "food" => eb = eb.with(ProvidesFood {}),
+                "town_portal" => eb = eb.with(TownPortal {}),
                 _ => {
                     rltk::console::log(format!(
                         "Warning: consumable effect {} not implemented.",
@@ -393,6 +389,7 @@ pub fn spawn_named_mob(
         },
         total_weight: 0.0,
         total_initiative_penalty: 0.0,
+        god_mode: false,
         gold: mob_template
             .gold
             .as_ref()

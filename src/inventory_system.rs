@@ -1,4 +1,4 @@
-use crate::{spatial, EquipmentChanged, Pools};
+use crate::{spatial, EquipmentChanged, Pools, TownPortal};
 
 use super::{
     gamelog::Gamelog, particle_system::ParticleBuilder, AreaOfEffect, Confusion, Consumable,
@@ -87,6 +87,7 @@ impl<'a> System<'a> for ItemUseSystem {
         ReadStorage<'a, MagicMapper>,
         WriteExpect<'a, RunState>,
         WriteStorage<'a, EquipmentChanged>,
+        ReadStorage<'a, TownPortal>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -114,6 +115,7 @@ impl<'a> System<'a> for ItemUseSystem {
             magic_mapper,
             mut runstate,
             mut dirty,
+            town_portal,
         ) = data;
 
         for (entity, useitem) in (&entities, &wants_use).join() {
@@ -306,6 +308,20 @@ impl<'a> System<'a> for ItemUseSystem {
                     .entries
                     .push("The map is revealed to you!".to_string());
                 *runstate = RunState::MagicMapReveal { row: 0 };
+            }
+
+            // If its a town portal...
+            if town_portal.get(useitem.item).is_some() {
+                if map.depth == 1 {
+                    gamelog
+                        .entries
+                        .push("You are already in town, so the scroll does nothing.".to_string());
+                } else {
+                    gamelog
+                        .entries
+                        .push("You are telported back to town!".to_string());
+                    *runstate = RunState::TownPortal;
+                }
             }
 
             if consumables.get(useitem.item).is_some() {

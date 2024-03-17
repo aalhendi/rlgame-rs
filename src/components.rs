@@ -307,6 +307,7 @@ pub struct Pools {
     pub total_weight: f32,
     pub total_initiative_penalty: f32,
     pub gold: f32,
+    pub god_mode: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -390,4 +391,15 @@ pub struct EquipmentChanged {}
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Vendor {
     pub categories: Vec<String>,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct TownPortal {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct TeleportTo {
+    pub x: i32,
+    pub y: i32,
+    pub depth: i32,
+    pub player_only: bool,
 }
