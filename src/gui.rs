@@ -1,6 +1,7 @@
 use crate::{
     camera::{self, PANE_WIDTH},
-    Attribute, Attributes, Consumable, Pools,
+    raws::rawsmaster::get_vendor_items,
+    Attribute, Attributes, Consumable, Item, Pools, Vendor, VendorMode,
 };
 
 use super::{
@@ -83,8 +84,25 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     draw_attribute("Fitness:", &p_attr.fitness, 6, ctx);
     draw_attribute("Intelligence:", &p_attr.intelligence, 7, ctx);
 
+    // Initiative and Weight
+    let weight_str = &format!(
+        "{weight:.0} lbs ({weight_max} lbs max)",
+        weight = player_pools.total_weight,
+        weight_max = (p_attr.might.base + p_attr.might.modifiers) * 15
+    );
+    let initiative_str = &format!(
+        "Initiative Penalty: {penalty:.0}",
+        penalty = player_pools.total_initiative_penalty
+    );
+    ctx.print_color(50, 9, white, black, weight_str);
+    ctx.print_color(50, 10, white, black, initiative_str);
+
+    // Gold
+    let gold_str = &format!("Gold: {amt:.1}", amt = player_pools.gold);
+    ctx.print_color(50, 11, gold, black, gold_str);
+
     // Wearables / Equipped
-    let mut y = 9; // Starting pt
+    let mut y = 13; // Starting pt
     let equipped = ecs.read_storage::<Equipped>();
     let name = ecs.read_storage::<Name>();
     for (equipped_by, item_name) in (&equipped, &name).join() {
@@ -320,7 +338,7 @@ pub fn show_menu<T: Owned + Component>(
     let count = inventory.count();
 
     let mut y = (25 - (count / 2)) as i32;
-    print_item_menu(ctx, y, count, "Inventory");
+    print_item_menu(ctx, y, 31, count, "Inventory");
 
     let mut equippable: Vec<Entity> = Vec::new();
     for (j, (entity, _pack, item_name)) in (&entities, &backpack, &names)
@@ -597,11 +615,11 @@ fn cycle_hovering(
     }
 }
 
-fn print_item_menu(ctx: &mut Rltk, y: i32, count: usize, label: &str) {
+fn print_item_menu(ctx: &mut Rltk, y: i32, width: i32, count: usize, label: &str) {
     let yellow = RGB::named(rltk::YELLOW);
     let white = RGB::named(rltk::WHITE);
     let black = RGB::named(rltk::BLACK);
-    ctx.draw_box(15, y - 2, 31, (count + 3) as i32, white, black);
+    ctx.draw_box(15, y - 2, width, (count + 3) as i32, white, black);
     ctx.print_color(18, y - 2, yellow, black, label);
     ctx.print_color(18, y + count as i32 + 1, yellow, black, "ESCAPE to cancel");
 }
@@ -676,7 +694,7 @@ pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
     let count = 2;
     let y = 25 - (count / 2);
 
-    print_item_menu(ctx, y, count as usize, "Cheating!");
+    print_item_menu(ctx, y, 31, count as usize, "Cheating!");
     print_item_label(ctx, y, 'T', &String::from("Teleport to exit"));
     print_item_label(ctx, y + 1, 'M', &String::from("Reveal map"));
 
@@ -730,5 +748,136 @@ impl Tooltip {
             let col = if i == 0 { white } else { light_gray };
             ctx.print_color(x + 1, y + i as i32 + 1, col, black, s);
         }
+    }
+}
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum VendorResult {
+    NoResponse,
+    Cancel,
+    Sell,
+    BuyMode,
+    SellMode,
+    Buy,
+}
+fn vendor_sell_menu(
+    gs: &mut State,
+    ctx: &mut Rltk,
+    _vendor: Entity,
+    _mode: VendorMode,
+) -> (VendorResult, Option<Entity>, Option<String>, Option<f32>) {
+    let player_entity = gs.ecs.fetch::<Entity>();
+    let names = gs.ecs.read_storage::<Name>();
+    let backpack = gs.ecs.read_storage::<InBackpack>();
+    let items = gs.ecs.read_storage::<Item>();
+    let entities = gs.ecs.entities();
+
+    let inventory = (&backpack, &names)
+        .join()
+        .filter(|item| item.0.owner == *player_entity);
+    let count = inventory.count();
+
+    let mut y = (25 - (count / 2)) as i32;
+    print_item_menu(
+        ctx,
+        y,
+        51,
+        count,
+        "Buy Which Item? (space to switch to sell mode)",
+    );
+
+    let mut equippable: Vec<Entity> = Vec::new();
+    for (j, (entity, _pack, name, item)) in (&entities, &backpack, &names, &items)
+        .join()
+        .filter(|item| item.1.owner == *player_entity)
+        .enumerate()
+    {
+        let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
+        print_item_label(ctx, y, label_char, &name.name.to_string());
+        ctx.print(50, y, &format!("{val:.1} gp", val = item.base_value * 0.8));
+        equippable.push(entity);
+        y += 1;
+    }
+
+    match ctx.key {
+        None => (VendorResult::NoResponse, None, None, None),
+        Some(key) => match key {
+            VirtualKeyCode::Space => (VendorResult::BuyMode, None, None, None),
+            VirtualKeyCode::Escape => (VendorResult::Cancel, None, None, None),
+            _ => {
+                let selection = rltk::letter_to_option(key);
+                if selection > -1 && selection < count as i32 {
+                    return (
+                        VendorResult::Sell,
+                        Some(equippable[selection as usize]),
+                        None,
+                        None,
+                    );
+                }
+                (VendorResult::NoResponse, None, None, None)
+            }
+        },
+    }
+}
+
+fn vendor_buy_menu(
+    gs: &mut State,
+    ctx: &mut Rltk,
+    vendor: Entity,
+    _mode: VendorMode,
+) -> (VendorResult, Option<Entity>, Option<String>, Option<f32>) {
+    let vendors = gs.ecs.read_storage::<Vendor>();
+    let inventory = get_vendor_items(
+        &vendors.get(vendor).unwrap().categories,
+        &crate::raws::RAWS.lock().unwrap(),
+    );
+    let count = inventory.len();
+
+    let mut y = (25 - (count / 2)) as i32;
+    print_item_menu(
+        ctx,
+        y,
+        51,
+        count,
+        "Buy Which Item? (space to switch to sell mode)",
+    );
+
+    for (j, sale) in inventory.iter().enumerate() {
+        let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
+        print_item_label(ctx, y, label_char, &sale.0);
+        ctx.print(50, y, &format!("{val:.1} gp", val = sale.1 * 1.2));
+        y += 1;
+    }
+
+    match ctx.key {
+        None => (VendorResult::NoResponse, None, None, None),
+        Some(key) => match key {
+            VirtualKeyCode::Space => (VendorResult::SellMode, None, None, None),
+            VirtualKeyCode::Escape => (VendorResult::Cancel, None, None, None),
+            _ => {
+                let selection = rltk::letter_to_option(key);
+                if selection > -1 && selection < count as i32 {
+                    return (
+                        VendorResult::Buy,
+                        None,
+                        Some(inventory[selection as usize].0.clone()),
+                        Some(inventory[selection as usize].1),
+                    );
+                }
+                (VendorResult::NoResponse, None, None, None)
+            }
+        },
+    }
+}
+
+pub fn show_vendor_menu(
+    gs: &mut State,
+    ctx: &mut Rltk,
+    vendor: Entity,
+    mode: VendorMode,
+) -> (VendorResult, Option<Entity>, Option<String>, Option<f32>) {
+    match mode {
+        VendorMode::Buy => vendor_buy_menu(gs, ctx, vendor, mode),
+        VendorMode::Sell => vendor_sell_menu(gs, ctx, vendor, mode),
     }
 }

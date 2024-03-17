@@ -43,6 +43,8 @@ impl<'a> System<'a> for DamageSystem {
         ) = data;
 
         let mut xp_gain = 0;
+        let mut gold_gain = 0.0f32;
+
         // Iterating through each entity that has both stats and damage components.
         for (entity, stats, damage) in (&entities, &mut stats, &damage).join() {
             for (dmg_amount, is_dmg_from_player) in &damage.amount {
@@ -51,6 +53,7 @@ impl<'a> System<'a> for DamageSystem {
                 // If dead from player
                 if stats.hit_points.current < 1 && *is_dmg_from_player {
                     xp_gain += stats.level * 100;
+                    gold_gain += stats.gold;
                     if let Some(p) = pos {
                         let idx = map.xy_idx(p.x, p.y);
                         spatial::remove_entity(entity, idx);
@@ -65,9 +68,10 @@ impl<'a> System<'a> for DamageSystem {
             }
         }
 
-        if xp_gain != 0 {
+        if xp_gain != 0 || gold_gain != 0.0 {
             let p_stats = stats.get_mut(*player_entity).unwrap();
             p_stats.xp += xp_gain;
+            p_stats.gold += gold_gain;
             if p_stats.xp >= p_stats.level * 1000 {
                 let player_attributes = attributes.get(*player_entity).unwrap();
                 // We've gone up a level!

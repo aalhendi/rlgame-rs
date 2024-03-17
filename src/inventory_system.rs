@@ -1,4 +1,4 @@
-use crate::{spatial, Pools};
+use crate::{spatial, EquipmentChanged, Pools};
 
 use super::{
     gamelog::Gamelog, particle_system::ParticleBuilder, AreaOfEffect, Confusion, Consumable,
@@ -18,11 +18,19 @@ impl<'a> System<'a> for ItemCollectionSystem {
         WriteStorage<'a, Position>,
         ReadStorage<'a, Name>,
         WriteStorage<'a, InBackpack>,
+        WriteStorage<'a, EquipmentChanged>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (player_entity, mut gamelog, mut wants_pickup, mut positions, names, mut backpack) =
-            data;
+        let (
+            player_entity,
+            mut gamelog,
+            mut wants_pickup,
+            mut positions,
+            names,
+            mut backpack,
+            mut dirty,
+        ) = data;
 
         for pickup in wants_pickup.join() {
             positions.remove(pickup.item);
@@ -34,6 +42,9 @@ impl<'a> System<'a> for ItemCollectionSystem {
                     },
                 )
                 .expect("Unable to insert backpack entry");
+            dirty
+                .insert(pickup.item, EquipmentChanged {})
+                .expect("Unable to mark EquipmentChanged");
 
             if pickup.collected_by == *player_entity {
                 gamelog.entries.push(format!(
@@ -75,6 +86,7 @@ impl<'a> System<'a> for ItemUseSystem {
         WriteStorage<'a, HungerClock>,
         ReadStorage<'a, MagicMapper>,
         WriteExpect<'a, RunState>,
+        WriteStorage<'a, EquipmentChanged>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -101,17 +113,21 @@ impl<'a> System<'a> for ItemUseSystem {
             mut hunger_clocks,
             magic_mapper,
             mut runstate,
+            mut dirty,
         ) = data;
 
-        for (entity, wants_use) in (&entities, &wants_use).join() {
+        for (entity, useitem) in (&entities, &wants_use).join() {
+            dirty
+                .insert(entity, EquipmentChanged {})
+                .expect("Unable to mark equipment changed");
             // Targeting
-            let mut targets: Vec<Entity> = Vec::new();
-            match wants_use.target {
+            let mut targets = Vec::new();
+            match useitem.target {
                 None => {
                     targets.push(*player_entity);
                 }
                 Some(target) => {
-                    match aoe.get(wants_use.item) {
+                    match aoe.get(useitem.item) {
                         None => {
                             // Single target in tile
                             let idx = map.xy_idx(target.x, target.y);
@@ -143,7 +159,7 @@ impl<'a> System<'a> for ItemUseSystem {
             }
 
             // If it is equippable, then we want to equip it - and unequip whatever else was in that slot
-            let item_equippable = equippable.get(wants_use.item);
+            let item_equippable = equippable.get(useitem.item);
             if let Some(can_equip) = item_equippable {
                 let target_slot = can_equip.slot;
                 let target = targets[0];
@@ -170,24 +186,24 @@ impl<'a> System<'a> for ItemUseSystem {
                 // Wield the item
                 equipped
                     .insert(
-                        wants_use.item,
+                        useitem.item,
                         Equipped {
                             owner: target,
                             slot: target_slot,
                         },
                     )
                     .expect("Unable to insert equipped component");
-                backpack.remove(wants_use.item);
+                backpack.remove(useitem.item);
                 if target == *player_entity {
                     gamelog.entries.push(format!(
                         "You equip {item_name}.",
-                        item_name = names.get(wants_use.item).unwrap().name
+                        item_name = names.get(useitem.item).unwrap().name
                     ));
                 }
             }
 
             // Damaging Item
-            if let Some(damager) = damagers.get(wants_use.item) {
+            if let Some(damager) = damagers.get(useitem.item) {
                 for mob in targets.iter() {
                     if pools.get(*mob).is_some() {
                         SufferDamage::new_damage(&mut suffer_damage, *mob, damager.damage, true);
@@ -196,7 +212,7 @@ impl<'a> System<'a> for ItemUseSystem {
                                 "You use {item_name} on {mob_name}, inflicting {amount} hp.",
                                 amount = damager.damage,
                                 mob_name = names.get(*mob).unwrap().name,
-                                item_name = names.get(wants_use.item).unwrap().name,
+                                item_name = names.get(useitem.item).unwrap().name,
                             ));
                         }
                         if let Some(pos) = positions.get(*mob) {
@@ -213,7 +229,7 @@ impl<'a> System<'a> for ItemUseSystem {
             }
 
             // Healing Item
-            if let Some(healer) = healers.get(wants_use.item) {
+            if let Some(healer) = healers.get(useitem.item) {
                 for target in targets.iter() {
                     if let Some(stats) = pools.get_mut(*target) {
                         let amount = if stats.hit_points.current + healer.heal_amount
@@ -230,7 +246,7 @@ impl<'a> System<'a> for ItemUseSystem {
                         if entity == *player_entity {
                             gamelog.entries.push(format!(
                                 "You drink the {potion_name}, healing {amount} hp.",
-                                potion_name = names.get(wants_use.item).unwrap().name,
+                                potion_name = names.get(useitem.item).unwrap().name,
                             ));
                         }
                         if let Some(pos) = positions.get(*target) {
@@ -248,7 +264,7 @@ impl<'a> System<'a> for ItemUseSystem {
 
             // Confusion Item
             // map To avoid double borrow
-            if let Some(turns) = confusers.get(wants_use.item).map(|confuser| confuser.turns) {
+            if let Some(turns) = confusers.get(useitem.item).map(|confuser| confuser.turns) {
                 for mob in targets.iter() {
                     confusers
                         .insert(*mob, Confusion { turns })
@@ -257,7 +273,7 @@ impl<'a> System<'a> for ItemUseSystem {
                         gamelog.entries.push(format!(
                             "You use {item_name} on {mob_name}, confusing them.",
                             mob_name = names.get(*mob).unwrap().name,
-                            item_name = names.get(wants_use.item).unwrap().name,
+                            item_name = names.get(useitem.item).unwrap().name,
                         ));
                     }
                     if let Some(pos) = positions.get(*mob) {
@@ -273,27 +289,27 @@ impl<'a> System<'a> for ItemUseSystem {
             }
 
             // Edible Item
-            if feeders.get(wants_use.item).is_some() {
+            if feeders.get(useitem.item).is_some() {
                 if let Some(hc) = hunger_clocks.get_mut(targets[0]) {
                     hc.state = HungerState::WellFed;
                     hc.duration = 20;
                     gamelog.entries.push(format!(
                         "You eat the {item_name}.",
-                        item_name = names.get(wants_use.item).unwrap().name
+                        item_name = names.get(useitem.item).unwrap().name
                     ));
                 }
             }
 
             // Magic Mapper Scroll
-            if magic_mapper.get(wants_use.item).is_some() {
+            if magic_mapper.get(useitem.item).is_some() {
                 gamelog
                     .entries
                     .push("The map is revealed to you!".to_string());
                 *runstate = RunState::MagicMapReveal { row: 0 };
             }
 
-            if consumables.get(wants_use.item).is_some() {
-                entities.delete(wants_use.item).expect("Delete failed");
+            if consumables.get(useitem.item).is_some() {
+                entities.delete(useitem.item).expect("Delete failed");
             }
         }
 
@@ -312,6 +328,7 @@ impl<'a> System<'a> for ItemDropSystem {
         ReadStorage<'a, Name>,
         WriteStorage<'a, Position>,
         WriteStorage<'a, InBackpack>,
+        WriteStorage<'a, EquipmentChanged>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -323,6 +340,7 @@ impl<'a> System<'a> for ItemDropSystem {
             names,
             mut positions,
             mut backpack,
+            mut dirty,
         ) = data;
 
         for (entity, to_drop) in (&entities, &wants_drop).join() {
@@ -332,6 +350,9 @@ impl<'a> System<'a> for ItemDropSystem {
                 .insert(to_drop.item, dropper_pos)
                 .expect("Unable to insert position");
             backpack.remove(to_drop.item);
+            dirty
+                .insert(entity, EquipmentChanged {})
+                .expect("Unable to mark equipment changed");
 
             if entity == *player_entity {
                 gamelog.entries.push(format!(

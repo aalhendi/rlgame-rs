@@ -9,7 +9,7 @@ use crate::{
     random_table::RandomTable,
     Attribute, Attributes, Equipped, Faction, InBackpack, Initiative, IsSerialized, LightSource,
     LootTable, MoveMode, Movement, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills,
-    WeaponAttribute, Wearable,
+    Vendor, WeaponAttribute, Wearable,
 };
 use regex::Regex;
 use specs::{
@@ -144,7 +144,11 @@ pub fn spawn_named_item(
         name: item_template.name.clone(),
     });
 
-    eb = eb.with(Item {});
+    eb = eb.with(Item {
+        initiative_penalty: item_template.initiative_penalty.unwrap_or(0.0),
+        weight_lbs: item_template.weight_lbs.unwrap_or(0.0),
+        base_value: item_template.base_value.unwrap_or(0.0),
+    });
 
     if let Some(weapon) = &item_template.weapon {
         eb = eb.with(Equippable {
@@ -375,6 +379,7 @@ pub fn spawn_named_mob(
     let mob_hp = npc_hp(mob_fitness, mob_level);
     let mob_mana = mana_at_level(mob_int, mob_level);
 
+    let mut rng = rltk::RandomNumberGenerator::new();
     let pools = Pools {
         level: mob_level,
         xp: 0,
@@ -386,6 +391,16 @@ pub fn spawn_named_mob(
             current: mob_mana,
             max: mob_mana,
         },
+        total_weight: 0.0,
+        total_initiative_penalty: 0.0,
+        gold: mob_template
+            .gold
+            .as_ref()
+            .map(|gold| {
+                let (n, d, b) = parse_dice_string(gold);
+                (rng.roll_dice(n, d) + b) as f32
+            })
+            .unwrap_or(0.0),
     };
     eb = eb.with(pools);
 
@@ -440,6 +455,13 @@ pub fn spawn_named_mob(
         eb = eb.with(Faction {
             name: "Mindless".to_string(),
         })
+    }
+
+    // TODO(aalhendi): Mindless and vendor might not be the best combo
+    if let Some(vendor) = &mob_template.vendor {
+        eb = eb.with(Vendor {
+            categories: vendor.clone(),
+        });
     }
 
     let new_mob = eb.build();
@@ -648,4 +670,17 @@ pub fn faction_reaction(my_faction: &str, their_faction: &str, raws: &RawMaster)
         .copied()
         //default to Ignore (shouldn't happen, since we default to Mindless)
         .unwrap_or(Reaction::Ignore)
+}
+
+pub fn get_vendor_items(categories: &[String], raws: &RawMaster) -> Vec<(String, f32)> {
+    raws.raws
+        .items
+        .iter()
+        .filter_map(|item| match (&item.vendor_category, item.base_value) {
+            (Some(cat), Some(base_value)) if categories.contains(cat) => {
+                Some((item.name.clone(), base_value))
+            }
+            _ => None,
+        })
+        .collect::<Vec<_>>()
 }

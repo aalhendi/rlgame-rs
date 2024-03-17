@@ -14,6 +14,8 @@ use crate::Faction;
 use crate::InBackpack;
 use crate::Pools;
 use crate::Ranged;
+use crate::Vendor;
+use crate::VendorMode;
 use crate::WantsToUseItem;
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
@@ -35,6 +37,7 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) -> RunState 
     let factions = ecs.read_storage::<Faction>();
     let mut swap_entities = Vec::new();
     let mut result = RunState::AwaitingInput;
+    let vendors = ecs.read_storage::<Vendor>();
 
     for (_player, pos, viewshed, entity) in
         (&mut players, &mut positions, &mut viewsheds, &entities).join()
@@ -50,6 +53,14 @@ pub fn try_move_player(delta_x: i32, delta_y: i32, ecs: &mut World) -> RunState 
         let dest_idx = map.xy_idx(pos.x + delta_x, pos.y + delta_y);
 
         result = spatial::for_each_tile_content_with_gamemode(dest_idx, |potential_target| {
+            // TODO(aalhendi): this returns early and so vendors cannot be hostile
+            if vendors.get(potential_target).is_some() {
+                return Some(RunState::ShowVendor {
+                    vendor: potential_target,
+                    mode: VendorMode::Sell,
+                });
+            }
+
             let is_hostile = if pools.get(potential_target).is_some() {
                 if let Some(faction) = factions.get(potential_target) {
                     let reaction = faction_reaction(&faction.name, "Player", &RAWS.lock().unwrap());

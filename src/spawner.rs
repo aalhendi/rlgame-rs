@@ -11,7 +11,8 @@ use crate::{
         rawsmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType},
         RAWS,
     },
-    Attribute, Attributes, Faction, Initiative, LightSource, Pool, Pools, Skill, Skills,
+    Attribute, Attributes, EquipmentChanged, Faction, Initiative, LightSource, Pool, Pools, Skill,
+    Skills,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
@@ -73,6 +74,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             },
         })
         .with(skills)
+        // TODO(aalhendi): Impl player pool fn
         .with(Pools {
             hit_points: Pool {
                 current: player_hp_at_level(11, 1),
@@ -84,6 +86,9 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             },
             xp: 0,
             level: 1,
+            total_weight: 0.0,
+            total_initiative_penalty: 0.0,
+            gold: 0.0,
         })
         // Slightly yellow torch
         .with(LightSource {
@@ -94,6 +99,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         .with(Faction {
             name: "Player".to_string(),
         })
+        .with(EquipmentChanged {})
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
 
