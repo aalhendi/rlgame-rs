@@ -4,6 +4,15 @@ use crate::{Map, TileType};
 
 pub fn tile_glyph(idx: usize, map: &Map) -> (FontCharType, RGB, RGB) {
     let (glyph, mut fg, mut bg) = match map.depth {
+        5 => {
+            let (x, _y) = map.idx_xy(idx);
+            if x < map.width / 2 {
+                get_limestone_cavern_glyph(idx, map)
+            } else {
+                get_tile_glyph_default(idx, map)
+            }
+        }
+        4 => get_limestone_cavern_glyph(idx, map),
         3 => get_limestone_cavern_glyph(idx, map),
         2 => get_forest_glyph(idx, map),
         _ => get_tile_glyph_default(idx, map),
@@ -172,7 +181,8 @@ fn get_limestone_cavern_glyph(idx: usize, map: &Map) -> (rltk::FontCharType, RGB
         }
         TileType::DeepWater => {
             glyph = to_cp437('▓');
-            fg = RGB::named(rltk::BLUE);
+            // fg = RGB::named(rltk::BLUE);
+            fg = RGB::from_f32(0.2, 0.2, 1.0) // hint of green to see it in greyscale
         }
         TileType::Gravel => {
             glyph = to_cp437(';');

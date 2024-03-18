@@ -4,7 +4,12 @@ use crate::{
         AreaOfEffect, BlocksTile, BlocksVisibility, Confusion, Consumable, Door, EntryTrigger,
         EquipmentSlot, Equippable, Hidden, InflictsDamage, Item, MagicMapper, MeleeWeapon, Name,
         Position, ProvidesFood, ProvidesHealing, Quips, Ranged, SingleActivation, Viewshed,
-    }, gamesystem::{attr_bonus, mana_at_level, npc_hp}, random_table::RandomTable, Attribute, Attributes, Equipped, Faction, InBackpack, Initiative, IsSerialized, LightSource, LootTable, MoveMode, Movement, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills, TownPortal, Vendor, WeaponAttribute, Wearable
+    },
+    gamesystem::{attr_bonus, mana_at_level, npc_hp},
+    random_table::RandomTable,
+    Attribute, Attributes, Equipped, Faction, InBackpack, Initiative, IsSerialized, LightSource,
+    LootTable, MoveMode, Movement, NaturalAttack, NaturalAttackDefense, Pool, Pools, Skill, Skills,
+    TownPortal, Vendor, WeaponAttribute, Wearable,
 };
 use regex::Regex;
 use specs::{
@@ -548,6 +553,18 @@ pub fn spawn_named_prop(
                 _ => {}
             }
         }
+    }
+
+    if let Some(light) = &prop_template.light {
+        eb = eb.with(LightSource {
+            range: light.range,
+            color: rltk::RGB::from_hex(&light.color).expect("Bad color"),
+        });
+        eb = eb.with(Viewshed {
+            range: light.range,
+            dirty: true,
+            visible_tiles: Vec::new(),
+        });
     }
 
     Some(eb.build())

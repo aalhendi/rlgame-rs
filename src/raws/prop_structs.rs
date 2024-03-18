@@ -1,4 +1,4 @@
-use super::item_structs::Renderable;
+use super::{item_structs::Renderable, mob_structs};
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -11,6 +11,7 @@ pub struct Prop {
     pub blocks_visibility: Option<bool>,
     pub door_open: Option<bool>,
     pub entry_trigger: Option<EntryTrigger>,
+    pub light: Option<mob_structs::MobLight>,
 }
 
 #[derive(Deserialize, Debug)]

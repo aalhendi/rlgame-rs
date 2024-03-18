@@ -73,3 +73,24 @@ const RIGHT_FORT: &str = "     #
   #######
      #
 ";
+
+pub const ORC_CAMP: PrefabSection = PrefabSection {
+    template: ORC_CAMP_TXT,
+    width: 12,
+    height: 12,
+    placement: (HorizontalPlacement::Center, VerticalPlacement::Center),
+};
+
+const ORC_CAMP_TXT: &str = "
+ ≈≈≈≈o≈≈≈≈≈
+ ≈☼      ☼≈
+ ≈ g      ≈
+ ≈        ≈
+ ≈     g  ≈
+ o    O   o
+ ≈        ≈
+ ≈ g      ≈
+ ≈     g  ≈
+ ≈☼      ☼≈
+ ≈≈≈≈o≈≈≈≈≈
+";
