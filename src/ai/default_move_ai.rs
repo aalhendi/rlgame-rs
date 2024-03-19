@@ -1,8 +1,6 @@
 use specs::{Entities, Join, ReadExpect, System, WriteExpect, WriteStorage};
 
-use crate::{
-    spatial, tile_walkable, EntityMoved, Map, MoveMode, Movement, MyTurn, Position, Viewshed,
-};
+use crate::{spatial, tile_walkable, ApplyMove, Map, MoveMode, Movement, MyTurn, Position};
 
 pub struct DefaultMoveAI;
 
@@ -12,33 +10,18 @@ impl<'a> System<'a> for DefaultMoveAI {
         WriteStorage<'a, MoveMode>,
         WriteStorage<'a, Position>,
         ReadExpect<'a, Map>,
-        WriteStorage<'a, Viewshed>,
-        WriteStorage<'a, EntityMoved>,
         WriteExpect<'a, rltk::RandomNumberGenerator>,
         Entities<'a>,
+        WriteStorage<'a, ApplyMove>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (
-            mut turns,
-            mut move_mode,
-            mut positions,
-            map,
-            mut viewsheds,
-            mut entity_moved,
-            mut rng,
-            entities,
-        ) = data;
+        let (mut turns, mut move_mode, mut positions, map, mut rng, entities, mut apply_move) =
+            data;
 
         let mut turn_done = Vec::new();
-        for (entity, pos, mode, viewshed, _myturn) in (
-            &entities,
-            &mut positions,
-            &mut move_mode,
-            &mut viewsheds,
-            &turns,
-        )
-            .join()
+        for (entity, pos, mode, _myturn) in
+            (&entities, &mut positions, &mut move_mode, &turns).join()
         {
             turn_done.push(entity);
 
@@ -61,14 +44,10 @@ impl<'a> System<'a> for DefaultMoveAI {
                     if x > 0 && x < map.width - 1 && y > 0 && y < map.height - 1 {
                         let dest_idx = map.xy_idx(x, y);
                         if !spatial::is_blocked(dest_idx) {
-                            let idx = map.xy_idx(pos.x, pos.y);
-                            pos.x = x;
-                            pos.y = y;
-                            entity_moved
-                                .insert(entity, EntityMoved {})
-                                .expect("Unable to insert marker");
-                            spatial::move_entity(entity, idx, dest_idx);
-                            viewshed.dirty = true;
+                            apply_move
+                                .insert(entity, ApplyMove { dest_idx })
+                                .expect("Unable to insert");
+                            turn_done.push(entity);
                         }
                     }
                 }
@@ -76,18 +55,13 @@ impl<'a> System<'a> for DefaultMoveAI {
                     match path {
                         Some(path) => {
                             // We have a target - go there
-                            let idx = map.xy_idx(pos.x, pos.y);
                             if path.len() > 1 {
                                 if !spatial::is_blocked(path[1]) {
-                                    let (x, y) = map.idx_xy(path[1]);
-                                    pos.x = x;
-                                    pos.y = y;
-                                    entity_moved
-                                        .insert(entity, EntityMoved {})
-                                        .expect("Unable to insert marker");
-                                    spatial::move_entity(entity, idx, path[1]);
-                                    viewshed.dirty = true;
+                                    apply_move
+                                        .insert(entity, ApplyMove { dest_idx: path[1] })
+                                        .expect("Unable to insert");
                                     path.remove(0); // Remove the first step in the path
+                                    turn_done.push(entity);
                                 }
                                 // Otherwise we wait a turn to see if the path clears up
                             } else {

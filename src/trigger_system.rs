@@ -1,4 +1,4 @@
-use crate::spatial;
+use crate::{spatial, ApplyTeleport, TeleportTo};
 
 use super::{
     gamelog::Gamelog, particle_system::ParticleBuilder, EntityMoved, EntryTrigger, Hidden,
@@ -22,6 +22,9 @@ impl<'a> System<'a> for TriggerSystem {
         WriteExpect<'a, ParticleBuilder>,
         WriteStorage<'a, SufferDamage>,
         ReadStorage<'a, SingleActivation>,
+        ReadStorage<'a, TeleportTo>,
+        WriteStorage<'a, ApplyTeleport>,
+        ReadExpect<'a, Entity>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -38,10 +41,13 @@ impl<'a> System<'a> for TriggerSystem {
             mut particle_builder,
             mut suffer_damage,
             single_activation,
+            teleporters,
+            mut apply_teleport,
+            player_entity,
         ) = data;
 
         // Iterate the entities that moved and their final position
-        let mut remove_entities: Vec<Entity> = Vec::new();
+        let mut remove_entities = Vec::new();
         for (entity, mut _entity_moved, pos) in (&entities, &mut entity_moved, &position).join() {
             let idx = map.xy_idx(pos.x, pos.y);
             spatial::for_each_tile_content(idx, |tile_entity| {
@@ -64,6 +70,22 @@ impl<'a> System<'a> for TriggerSystem {
                             200.0,
                         );
                         SufferDamage::new_damage(&mut suffer_damage, entity, damage.damage, false);
+                    }
+
+                    // If its a teleporter, then do that
+                    if let Some(teleport) = teleporters.get(tile_entity) {
+                        if !teleport.player_only || entity == *player_entity {
+                            apply_teleport
+                                .insert(
+                                    entity,
+                                    ApplyTeleport {
+                                        dest_x: teleport.x,
+                                        dest_y: teleport.y,
+                                        dest_depth: teleport.depth,
+                                    },
+                                )
+                                .expect("Unable to insert");
+                        }
                     }
 
                     // If it is single activation, it needs to be removed

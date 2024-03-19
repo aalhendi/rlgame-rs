@@ -403,3 +403,15 @@ pub struct TeleportTo {
     pub depth: i32,
     pub player_only: bool,
 }
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct ApplyMove {
+    pub dest_idx: usize,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct ApplyTeleport {
+    pub dest_x: i32,
+    pub dest_y: i32,
+    pub dest_depth: i32,
+}

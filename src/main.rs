@@ -5,6 +5,7 @@ use ai::{
 };
 use encumbrance_system::EncumbranceSystem;
 use gui::VendorResult;
+use movement_system::MovementSystem;
 use raws::{
     rawsmaster::{spawn_named_item, SpawnType},
     RAWS,
@@ -57,6 +58,7 @@ mod saveload_system;
 mod trigger_system;
 use lighting_system::LightingSystem;
 mod ai;
+mod movement_system;
 pub mod spatial;
 
 const SHOW_MAPGEN_VISUALIZER: bool = true;
@@ -96,6 +98,11 @@ pub enum RunState {
     ShowVendor {
         vendor: Entity,
         mode: VendorMode,
+    },
+    TeleportingToOtherLevel {
+        x: i32,
+        y: i32,
+        depth: i32,
     },
 }
 
@@ -199,6 +206,9 @@ impl State {
         let mut default_move_ai = DefaultMoveAI;
         default_move_ai.run_now(&self.ecs);
 
+        let mut movement_system = MovementSystem;
+        movement_system.run_now(&self.ecs);
+
         let mut trigger_system = TriggerSystem;
         trigger_system.run_now(&self.ecs);
 
@@ -267,6 +277,9 @@ impl GameState for State {
                     match *self.ecs.fetch::<RunState>() {
                         RunState::AwaitingInput => newrunstate = RunState::AwaitingInput,
                         RunState::TownPortal => newrunstate = RunState::TownPortal,
+                        RunState::TeleportingToOtherLevel { x, y, depth } => {
+                            newrunstate = RunState::TeleportingToOtherLevel { x, y, depth }
+                        }
                         RunState::MagicMapReveal { .. } => {
                             newrunstate = RunState::MagicMapReveal { row: 0 }
                         }
@@ -526,6 +539,19 @@ impl GameState for State {
                 self.mapgen_next_state = Some(RunState::PreRun);
                 newrunstate = RunState::MapGeneration;
             }
+            RunState::TeleportingToOtherLevel { x, y, depth } => {
+                self.goto_level(depth - 1);
+                let player_entity = self.ecs.fetch::<Entity>();
+                if let Some(pos) = self.ecs.write_storage::<Position>().get_mut(*player_entity) {
+                    pos.x = x;
+                    pos.y = y;
+                }
+                let mut ppos = self.ecs.fetch_mut::<rltk::Point>();
+                ppos.x = x;
+                ppos.y = y;
+                self.mapgen_next_state = Some(RunState::PreRun);
+                newrunstate = RunState::MapGeneration;
+            }
         }
 
         {
@@ -611,6 +637,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Vendor>();
     gs.ecs.register::<TownPortal>();
     gs.ecs.register::<TeleportTo>();
+    gs.ecs.register::<ApplyMove>();
+    gs.ecs.register::<ApplyTeleport>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

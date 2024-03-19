@@ -48,7 +48,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let x_pos = PANE_WIDTH - (name_length / 2);
     // Endcap / wrapping chars
     ctx.set(x_pos, 0, box_gray, black, to_cp437('┤'));
-    ctx.set(x_pos + name_length, 0, box_gray, black, to_cp437('├'));
+    ctx.set(x_pos + name_length - 1, 0, box_gray, black, to_cp437('├'));
     ctx.print_color(x_pos + 1, 0, white, black, &map.name);
     std::mem::drop(map);
 

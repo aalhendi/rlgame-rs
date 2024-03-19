@@ -129,7 +129,9 @@ pub fn save_game(ecs: &mut World) {
             EquipmentChanged,
             Vendor,
             TownPortal,
-            TeleportTo
+            TeleportTo,
+            ApplyMove,
+            ApplyTeleport
         );
     }
 
