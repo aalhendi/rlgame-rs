@@ -43,7 +43,9 @@ mod gamelog;
 mod gui;
 pub mod inventory_system;
 pub mod spawner;
-use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemRemoveSystem, ItemUseSystem};
+use inventory_system::{
+    ItemCollectionSystem, ItemDropSystem, ItemIdentificationSystem, ItemRemoveSystem, ItemUseSystem,
+};
 use map::dungeon::MasterDungeonMap;
 pub mod camera;
 mod gamesystem;
@@ -223,6 +225,9 @@ impl State {
 
         let mut item_use_system = ItemUseSystem;
         item_use_system.run_now(&self.ecs);
+
+        let mut item_identification_system = ItemIdentificationSystem;
+        item_identification_system.run_now(&self.ecs);
 
         let mut item_drop_system = ItemDropSystem;
         item_drop_system.run_now(&self.ecs);
@@ -509,9 +514,17 @@ impl GameState for State {
                         self.ecs.delete_entity(e).expect("Unable to delete");
                     }
                     gui::VendorResult::Buy => {
+                        let tag = tag.unwrap();
                         let price = sell_price.unwrap();
                         let mut pools = self.ecs.write_storage::<Pools>();
-                        let player_pools = pools.get_mut(*self.ecs.fetch::<Entity>()).unwrap();
+                        let mut identified = self.ecs.write_storage::<IdentifiedItem>();
+                        let player_entity = self.ecs.fetch::<Entity>();
+                        identified
+                            .insert(*player_entity, IdentifiedItem { name: tag.clone() })
+                            .expect("Unable to insert");
+                        std::mem::drop(identified);
+                        let player_pools = pools.get_mut(*player_entity).unwrap();
+                        std::mem::drop(player_entity);
                         if player_pools.gold >= price {
                             player_pools.gold -= price;
                             std::mem::drop(pools);
@@ -519,7 +532,7 @@ impl GameState for State {
                             spawn_named_item(
                                 &RAWS.lock().unwrap(),
                                 &mut self.ecs,
-                                &tag.unwrap(),
+                                &tag,
                                 SpawnType::Carried { by: player_entity },
                             );
                         }
@@ -639,17 +652,20 @@ fn main() -> rltk::BError {
     gs.ecs.register::<TeleportTo>();
     gs.ecs.register::<ApplyMove>();
     gs.ecs.register::<ApplyTeleport>();
+    gs.ecs.register::<MagicItem>();
+    gs.ecs.register::<ObfuscatedName>();
+    gs.ecs.register::<IdentifiedItem>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();
 
     // Resource Insertion
-    let player_entity = spawner::player(&mut gs.ecs, Position { x: 0, y: 0 });
-    gs.ecs.insert(rltk::RandomNumberGenerator::new());
-    gs.ecs.insert(rex_assets::RexAssets::new());
-    gs.ecs.insert(Map::new(1, 64, 64, "New Map"));
     gs.ecs.insert(MasterDungeonMap::new());
+    gs.ecs.insert(Map::new(1, 64, 64, "New Map"));
     gs.ecs.insert(Point::new(0, 0));
+    gs.ecs.insert(rltk::RandomNumberGenerator::new());
+    let player_entity = spawner::player(&mut gs.ecs, Position { x: 0, y: 0 });
+    gs.ecs.insert(rex_assets::RexAssets::new());
     gs.ecs.insert(player_entity);
     if SHOW_MAPGEN_VISUALIZER {
         gs.ecs.insert(RunState::MapGeneration {});

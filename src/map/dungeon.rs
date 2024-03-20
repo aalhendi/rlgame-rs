@@ -1,20 +1,50 @@
-use crate::{map_builders::level_builder, OtherLevelPosition, Position, TileType, Viewshed};
+use crate::{
+    map_builders::level_builder,
+    raws::rawsmaster::{get_potion_tags, get_scroll_tags},
+    OtherLevelPosition, Position, TileType, Viewshed,
+};
 
 use super::Map;
 use rltk::Point;
 use serde::{Deserialize, Serialize};
 use specs::{Entity, Join, World, WorldExt};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Default, Serialize, Deserialize, Clone)]
 pub struct MasterDungeonMap {
     maps: HashMap<i32, Map>,
+    // when item is identified, put its name tag in HashSet
+    pub identified_items: HashSet<String>,
+    // maps actual name with randomized/obfuscated name
+    pub scroll_mappings: HashMap<String, String>,
+    pub potion_mappings: HashMap<String, String>,
 }
 
 impl MasterDungeonMap {
     pub fn new() -> MasterDungeonMap {
+        let mut rng = rltk::RandomNumberGenerator::new();
+
+        let scroll_mappings = get_scroll_tags()
+            .iter()
+            .map(|scroll_tag| (scroll_tag.to_string(), make_scroll_name(&mut rng)))
+            .collect();
+
+        let mut used_pot_names = HashSet::new();
+        let potion_mappings = get_potion_tags()
+            .iter()
+            .map(|pot_tag| {
+                (
+                    pot_tag.to_string(),
+                    make_potion_name(&mut rng, &mut used_pot_names),
+                )
+            })
+            .collect();
+
         MasterDungeonMap {
             maps: HashMap::new(),
+            identified_items: HashSet::new(),
+            scroll_mappings,
+            potion_mappings,
         }
     }
 
@@ -184,5 +214,80 @@ pub fn thaw_level_entities(ecs: &mut World) {
     // Remove other level positions
     for p in pos_to_delete.iter() {
         other_level_positions.remove(*p);
+    }
+}
+
+fn make_scroll_name(rng: &mut rltk::RandomNumberGenerator) -> String {
+    let length = 4 + rng.roll_dice(1, 4);
+    let mut name = "Scroll of ".to_string();
+
+    for i in 0..length {
+        if i % 2 == 0 {
+            name += match rng.roll_dice(1, 5) {
+                1 => "a",
+                2 => "e",
+                3 => "i",
+                4 => "o",
+                _ => "u",
+            }
+        } else {
+            name += match rng.roll_dice(1, 21) {
+                1 => "b",
+                2 => "c",
+                3 => "d",
+                4 => "f",
+                5 => "g",
+                6 => "h",
+                7 => "j",
+                8 => "k",
+                9 => "l",
+                10 => "m",
+                11 => "n",
+                12 => "p",
+                13 => "q",
+                14 => "r",
+                15 => "s",
+                16 => "t",
+                17 => "v",
+                18 => "w",
+                19 => "x",
+                20 => "y",
+                _ => "z",
+            }
+        }
+    }
+
+    name
+}
+
+const POTION_COLORS: &[&str] = &[
+    "Red", "Orange", "Yellow", "Green", "Brown", "Indigo", "Violet",
+];
+const POTION_ADJECTIVES: &[&str] = &[
+    "Swirling",
+    "Effervescent",
+    "Slimey",
+    "Oiley",
+    "Viscous",
+    "Smelly",
+    "Glowing",
+];
+
+fn make_potion_name(
+    rng: &mut rltk::RandomNumberGenerator,
+    used_names: &mut HashSet<String>,
+) -> String {
+    loop {
+        let mut name: String = POTION_ADJECTIVES
+            [rng.roll_dice(1, POTION_ADJECTIVES.len() as i32) as usize - 1]
+            .to_string();
+        name += " ";
+        name += POTION_COLORS[rng.roll_dice(1, POTION_COLORS.len() as i32) as usize - 1];
+        name += " Potion";
+
+        if !used_names.contains(&name) {
+            used_names.insert(name.clone());
+            return name;
+        }
     }
 }

@@ -1,7 +1,9 @@
 use crate::{
     camera::{self, PANE_WIDTH},
-    raws::rawsmaster::get_vendor_items,
-    Attribute, Attributes, Consumable, Item, Pools, Vendor, VendorMode,
+    dungeon::MasterDungeonMap,
+    raws::{rawsmaster::get_vendor_items, RAWS},
+    Attribute, Attributes, Consumable, Item, MagicItem, MagicItemClass, ObfuscatedName, Pools,
+    Vendor, VendorMode,
 };
 
 use super::{
@@ -56,6 +58,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let player_entity = ecs.fetch::<Entity>();
     let pools = ecs.read_storage::<Pools>();
     let player_pools = pools.get(*player_entity).unwrap();
+    let entities = ecs.entities();
 
     let health_curr = player_pools.hit_points.current;
     let health_max = player_pools.hit_points.max;
@@ -104,10 +107,10 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // Wearables / Equipped
     let mut y = 13; // Starting pt
     let equipped = ecs.read_storage::<Equipped>();
-    let name = ecs.read_storage::<Name>();
-    for (equipped_by, item_name) in (&equipped, &name).join() {
+    for (entity, equipped_by) in (&entities, &equipped).join() {
         if equipped_by.owner == *player_entity {
-            ctx.print_color(50, y, white, black, &item_name.name);
+            let name = &get_item_display_name(ecs, entity);
+            ctx.print_color(50, y, get_item_color(ecs, entity), black, name);
             y += 1;
         }
     }
@@ -117,10 +120,11 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let consumables = ecs.read_storage::<Consumable>();
     let backpack = ecs.read_storage::<InBackpack>();
     let mut index = 1;
-    for (carried_by, _consumable, item_name) in (&backpack, &consumables, &name).join() {
+    for (entity, carried_by, _consumable) in (&entities, &backpack, &consumables).join() {
         if carried_by.owner == *player_entity && index < 10 {
+            let name = &get_item_display_name(ecs, entity);
             ctx.print_color(50, y, yellow, black, &format!("↑{index}"));
-            ctx.print_color(53, y, green, black, &item_name.name);
+            ctx.print_color(53, y, get_item_color(ecs, entity), black, name);
             y += 1;
             index += 1;
         }
@@ -197,7 +201,6 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let box_gray: RGB = RGB::from_hex("#999999").expect("Could not parse color from hex");
 
     let map = ecs.fetch::<Map>();
-    let names = ecs.read_storage::<Name>();
     let positions = ecs.read_storage::<Position>();
     let hidden = ecs.read_storage::<Hidden>();
     let attributes = ecs.read_storage::<Attributes>();
@@ -225,10 +228,10 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
 
     // Check if mouse-pos is on an entity, add its TT
     let mut tip_boxes: Vec<Tooltip> = Vec::new();
-    for (entity, name, position, _hidden) in (&entities, &names, &positions, !&hidden).join() {
+    for (entity, position, _hidden) in (&entities, &positions, !&hidden).join() {
         if position.x == mouse_map_pos.0 && position.y == mouse_map_pos.1 {
             let mut tip = Tooltip::new();
-            tip.add_line(name.name.clone());
+            tip.add_line(get_item_display_name(ecs, entity));
 
             // Comment on attributes
             if let Some(attr) = attributes.get(entity) {
@@ -341,13 +344,15 @@ pub fn show_menu<T: Owned + Component>(
     print_item_menu(ctx, y, 31, count, "Inventory");
 
     let mut equippable: Vec<Entity> = Vec::new();
-    for (j, (entity, _pack, item_name)) in (&entities, &backpack, &names)
+    for (j, (entity, _pack)) in (&entities, &backpack)
         .join()
-        .filter(|(_entity, item, _name)| item.owned_by(&player_entity))
+        .filter(|(_entity, item)| item.owned_by(&player_entity))
         .enumerate()
     {
         let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
-        print_item_label(ctx, y, label_char, &item_name.name);
+        let color = Some(get_item_color(&gs.ecs, entity));
+        let name = &get_item_display_name(&gs.ecs, entity);
+        print_item_label(ctx, y, label_char, name, color);
         equippable.push(entity);
         y += 1;
     }
@@ -367,7 +372,7 @@ pub fn remove_item_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Opti
     show_menu::<Equipped>(gs, ctx)
 }
 
-fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &String) {
+fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &String, color: Option<RGB>) {
     ctx.set(
         17,
         y,
@@ -390,7 +395,11 @@ fn print_item_label(ctx: &mut Rltk, y: i32, label_char: char, name: &String) {
         rltk::to_cp437(')'),
     );
 
-    ctx.print(21, y, name.to_string());
+    if let Some(c) = color {
+        ctx.print_color(21, y, c, RGB::named(rltk::BLACK), name.to_string());
+    } else {
+        ctx.print(21, y, name.to_string());
+    }
 }
 
 fn item_menu_input(
@@ -698,11 +707,11 @@ pub fn show_cheat_mode(_gs: &mut State, ctx: &mut Rltk) -> CheatMenuResult {
     let y = 25 - (count / 2);
 
     print_item_menu(ctx, y, 31, count as usize, "Cheating!");
-    print_item_label(ctx, y, 'T', &String::from("Teleport to exit"));
-    print_item_label(ctx, y + 1, 'M', &String::from("Reveal map"));
-    print_item_label(ctx, y + 2, 'H', &String::from("Heal all wounds"));
-    print_item_label(ctx, y + 3, 'G', &String::from("God Mode (No Death)"));
-    print_item_label(ctx, y + 4, 'L', &String::from("Get Rich (+100g)"));
+    print_item_label(ctx, y, 'T', &String::from("Teleport to exit"), None);
+    print_item_label(ctx, y + 1, 'M', &String::from("Reveal map"), None);
+    print_item_label(ctx, y + 2, 'H', &String::from("Heal all wounds"), None);
+    print_item_label(ctx, y + 3, 'G', &String::from("God Mode (No Death)"), None);
+    print_item_label(ctx, y + 4, 'L', &String::from("Get Rich (+100g)"), None);
 
     match ctx.key {
         None => CheatMenuResult::NoResponse,
@@ -802,7 +811,8 @@ fn vendor_sell_menu(
         .enumerate()
     {
         let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
-        print_item_label(ctx, y, label_char, &name.name.to_string());
+        let color = Some(get_item_color(&gs.ecs, entity));
+        print_item_label(ctx, y, label_char, &name.name.to_string(), color);
         ctx.print(50, y, &format!("{val:.1} gp", val = item.base_value * 0.8));
         equippable.push(entity);
         y += 1;
@@ -838,7 +848,7 @@ fn vendor_buy_menu(
     let vendors = gs.ecs.read_storage::<Vendor>();
     let inventory = get_vendor_items(
         &vendors.get(vendor).unwrap().categories,
-        &crate::raws::RAWS.lock().unwrap(),
+        &RAWS.lock().unwrap(),
     );
     let count = inventory.len();
 
@@ -853,7 +863,7 @@ fn vendor_buy_menu(
 
     for (j, sale) in inventory.iter().enumerate() {
         let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
-        print_item_label(ctx, y, label_char, &sale.0);
+        print_item_label(ctx, y, label_char, &sale.0, None);
         ctx.print(50, y, &format!("{val:.1} gp", val = sale.1 * 1.2));
         y += 1;
     }
@@ -889,4 +899,45 @@ pub fn show_vendor_menu(
         VendorMode::Buy => vendor_buy_menu(gs, ctx, vendor, mode),
         VendorMode::Sell => vendor_sell_menu(gs, ctx, vendor, mode),
     }
+}
+
+pub fn get_item_color(ecs: &World, item: Entity) -> RGB {
+    match ecs.read_storage::<MagicItem>().get(item) {
+        Some(magic) => match magic.class {
+            MagicItemClass::Common => RGB::from_f32(0.5, 1.0, 0.5),
+            MagicItemClass::Rare => RGB::from_f32(0.0, 1.0, 1.0),
+            MagicItemClass::Legendary => RGB::from_f32(0.71, 0.15, 0.93),
+        },
+        _ => RGB::from_f32(1.0, 1.0, 1.0),
+    }
+}
+
+// Outside ECS function
+pub fn get_item_display_name(ecs: &World, item: Entity) -> String {
+    // Early return for items without a name
+    let name_storage = ecs.read_storage::<Name>();
+    let name = match name_storage.get(item) {
+        Some(name) => name,
+        None => return "Nameless item (bug)".to_string(),
+    };
+
+    // Non-magic items just return their name
+    if ecs.read_storage::<MagicItem>().get(item).is_none() {
+        return name.name.clone();
+    }
+
+    // For magic items, check if they are identified
+    if ecs
+        .fetch::<MasterDungeonMap>()
+        .identified_items
+        .contains(&name.name)
+    {
+        return name.name.clone();
+    }
+
+    // Return the obfuscated name if available, else a default message
+    ecs.read_storage::<ObfuscatedName>()
+        .get(item)
+        .map(|obfuscated| obfuscated.name.clone())
+        .unwrap_or_else(|| "Nameless item (bug)".to_string())
 }

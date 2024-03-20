@@ -73,7 +73,8 @@
     },
     { "name": "Dagger", "weight": 3, "min_depth": 0, "max_depth": 100 },
     { "name": "Shield", "weight": 3, "min_depth": 0, "max_depth": 100 },
-    { "name": "Longsword", "weight": 1, "min_depth": 3, "max_depth": 100 },
+    { "name": "Longsword", "weight": 2, "min_depth": 3, "max_depth": 100 },
+    { "name": "Longsword +1", "weight": 1, "min_depth": 3, "max_depth": 100 },
     { "name": "Tower Shield", "weight": 1, "min_depth": 3, "max_depth": 100 },
     { "name": "Leather Armor", "weight": 1, "min_depth": 2, "max_depth": 100 },
     { "name": "Leather Boots", "weight": 1, "min_depth": 2, "max_depth": 100 },
@@ -1007,14 +1008,15 @@
       },
       "weight_lbs": 0.5,
       "base_value": 50.0,
-      "vendor_category": "alchemy"
+      "vendor_category": "alchemy",
+      "magic": { "class": "common", "naming": "potion" }
     },
 
     {
       "name": "Magic Missile Scroll",
       "renderable": {
         "glyph": ")",
-        "fg": "#00FFFF",
+        "fg": "#FFAAAA",
         "bg": "#000000",
         "order": 2
       },
@@ -1026,14 +1028,15 @@
       },
       "weight_lbs": 0.5,
       "base_value": 50.0,
-      "vendor_category": "alchemy"
+      "vendor_category": "alchemy",
+      "magic": { "class": "common", "naming": "scroll" }
     },
 
     {
       "name": "Fireball Scroll",
       "renderable": {
         "glyph": ")",
-        "fg": "#FFA500",
+        "fg": "#FFAAAA",
         "bg": "#000000",
         "order": 2
       },
@@ -1046,7 +1049,8 @@
       },
       "weight_lbs": 0.5,
       "base_value": 100.0,
-      "vendor_category": "alchemy"
+      "vendor_category": "alchemy",
+      "magic": { "class": "common", "naming": "scroll" }
     },
 
     {
@@ -1065,7 +1069,8 @@
       },
       "weight_lbs": 0.5,
       "base_value": 75.0,
-      "vendor_category": "alchemy"
+      "vendor_category": "alchemy",
+      "magic": { "class": "common", "naming": "scroll" }
     },
 
     {
@@ -1083,14 +1088,15 @@
       },
       "weight_lbs": 0.5,
       "base_value": 50.0,
-      "vendor_category": "alchemy"
+      "vendor_category": "alchemy",
+      "magic": { "class": "common", "naming": "scroll" }
     },
 
     {
       "name": "Town Portal Scroll",
       "renderable": {
         "glyph": ")",
-        "fg": "#AAAAFF",
+        "fg": "#FFAAAA",
         "bg": "#000000",
         "order": 2
       },
@@ -1101,7 +1107,8 @@
       },
       "weight_lbs": 0.5,
       "base_value": 20.0,
-      "vendor_category": "alchemy"
+      "vendor_category": "alchemy",
+      "magic": { "class": "common", "naming": "scroll" }
     },
 
     {
@@ -1275,6 +1282,27 @@
       "base_value": 15.0,
       "initiative_penalty": 2,
       "vendor_category": "weapon"
+    },
+
+    {
+      "name": "Longsword +1",
+      "renderable": {
+        "glyph": "/",
+        "fg": "#FFAAFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "weapon": {
+        "range": "melee",
+        "attribute": "might",
+        "base_damage": "1d8+1",
+        "hit_bonus": 1
+      },
+      "weight_lbs": 2.0,
+      "base_value": 100.0,
+      "initiative_penalty": 1,
+      "vendor_category": "weapon",
+      "magic": { "class": "common", "naming": "Unidentified Longsword" }
     },
 
     {

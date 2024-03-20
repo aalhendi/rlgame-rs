@@ -1,4 +1,7 @@
-use crate::{spatial, EquipmentChanged, Pools, TownPortal};
+use crate::{
+    dungeon::MasterDungeonMap, raws::rawsmaster::is_tag_magic, spatial, EquipmentChanged,
+    IdentifiedItem, Item, MagicItem, ObfuscatedName, Player, Pools, TownPortal,
+};
 
 use super::{
     gamelog::Gamelog, particle_system::ParticleBuilder, AreaOfEffect, Confusion, Consumable,
@@ -19,6 +22,9 @@ impl<'a> System<'a> for ItemCollectionSystem {
         ReadStorage<'a, Name>,
         WriteStorage<'a, InBackpack>,
         WriteStorage<'a, EquipmentChanged>,
+        ReadStorage<'a, MagicItem>,
+        ReadStorage<'a, ObfuscatedName>,
+        ReadExpect<'a, MasterDungeonMap>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -30,6 +36,9 @@ impl<'a> System<'a> for ItemCollectionSystem {
             names,
             mut backpack,
             mut dirty,
+            magic_items,
+            obfuscated_names,
+            dm,
         ) = data;
 
         for pickup in wants_pickup.join() {
@@ -49,10 +58,7 @@ impl<'a> System<'a> for ItemCollectionSystem {
             if pickup.collected_by == *player_entity {
                 gamelog.entries.push(format!(
                     "You pick up the {}.",
-                    names
-                        .get(pickup.item)
-                        .expect("Failed to get item name")
-                        .name
+                    obfuscate_name(pickup.item, &names, &magic_items, &obfuscated_names, &dm)
                 ));
             }
         }
@@ -88,6 +94,7 @@ impl<'a> System<'a> for ItemUseSystem {
         WriteExpect<'a, RunState>,
         WriteStorage<'a, EquipmentChanged>,
         ReadStorage<'a, TownPortal>,
+        WriteStorage<'a, IdentifiedItem>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -116,6 +123,7 @@ impl<'a> System<'a> for ItemUseSystem {
             mut runstate,
             mut dirty,
             town_portal,
+            mut identified_item,
         ) = data;
 
         for (entity, useitem) in (&entities, &wants_use).join() {
@@ -158,6 +166,18 @@ impl<'a> System<'a> for ItemUseSystem {
                         }
                     }
                 }
+            }
+
+            // Identify
+            if entity == *player_entity {
+                identified_item
+                    .insert(
+                        entity,
+                        IdentifiedItem {
+                            name: names.get(useitem.item).unwrap().name.clone(),
+                        },
+                    )
+                    .expect("Unable to insert");
             }
 
             // If it is equippable, then we want to equip it - and unequip whatever else was in that slot
@@ -345,6 +365,9 @@ impl<'a> System<'a> for ItemDropSystem {
         WriteStorage<'a, Position>,
         WriteStorage<'a, InBackpack>,
         WriteStorage<'a, EquipmentChanged>,
+        ReadStorage<'a, MagicItem>,
+        ReadStorage<'a, ObfuscatedName>,
+        ReadExpect<'a, MasterDungeonMap>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -357,6 +380,9 @@ impl<'a> System<'a> for ItemDropSystem {
             mut positions,
             mut backpack,
             mut dirty,
+            magic_items,
+            obfuscated_names,
+            dm,
         ) = data;
 
         for (entity, to_drop) in (&entities, &wants_drop).join() {
@@ -373,7 +399,8 @@ impl<'a> System<'a> for ItemDropSystem {
             if entity == *player_entity {
                 gamelog.entries.push(format!(
                     "You drop the {item_name}.",
-                    item_name = names.get(to_drop.item).unwrap().name
+                    item_name =
+                        obfuscate_name(to_drop.item, &names, &magic_items, &obfuscated_names, &dm)
                 ));
             }
         }
@@ -420,4 +447,68 @@ impl<'a> System<'a> for ItemRemoveSystem {
 
         wants_remove.clear();
     }
+}
+
+pub struct ItemIdentificationSystem;
+
+impl<'a> System<'a> for ItemIdentificationSystem {
+    type SystemData = (
+        ReadStorage<'a, Player>,
+        WriteStorage<'a, IdentifiedItem>,
+        WriteExpect<'a, MasterDungeonMap>,
+        ReadStorage<'a, Item>,
+        ReadStorage<'a, Name>,
+        WriteStorage<'a, ObfuscatedName>,
+        Entities<'a>,
+    );
+
+    fn run(&mut self, data: Self::SystemData) {
+        let (player, mut identified, mut dm, items, names, mut obfuscated_names, entities) = data;
+
+        for (_p, id) in (&player, &identified).join() {
+            if !dm.identified_items.contains(&id.name) && is_tag_magic(&id.name) {
+                dm.identified_items.insert(id.name.clone());
+
+                for (entity, _item, name) in (&entities, &items, &names).join() {
+                    if name.name == id.name {
+                        obfuscated_names.remove(entity);
+                    }
+                }
+            }
+        }
+
+        // Clean up
+        identified.clear();
+    }
+}
+
+// Inside ECS function
+pub fn obfuscate_name(
+    item: Entity,
+    names: &ReadStorage<Name>,
+    magic_items: &ReadStorage<MagicItem>,
+    obfuscated_names: &ReadStorage<ObfuscatedName>,
+    dm: &MasterDungeonMap,
+) -> String {
+    // Early return for items without a name
+    let name = match names.get(item) {
+        Some(name) => name,
+        None => return "Nameless item (bug)".to_string(),
+    };
+
+    // Non-magic items just return their name
+    if magic_items.get(item).is_none() {
+        return name.name.clone();
+    }
+
+    // For magic items, check if they are identified
+    if dm.identified_items.contains(&name.name) {
+        return name.name.clone();
+    }
+
+    // Return the obfuscated name if available, else a default message
+    obfuscated_names
+        .get(item)
+        .map(|obfuscated| obfuscated.name.clone())
+        .unwrap_or_else(|| "Nameless item (bug)".to_string())
 }
