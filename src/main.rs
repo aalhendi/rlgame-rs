@@ -43,9 +43,11 @@ mod gamelog;
 mod gui;
 pub mod inventory_system;
 pub mod spawner;
-use inventory_system::{
-    ItemCollectionSystem, ItemDropSystem, ItemIdentificationSystem, ItemRemoveSystem, ItemUseSystem,
-};
+use inventory_system::collection_system::ItemCollectionSystem;
+use inventory_system::drop_system::ItemDropSystem;
+use inventory_system::identification_system::ItemIdentificationSystem;
+use inventory_system::remove_system::ItemRemoveSystem;
+use inventory_system::use_system::ItemUseSystem;
 use map::dungeon::MasterDungeonMap;
 pub mod camera;
 mod gamesystem;
