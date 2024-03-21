@@ -38,16 +38,15 @@ use map_indexing_system::MapIndexingSystem;
 pub mod melee_combat_system;
 use melee_combat_system::MeleeCombatSystem;
 pub mod damage_system;
-use damage_system::DamageSystem;
 mod gamelog;
 mod gui;
 pub mod inventory_system;
 pub mod spawner;
-use inventory_system::collection_system::ItemCollectionSystem;
 use inventory_system::drop_system::ItemDropSystem;
 use inventory_system::identification_system::ItemIdentificationSystem;
 use inventory_system::remove_system::ItemRemoveSystem;
 use inventory_system::use_system::ItemUseSystem;
+use inventory_system::{collection_system::ItemCollectionSystem, use_equip::ItemEquipOnUse};
 use map::dungeon::MasterDungeonMap;
 pub mod camera;
 mod gamesystem;
@@ -62,6 +61,7 @@ mod saveload_system;
 mod trigger_system;
 use lighting_system::LightingSystem;
 mod ai;
+mod effects;
 mod movement_system;
 pub mod spatial;
 
@@ -219,11 +219,11 @@ impl State {
         let mut melee_combat_system = MeleeCombatSystem;
         melee_combat_system.run_now(&self.ecs);
 
-        let mut damage_system = DamageSystem;
-        damage_system.run_now(&self.ecs);
-
         let mut item_collection_system = ItemCollectionSystem;
         item_collection_system.run_now(&self.ecs);
+
+        let mut item_equip_use_system = ItemEquipOnUse;
+        item_equip_use_system.run_now(&self.ecs);
 
         let mut item_use_system = ItemUseSystem;
         item_use_system.run_now(&self.ecs);
@@ -239,6 +239,8 @@ impl State {
 
         let mut hunger_system = hunger_system::HungerSystem;
         hunger_system.run_now(&self.ecs);
+
+        effects::run_effects_queue(&mut self.ecs);
 
         let mut particle_system = particle_system::ParticleSpawnSystem;
         particle_system.run_now(&self.ecs);
@@ -603,7 +605,6 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Name>();
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<WantsToMelee>();
-    gs.ecs.register::<SufferDamage>();
     gs.ecs.register::<InflictsDamage>();
     gs.ecs.register::<Confusion>();
     gs.ecs.register::<AreaOfEffect>();
@@ -657,6 +658,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<MagicItem>();
     gs.ecs.register::<ObfuscatedName>();
     gs.ecs.register::<IdentifiedItem>();
+    gs.ecs.register::<SpawnParticleBurst>();
+    gs.ecs.register::<SpawnParticleLine>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

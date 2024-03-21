@@ -1,11 +1,11 @@
 use crate::{
-    gamesystem::skill_bonus, Attributes, EquipmentSlot, NaturalAttackDefense, Pools, Skill, Skills,
-    WeaponAttribute,
+    effects::{add_effect, EffectType, Targets},
+    gamesystem::skill_bonus,
+    Attributes, EquipmentSlot, NaturalAttackDefense, Pools, Skill, Skills, WeaponAttribute,
 };
 
 use super::{
-    gamelog::Gamelog, particle_system::ParticleBuilder, Equipped, HungerClock, HungerState,
-    MeleeWeapon, Name, Position, SufferDamage, WantsToMelee, Wearable,
+    gamelog::Gamelog, Equipped, HungerClock, HungerState, MeleeWeapon, Name, WantsToMelee, Wearable,
 };
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
@@ -19,18 +19,14 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Name>,
         ReadStorage<'a, Attributes>,
         ReadStorage<'a, Skills>,
-        WriteStorage<'a, SufferDamage>,
         WriteExpect<'a, Gamelog>,
         ReadStorage<'a, MeleeWeapon>,
         ReadStorage<'a, Wearable>,
         ReadStorage<'a, Equipped>,
-        WriteExpect<'a, ParticleBuilder>,
-        ReadStorage<'a, Position>,
         ReadStorage<'a, HungerClock>,
         ReadStorage<'a, Pools>,
         ReadStorage<'a, NaturalAttackDefense>,
         WriteExpect<'a, RandomNumberGenerator>,
-        ReadExpect<'a, Entity>,
     );
     fn run(&mut self, data: Self::SystemData) {
         let (
@@ -39,18 +35,14 @@ impl<'a> System<'a> for MeleeCombatSystem {
             names,
             attributes,
             skills,
-            mut inflict_damage,
             mut log,
             melee_weapons,
             wearables,
             equipped,
-            mut particle_builder,
-            positions,
             hunger_clock,
             pools,
             naturals,
             mut rng,
-            player_entity,
         ) = data;
 
         for (entity, wants_melee, name, attacker_attributes, attacker_skills, attacker_pools) in (
@@ -109,7 +101,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 WeaponAttribute::Quickness => attacker_attributes.quickness.bonus,
             };
             let skill_hit_bonus = skill_bonus(Skill::Melee, attacker_skills);
-            let weapon_hit_bonus = 0; // TODO(aalhendi): Once weapons support this
+            let weapon_hit_bonus = weapon_info.hit_bonus;
             let mut status_hit_bonus = 0;
             if let Some(hc) = hunger_clock.get(entity) {
                 // Well-Fed grants +1
@@ -150,15 +142,18 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         name = name.name,
                         target_name = target_name.name
                     ));
-                    if let Some(pos) = positions.get(wants_melee.target) {
-                        particle_builder.request(
-                            *pos,
-                            rltk::RGB::named(rltk::BLUE),
-                            rltk::RGB::named(rltk::BLACK),
-                            rltk::to_cp437('‼'),
-                            200.0,
-                        );
-                    }
+                    add_effect(
+                        None,
+                        EffectType::Particle {
+                            glyph: rltk::to_cp437('‼'),
+                            fg: rltk::RGB::named(rltk::BLUE),
+                            bg: rltk::RGB::named(rltk::BLACK),
+                            lifespan: 200.0,
+                        },
+                        Targets::Single {
+                            target: wants_melee.target,
+                        },
+                    );
                 }
 
                 // Target hit!
@@ -177,26 +172,18 @@ impl<'a> System<'a> for MeleeCombatSystem {
                             + skill_damage_bonus
                             + weapon_damage_bonus,
                     );
-                    SufferDamage::new_damage(
-                        &mut inflict_damage,
-                        wants_melee.target,
-                        damage,
-                        entity == *player_entity,
+                    add_effect(
+                        Some(entity),
+                        EffectType::Damage { amount: damage },
+                        Targets::Single {
+                            target: wants_melee.target,
+                        },
                     );
                     log.entries.push(format!(
                         "{name} hits {target_name}, for {damage} hp.",
                         name = &name.name,
                         target_name = &target_name.name,
                     ));
-                    if let Some(pos) = positions.get(wants_melee.target) {
-                        particle_builder.request(
-                            *pos,
-                            rltk::RGB::named(rltk::ORANGE),
-                            rltk::RGB::named(rltk::BLACK),
-                            rltk::to_cp437('‼'),
-                            200.0,
-                        );
-                    }
                 }
 
                 // Miss
@@ -206,15 +193,18 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         name = name.name,
                         target_name = target_name.name
                     ));
-                    if let Some(pos) = positions.get(wants_melee.target) {
-                        particle_builder.request(
-                            *pos,
-                            rltk::RGB::named(rltk::CYAN),
-                            rltk::RGB::named(rltk::BLACK),
-                            rltk::to_cp437('‼'),
-                            200.0,
-                        );
-                    }
+                    add_effect(
+                        None,
+                        EffectType::Particle {
+                            glyph: rltk::to_cp437('‼'),
+                            fg: rltk::RGB::named(rltk::CYAN),
+                            bg: rltk::RGB::named(rltk::BLACK),
+                            lifespan: 200.0,
+                        },
+                        Targets::Single {
+                            target: wants_melee.target,
+                        },
+                    );
                 }
             }
         }

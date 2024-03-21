@@ -88,7 +88,7 @@ impl TownBuilder {
             .enumerate()
             .map(|(i, b)| (i, b.w * b.h, BuildingTag::Unassigned))
             .collect();
-        b_sizes.sort_by(|a, b| a.1.cmp(&b.1));
+        b_sizes.sort_by(|a, b| b.1.cmp(&a.1));
         b_sizes[0].2 = BuildingTag::Pub;
         b_sizes[1].2 = BuildingTag::Temple;
         b_sizes[2].2 = BuildingTag::Blacksmith;
@@ -392,6 +392,7 @@ impl TownBuilder {
             "Chair",
             "Parishioner",
             "Parishioner",
+            "Altar",
             "Priest",
         ];
         self.random_building_spawn(building, build_data, 0, rng, to_place);

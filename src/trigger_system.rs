@@ -1,9 +1,9 @@
-use crate::{spatial, ApplyTeleport, TeleportTo};
-
-use super::{
-    gamelog::Gamelog, particle_system::ParticleBuilder, EntityMoved, EntryTrigger, Hidden,
-    InflictsDamage, Map, Name, Position, SingleActivation, SufferDamage,
+use crate::{
+    effects::{add_effect, targetting::aoe_tiles, EffectType, Targets},
+    spatial, AreaOfEffect,
 };
+
+use super::{gamelog::Gamelog, EntityMoved, EntryTrigger, Map, Name, Position};
 use specs::prelude::*;
 
 pub struct TriggerSystem;
@@ -14,17 +14,10 @@ impl<'a> System<'a> for TriggerSystem {
         WriteStorage<'a, EntityMoved>,
         ReadStorage<'a, Position>,
         ReadStorage<'a, EntryTrigger>,
-        WriteStorage<'a, Hidden>,
         ReadStorage<'a, Name>,
         Entities<'a>,
         WriteExpect<'a, Gamelog>,
-        ReadStorage<'a, InflictsDamage>,
-        WriteExpect<'a, ParticleBuilder>,
-        WriteStorage<'a, SufferDamage>,
-        ReadStorage<'a, SingleActivation>,
-        ReadStorage<'a, TeleportTo>,
-        WriteStorage<'a, ApplyTeleport>,
-        ReadExpect<'a, Entity>,
+        ReadStorage<'a, AreaOfEffect>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -33,74 +26,43 @@ impl<'a> System<'a> for TriggerSystem {
             mut entity_moved,
             position,
             entry_trigger,
-            mut hidden,
             names,
             entities,
             mut log,
-            inflicts_damage,
-            mut particle_builder,
-            mut suffer_damage,
-            single_activation,
-            teleporters,
-            mut apply_teleport,
-            player_entity,
+            area_of_effect,
         ) = data;
 
         // Iterate the entities that moved and their final position
-        let mut remove_entities = Vec::new();
         for (entity, mut _entity_moved, pos) in (&entities, &mut entity_moved, &position).join() {
             let idx = map.xy_idx(pos.x, pos.y);
-            spatial::for_each_tile_content(idx, |tile_entity| {
-                // Is Triggerable
-                if entity != tile_entity && entry_trigger.get(tile_entity).is_some() {
-                    if let Some(name) = names.get(tile_entity) {
-                        log.entries.push(format!(
-                            "{trigger_entity} triggers!",
-                            trigger_entity = &name.name
-                        ));
+            spatial::for_each_tile_content(idx, |entity_id| {
+                if entity == entity_id {
+                    return;
+                }
+                // Do not bother to check yourself for being a trap!
+                if entry_trigger.get(entity_id).is_some() {
+                    // We triggered it
+                    let name = names.get(entity_id);
+                    if let Some(name) = name {
+                        log.entries.push(format!("{} triggers!", &name.name));
                     }
 
-                    // Inflicts Damage
-                    if let Some(damage) = inflicts_damage.get(tile_entity) {
-                        particle_builder.request(
-                            *pos,
-                            rltk::RGB::named(rltk::ORANGE),
-                            rltk::RGB::named(rltk::BLACK),
-                            rltk::to_cp437('‼'),
-                            200.0,
-                        );
-                        SufferDamage::new_damage(&mut suffer_damage, entity, damage.damage, false);
-                    }
-
-                    // If its a teleporter, then do that
-                    if let Some(teleport) = teleporters.get(tile_entity) {
-                        if !teleport.player_only || entity == *player_entity {
-                            apply_teleport
-                                .insert(
-                                    entity,
-                                    ApplyTeleport {
-                                        dest_x: teleport.x,
-                                        dest_y: teleport.y,
-                                        dest_depth: teleport.depth,
-                                    },
-                                )
-                                .expect("Unable to insert");
-                        }
-                    }
-
-                    // If it is single activation, it needs to be removed
-                    if single_activation.get(tile_entity).is_some() {
-                        remove_entities.push(tile_entity);
-                    }
-
-                    hidden.remove(tile_entity); // The trap is no longer hidden
+                    // Call the effects system
+                    add_effect(
+                        Some(entity),
+                        EffectType::TriggerFire { trigger: entity_id },
+                        if let Some(aoe) = area_of_effect.get(entity_id) {
+                            Targets::Tiles {
+                                tiles: aoe_tiles(&map, rltk::Point::new(pos.x, pos.y), aoe.radius),
+                            }
+                        } else {
+                            Targets::Tile {
+                                tile_idx: idx as i32,
+                            }
+                        },
+                    );
                 }
             });
-        }
-
-        // Remove any single activation traps
-        for trap in remove_entities.iter() {
-            entities.delete(*trap).expect("Unable to delete trap");
         }
 
         // Remove all entity movement markers

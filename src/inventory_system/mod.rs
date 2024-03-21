@@ -7,6 +7,7 @@ pub mod collection_system;
 pub mod drop_system;
 pub mod identification_system;
 pub mod remove_system;
+pub mod use_equip;
 pub mod use_system;
 
 // Inside ECS function
