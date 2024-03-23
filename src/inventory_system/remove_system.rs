@@ -1,6 +1,6 @@
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::{gamelog::Gamelog, Equipped, InBackpack, Name, WantsToRemoveItem};
+use crate::{gamelog::Gamelog, CursedItem, Equipped, InBackpack, Name, WantsToRemoveItem};
 
 pub struct ItemRemoveSystem;
 
@@ -13,6 +13,7 @@ impl<'a> System<'a> for ItemRemoveSystem {
         WriteExpect<'a, Gamelog>,
         ReadExpect<'a, Entity>,
         ReadStorage<'a, Name>,
+        ReadStorage<'a, CursedItem>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -24,9 +25,18 @@ impl<'a> System<'a> for ItemRemoveSystem {
             mut gamelog,
             player_entity,
             names,
+            cursed,
         ) = data;
 
         for (entity, to_remove) in (&entities, &wants_remove).join() {
+            if cursed.get(to_remove.item).is_some() {
+                gamelog.entries.push(format!(
+                    "You cannot remove {}, it is cursed",
+                    names.get(to_remove.item).unwrap().name
+                ));
+                continue;
+            }
+
             equipped.remove(to_remove.item);
             backpack
                 .insert(to_remove.item, InBackpack { owner: entity })

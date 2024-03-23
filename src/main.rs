@@ -108,6 +108,8 @@ pub enum RunState {
         y: i32,
         depth: i32,
     },
+    ShowRemoveCurse,
+    ShowIdentify,
 }
 
 impl RunState {
@@ -286,6 +288,8 @@ impl GameState for State {
                     match *self.ecs.fetch::<RunState>() {
                         RunState::AwaitingInput => newrunstate = RunState::AwaitingInput,
                         RunState::TownPortal => newrunstate = RunState::TownPortal,
+                        RunState::ShowRemoveCurse => newrunstate = RunState::ShowRemoveCurse,
+                        RunState::ShowIdentify => newrunstate = RunState::ShowIdentify,
                         RunState::TeleportingToOtherLevel { x, y, depth } => {
                             newrunstate = RunState::TeleportingToOtherLevel { x, y, depth }
                         }
@@ -569,6 +573,33 @@ impl GameState for State {
                 self.mapgen_next_state = Some(RunState::PreRun);
                 newrunstate = RunState::MapGeneration;
             }
+            RunState::ShowRemoveCurse => {
+                let (menu_result, maybe_entity) = gui::remove_curse_menu(self, ctx);
+                match menu_result {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected => {
+                        let item_entity = maybe_entity.unwrap();
+                        self.ecs.write_storage::<CursedItem>().remove(item_entity);
+                        newrunstate = RunState::Ticking;
+                    }
+                }
+            }
+            RunState::ShowIdentify => {
+                let (menu_result, maybe_entity) = gui::identify_menu(self, ctx);
+                match menu_result {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected => {
+                        let item_entity = maybe_entity.unwrap();
+                        if let Some(name) = self.ecs.read_storage::<Name>().get(item_entity) {
+                            let mut dm = self.ecs.fetch_mut::<MasterDungeonMap>();
+                            dm.identified_items.insert(name.name.clone());
+                        }
+                        newrunstate = RunState::Ticking;
+                    }
+                }
+            }
         }
 
         {
@@ -660,6 +691,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<IdentifiedItem>();
     gs.ecs.register::<SpawnParticleBurst>();
     gs.ecs.register::<SpawnParticleLine>();
+    gs.ecs.register::<CursedItem>();
+    gs.ecs.register::<ProvidesRemoveCurse>();
+    gs.ecs.register::<ProvidesIdentification>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

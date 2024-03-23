@@ -428,3 +428,12 @@ pub struct SpawnParticleBurst {
     pub color: RGB,
     pub lifetime_ms: f32,
 }
+
+#[derive(Component, Serialize, Deserialize, Clone)]
+pub struct CursedItem {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct ProvidesRemoveCurse {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct ProvidesIdentification {}

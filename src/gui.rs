@@ -2,8 +2,8 @@ use crate::{
     camera::{self, PANE_WIDTH},
     dungeon::MasterDungeonMap,
     raws::{rawsmaster::get_vendor_items, RAWS},
-    Attribute, Attributes, Consumable, Item, MagicItem, MagicItemClass, ObfuscatedName, Pools,
-    Vendor, VendorMode,
+    Attribute, Attributes, Consumable, CursedItem, Item, MagicItem, MagicItemClass, ObfuscatedName,
+    Pools, Vendor, VendorMode,
 };
 
 use super::{
@@ -805,14 +805,15 @@ fn vendor_sell_menu(
     );
 
     let mut equippable: Vec<Entity> = Vec::new();
-    for (j, (entity, _pack, name, item)) in (&entities, &backpack, &names, &items)
+    for (j, (entity, _pack, item)) in (&entities, &backpack, &items)
         .join()
         .filter(|item| item.1.owner == *player_entity)
         .enumerate()
     {
         let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
         let color = Some(get_item_color(&gs.ecs, entity));
-        print_item_label(ctx, y, label_char, &name.name.to_string(), color);
+        let name = &get_item_display_name(&gs.ecs, entity);
+        print_item_label(ctx, y, label_char, name, color);
         ctx.print(50, y, &format!("{val:.1} gp", val = item.base_value * 0.8));
         equippable.push(entity);
         y += 1;
@@ -902,6 +903,15 @@ pub fn show_vendor_menu(
 }
 
 pub fn get_item_color(ecs: &World, item: Entity) -> RGB {
+    let dm = ecs.fetch::<MasterDungeonMap>();
+    if let Some(name) = ecs.read_storage::<Name>().get(item) {
+        if ecs.read_storage::<CursedItem>().get(item).is_some()
+            && dm.identified_items.contains(&name.name)
+        {
+            return RGB::named(rltk::RED);
+        }
+    }
+
     match ecs.read_storage::<MagicItem>().get(item) {
         Some(magic) => match magic.class {
             MagicItemClass::Common => RGB::from_f32(0.5, 1.0, 0.5),
@@ -940,4 +950,113 @@ pub fn get_item_display_name(ecs: &World, item: Entity) -> String {
         .get(item)
         .map(|obfuscated| obfuscated.name.clone())
         .unwrap_or_else(|| "Nameless item (bug)".to_string())
+}
+
+pub fn remove_curse_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+    let player_entity = gs.ecs.fetch::<Entity>();
+    let equipped = gs.ecs.read_storage::<Equipped>();
+    let backpack = gs.ecs.read_storage::<InBackpack>();
+    let entities = gs.ecs.entities();
+    let items = gs.ecs.read_storage::<Item>();
+    let cursed = gs.ecs.read_storage::<CursedItem>();
+    let names = gs.ecs.read_storage::<Name>();
+    let dm = gs.ecs.fetch::<MasterDungeonMap>();
+
+    let build_cursed_iterator = || {
+        (&entities, &items, &cursed)
+            .join()
+            .filter(|(item_entity, _item, _cursed)| {
+                let mut keep = false;
+                if let Some(bp) = backpack.get(*item_entity) {
+                    if bp.owner == *player_entity {
+                        if let Some(name) = names.get(*item_entity) {
+                            if dm.identified_items.contains(&name.name) {
+                                keep = true;
+                            }
+                        }
+                    }
+                }
+                // It's equipped, so we know it's cursed
+                if let Some(equip) = equipped.get(*item_entity) {
+                    if equip.owner == *player_entity {
+                        keep = true;
+                    }
+                }
+                keep
+            })
+    };
+
+    let count = build_cursed_iterator().count();
+    let mut y = (25 - (count / 2)) as i32;
+    print_item_menu(ctx, y, 31, count, "Remove Curse From Which Item?");
+
+    let mut equippable = Vec::new();
+    for (j, (entity, _item, _cursed)) in build_cursed_iterator().enumerate() {
+        let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
+        let name = &get_item_display_name(&gs.ecs, entity);
+        let color = Some(get_item_color(&gs.ecs, entity));
+        print_item_label(ctx, y, label_char, name, color);
+        equippable.push(entity);
+        y += 1;
+    }
+
+    item_menu_input(ctx.key, &equippable, count as i32)
+}
+
+pub fn identify_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {
+    let player_entity = gs.ecs.fetch::<Entity>();
+    let equipped = gs.ecs.read_storage::<Equipped>();
+    let backpack = gs.ecs.read_storage::<InBackpack>();
+    let entities = gs.ecs.entities();
+    let items = gs.ecs.read_storage::<Item>();
+    let names = gs.ecs.read_storage::<Name>();
+    let dm = gs.ecs.fetch::<MasterDungeonMap>();
+    let obfuscated = gs.ecs.read_storage::<ObfuscatedName>();
+
+    let build_cursed_iterator = || {
+        (&entities, &items).join().filter(|(item_entity, _item)| {
+            let mut keep = false;
+            if let Some(bp) = backpack.get(*item_entity) {
+                if bp.owner == *player_entity {
+                    if let Some(name) = names.get(*item_entity) {
+                        if obfuscated.get(*item_entity).is_some()
+                            && !dm.identified_items.contains(&name.name)
+                        {
+                            keep = true;
+                        }
+                    }
+                }
+            }
+            // It's equipped, so we know it's cursed
+            if let Some(equip) = equipped.get(*item_entity) {
+                if equip.owner == *player_entity {
+                    if let Some(name) = names.get(*item_entity) {
+                        if obfuscated.get(*item_entity).is_some()
+                            && !dm.identified_items.contains(&name.name)
+                        {
+                            keep = true;
+                        }
+                    }
+                }
+            }
+            keep
+        })
+    };
+
+    let count = build_cursed_iterator().count();
+
+    let mut y = (25 - (count / 2)) as i32;
+    print_item_menu(ctx, y, 31, count, "Identify Which Item?");
+
+    let mut equippable = Vec::new();
+    for (j, (entity, _item)) in build_cursed_iterator().enumerate() {
+        let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
+        let name = &get_item_display_name(&gs.ecs, entity);
+        let color = Some(get_item_color(&gs.ecs, entity));
+        print_item_label(ctx, y, label_char, name, color);
+        equippable.push(entity);
+        y += 1;
+    }
+
+    item_menu_input(ctx.key, &equippable, count as i32)
 }

@@ -19,6 +19,7 @@ pub struct Item {
 pub struct MagicItem {
     pub class: String,
     pub naming: String,
+    pub cursed: Option<bool>,
 }
 
 #[derive(Deserialize, Debug)]

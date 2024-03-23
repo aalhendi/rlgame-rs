@@ -1,7 +1,7 @@
 use specs::{Entity, World, WorldExt};
 
 use crate::{
-    gamelog::Gamelog, Confusion, Consumable, Hidden, InflictsDamage, MagicMapper, Map, Name, ProvidesFood, ProvidesHealing, RunState, SingleActivation, SpawnParticleBurst, SpawnParticleLine, TeleportTo, TownPortal
+    gamelog::Gamelog, Confusion, Consumable, Hidden, InflictsDamage, MagicMapper, Map, Name, ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesRemoveCurse, RunState, SingleActivation, SpawnParticleBurst, SpawnParticleLine, TeleportTo, TownPortal
 };
 
 use super::{
@@ -102,6 +102,28 @@ fn event_trigger(
             .entries
             .push("The map is revealed to you!".to_string());
         *runstate = RunState::MagicMapReveal { row: 0 };
+        did_something = true;
+    }
+
+    // Remove Curse
+    if ecs
+        .read_storage::<ProvidesRemoveCurse>()
+        .get(entity)
+        .is_some()
+    {
+        let mut runstate = ecs.fetch_mut::<RunState>();
+        *runstate = RunState::ShowRemoveCurse;
+        did_something = true;
+    }
+
+    // Identify Item
+    if ecs
+        .read_storage::<ProvidesIdentification>()
+        .get(entity)
+        .is_some()
+    {
+        let mut runstate = ecs.fetch_mut::<RunState>();
+        *runstate = RunState::ShowIdentify;
         did_something = true;
     }
 

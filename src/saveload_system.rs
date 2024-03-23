@@ -135,7 +135,10 @@ pub fn save_game(ecs: &mut World) {
             ObfuscatedName,
             IdentifiedItem,
             SpawnParticleBurst,
-            SpawnParticleLine
+            SpawnParticleLine,
+            CursedItem,
+            ProvidesRemoveCurse,
+            ProvidesIdentification
         );
     }
 
@@ -230,7 +233,10 @@ pub fn load_game(ecs: &mut World) {
             ObfuscatedName,
             IdentifiedItem,
             SpawnParticleBurst,
-            SpawnParticleLine
+            SpawnParticleLine,
+            CursedItem,
+            ProvidesRemoveCurse,
+            ProvidesIdentification
         );
     }
 
