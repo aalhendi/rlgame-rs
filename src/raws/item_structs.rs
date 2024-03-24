@@ -13,6 +13,15 @@ pub struct Item {
     pub base_value: Option<f32>,
     pub vendor_category: Option<String>,
     pub magic: Option<MagicItem>,
+    pub attributes: Option<ItemAttributeBonus>,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct ItemAttributeBonus {
+    pub might: Option<i32>,
+    pub fitness: Option<i32>,
+    pub quickness: Option<i32>,
+    pub intelligence: Option<i32>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -33,6 +42,7 @@ pub struct Renderable {
 #[derive(Deserialize, Debug)]
 pub struct Consumable {
     pub effects: HashMap<String, String>, // effect_name, effect_value
+    pub charges: Option<i32>,
 }
 
 // TODO: Use an equipment_slot field in spawns.json and have an enum for equippables under Item struct. Makes it easier to expand equip slots to amulets, rings, etc.

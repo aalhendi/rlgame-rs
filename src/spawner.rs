@@ -12,8 +12,9 @@ use crate::{
         rawsmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType},
         RAWS,
     },
-    Attribute, Attributes, EntryTrigger, EquipmentChanged, Faction, Initiative, LightSource,
-    OtherLevelPosition, Pool, Pools, SingleActivation, Skill, Skills, TeleportTo,
+    Attribute, AttributeBonus, Attributes, Duration, EntryTrigger, EquipmentChanged, Faction,
+    Initiative, LightSource, OtherLevelPosition, Pool, Pools, SingleActivation, Skill, Skills,
+    StatusEffect, TeleportTo,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
@@ -133,12 +134,22 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         SpawnType::Equipped { by: player },
     );
     spawn_named_entity(raws, ecs, "Old Boots", SpawnType::Equipped { by: player });
-    spawn_named_entity(
-        raws,
-        ecs,
-        "Town Portal Scroll",
-        SpawnType::Carried { by: player },
-    );
+
+    // Starting hangover
+    ecs.create_entity()
+        .with(StatusEffect { target: player })
+        .with(Duration { turns: 10 })
+        .with(Name {
+            name: "Hangover".to_string(),
+        })
+        .with(AttributeBonus {
+            might: Some(-1),
+            fitness: None,
+            quickness: Some(-1),
+            intelligence: Some(-1),
+        })
+        .marked::<SimpleMarker<IsSerialized>>()
+        .build();
 
     player
 }

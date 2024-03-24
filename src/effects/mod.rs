@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use specs::{Entity, World};
 
-use crate::spatial;
+use crate::{spatial, AttributeBonus};
 
 use self::targetting::entity_position;
 
@@ -63,11 +63,11 @@ pub enum EffectType {
         depth: i32,
         player_only: bool,
     },
-    // AttributeEffect {
-    //     bonus: AttributeBonus,
-    //     name: String,
-    //     duration: i32,
-    // },
+    AttributeEffect {
+        bonus: AttributeBonus,
+        name: String,
+        duration: i32,
+    },
     // Slow {
     //     initiative_penalty: f32,
     // },
@@ -140,9 +140,9 @@ fn tile_effect_hits_entities(effect: &EffectType) -> bool {
             | EffectType::Healing { .. }
             // | EffectType::Mana { .. }
             | EffectType::Confusion { .. }
-            | EffectType::TeleportTo { .. } // | EffectType::AttributeEffect { .. }
-                                            // | EffectType::Slow { .. }
-                                            // | EffectType::DamageOverTime { .. }
+            | EffectType::TeleportTo { .. }
+            | EffectType::AttributeEffect { .. } // | EffectType::Slow { .. }
+                                                 // | EffectType::DamageOverTime { .. }
     )
 }
 
@@ -179,7 +179,7 @@ fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
         // EffectType::Mana { .. } => damage::restore_mana(ecs, effect, target),
         EffectType::Confusion { .. } => damage::add_confusion(ecs, effect, target),
         EffectType::TeleportTo { .. } => movement::apply_teleport(ecs, effect, target),
-        // EffectType::AttributeEffect { .. } => damage::attribute_effect(ecs, effect, target),
+        EffectType::AttributeEffect { .. } => damage::attribute_effect(ecs, effect, target),
         // EffectType::Slow { .. } => damage::slow(ecs, effect, target),
         // EffectType::DamageOverTime { .. } => damage::damage_over_time(ecs, effect, target),
         // EffectType::ParticleProjectile { .. }

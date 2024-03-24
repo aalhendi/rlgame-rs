@@ -1,7 +1,10 @@
 use specs::{Entity, World, WorldExt};
 
 use crate::{
-    gamelog::Gamelog, Confusion, Consumable, Hidden, InflictsDamage, MagicMapper, Map, Name, ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesRemoveCurse, RunState, SingleActivation, SpawnParticleBurst, SpawnParticleLine, TeleportTo, TownPortal
+    gamelog::Gamelog, AttributeBonus, Confusion, Consumable, Duration, Hidden, InflictsDamage,
+    MagicMapper, Map, Name, ProvidesFood, ProvidesHealing, ProvidesIdentification,
+    ProvidesRemoveCurse, RunState, SingleActivation, SpawnParticleBurst, SpawnParticleLine,
+    TeleportTo, TownPortal,
 };
 
 use super::{
@@ -11,6 +14,22 @@ use super::{
 };
 
 pub fn item_trigger(creator: Option<Entity>, item: Entity, targets: &Targets, ecs: &mut World) {
+    // Check charges
+    if let Some(c) = ecs.write_storage::<Consumable>().get_mut(item) {
+        match c.charges.cmp(&1) {
+            std::cmp::Ordering::Less => {
+                // Cancel
+                let mut gamelog = ecs.fetch_mut::<Gamelog>();
+                gamelog.entries.push(format!(
+                    "{} is out of charges!",
+                    ecs.read_storage::<Name>().get(item).unwrap().name
+                ));
+                return;
+            }
+            std::cmp::Ordering::Equal | std::cmp::Ordering::Greater => c.charges -= 1,
+        }
+    }
+
     // Use the item via the generic system
     let did_something = event_trigger(creator, item, targets, ecs);
 
@@ -169,11 +188,14 @@ fn event_trigger(
     }
 
     // Confusion
-    if let Some(confusion) = ecs.read_storage::<Confusion>().get(entity) {
+    if let (Some(_confusion), Some(duration)) = (
+        ecs.read_storage::<Confusion>().get(entity),
+        ecs.read_storage::<Duration>().get(entity),
+    ) {
         add_effect(
             creator,
             EffectType::Confusion {
-                turns: confusion.turns,
+                turns: duration.turns,
             },
             targets.clone(),
         );
@@ -189,6 +211,20 @@ fn event_trigger(
                 y: teleport.y,
                 depth: teleport.depth,
                 player_only: teleport.player_only,
+            },
+            targets.clone(),
+        );
+        did_something = true;
+    }
+
+    // Attribute Modifiers
+    if let Some(attr) = ecs.read_storage::<AttributeBonus>().get(entity) {
+        add_effect(
+            creator,
+            EffectType::AttributeEffect {
+                bonus: attr.clone(),
+                duration: 10,
+                name: ecs.read_storage::<Name>().get(entity).unwrap().name.clone(),
             },
             targets.clone(),
         );

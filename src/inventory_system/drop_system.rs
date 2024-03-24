@@ -1,9 +1,11 @@
 use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::{dungeon::MasterDungeonMap, gamelog::Gamelog, EquipmentChanged, InBackpack, MagicItem, Name, ObfuscatedName, Position, WantsToDropItem};
+use crate::{
+    dungeon::MasterDungeonMap, gamelog::Gamelog, EquipmentChanged, InBackpack, MagicItem, Name,
+    ObfuscatedName, Position, WantsToDropItem,
+};
 
 use super::obfuscate_name;
-
 
 pub struct ItemDropSystem;
 

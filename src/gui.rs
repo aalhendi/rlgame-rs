@@ -2,8 +2,8 @@ use crate::{
     camera::{self, PANE_WIDTH},
     dungeon::MasterDungeonMap,
     raws::{rawsmaster::get_vendor_items, RAWS},
-    Attribute, Attributes, Consumable, CursedItem, Item, MagicItem, MagicItemClass, ObfuscatedName,
-    Pools, Vendor, VendorMode,
+    Attribute, Attributes, Consumable, CursedItem, Duration, Item, MagicItem, MagicItemClass,
+    ObfuscatedName, Pools, StatusEffect, Vendor, VendorMode,
 };
 
 use super::{
@@ -131,13 +131,30 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     }
 
     // Status
+    let mut y = PANE_WIDTH;
+    let statuses = ecs.read_storage::<StatusEffect>();
+    let durations = ecs.read_storage::<Duration>();
+    let names = ecs.read_storage::<Name>();
     let hunger = ecs.read_storage::<HungerClock>();
     let hc = hunger.get(*player_entity).unwrap();
     match hc.state {
-        HungerState::WellFed => ctx.print_color(50, PANE_WIDTH, green, black, "Well Fed"),
-        HungerState::Normal => ctx.print_color(50, PANE_WIDTH, white, black, "Normal"),
-        HungerState::Hungry => ctx.print_color(50, PANE_WIDTH, orange, black, "Hungry"),
-        HungerState::Starving => ctx.print_color(50, PANE_WIDTH, red, black, "Starving"),
+        HungerState::WellFed => ctx.print_color(50, y, green, black, "Well Fed"),
+        HungerState::Normal => ctx.print_color(50, y, white, black, "Normal"),
+        HungerState::Hungry => ctx.print_color(50, y, orange, black, "Hungry"),
+        HungerState::Starving => ctx.print_color(50, y, red, black, "Starving"),
+    }
+    if !matches!(hc.state, HungerState::Normal) {
+        y -= 1;
+    }
+
+    for (status, duration, name) in (&statuses, &durations, &names).join() {
+        if status.target != *player_entity {
+            continue;
+        }
+
+        let duration_str = &format!("{} ({})", name.name, duration.turns);
+        ctx.print_color(50, y, red, black, duration_str);
+        y -= 1;
     }
     // ctx.draw_box(0, 43, 79, 6, white, black);
 
@@ -206,6 +223,9 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let attributes = ecs.read_storage::<Attributes>();
     let pools = ecs.read_storage::<Pools>();
     let entities = ecs.entities();
+    let statuses = ecs.read_storage::<StatusEffect>();
+    let durations = ecs.read_storage::<Duration>();
+    let names = ecs.read_storage::<Name>();
 
     let mouse_pos = ctx.mouse_pos();
     let mut mouse_map_pos = mouse_pos;
@@ -272,6 +292,13 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
             let stat = pools.get(entity);
             if let Some(stat) = stat {
                 tip.add_line(format!("Level: {lvl}", lvl = stat.level));
+            }
+
+            // Comment on durations (Status effects)
+            for (status, duration, name) in (&statuses, &durations, &names).join() {
+                if status.target == entity {
+                    tip.add_line(format!("{} ({})", name.name, duration.turns));
+                }
             }
 
             tip_boxes.push(tip);
@@ -801,7 +828,7 @@ fn vendor_sell_menu(
         y,
         51,
         count,
-        "Buy Which Item? (space to switch to sell mode)",
+        "Sell Which Item? (space to switch to buy mode)",
     );
 
     let mut equippable: Vec<Entity> = Vec::new();
@@ -942,7 +969,13 @@ pub fn get_item_display_name(ecs: &World, item: Entity) -> String {
         .identified_items
         .contains(&name.name)
     {
-        return name.name.clone();
+        if let Some(c) = ecs.read_storage::<Consumable>().get(item) {
+            if c.max_charges > 1 {
+                return format!("{} ({})", name.name.clone(), c.charges).to_string();
+            } else {
+                return name.name.clone();
+            }
+        }
     }
 
     // Return the obfuscated name if available, else a default message

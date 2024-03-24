@@ -138,7 +138,10 @@ pub fn save_game(ecs: &mut World) {
             SpawnParticleLine,
             CursedItem,
             ProvidesRemoveCurse,
-            ProvidesIdentification
+            ProvidesIdentification,
+            AttributeBonus,
+            Duration,
+            StatusEffect
         );
     }
 
@@ -236,7 +239,10 @@ pub fn load_game(ecs: &mut World) {
             SpawnParticleLine,
             CursedItem,
             ProvidesRemoveCurse,
-            ProvidesIdentification
+            ProvidesIdentification,
+            AttributeBonus,
+            Duration,
+            StatusEffect
         );
     }
 

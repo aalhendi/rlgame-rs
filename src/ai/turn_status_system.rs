@@ -1,52 +1,62 @@
-use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use std::collections::HashSet;
 
-use crate::{particle_system::ParticleBuilder, Confusion, MyTurn, Position, RunState};
+use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteStorage};
+
+use crate::{
+    effects::{add_effect, EffectType, Targets},
+    Confusion, MyTurn, RunState, StatusEffect,
+};
 
 pub struct TurnStatusSystem;
 
 impl<'a> System<'a> for TurnStatusSystem {
     type SystemData = (
         WriteStorage<'a, MyTurn>,
-        WriteStorage<'a, Confusion>,
+        ReadStorage<'a, Confusion>,
         Entities<'a>,
         ReadExpect<'a, RunState>,
-        WriteExpect<'a, ParticleBuilder>,
-        ReadStorage<'a, Position>,
+        ReadStorage<'a, StatusEffect>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
         // Iterates confused entities, decrements their turn counter. If still confused, removes MyTurn tag. If recovered, removes Confusion tag
-        let (mut turns, mut confusion, entities, runstate, mut particle_builder, positions) = data;
+        let (mut turns, confusion, entities, runstate, statuses) = data;
 
         if *runstate != RunState::Ticking {
             return;
         }
 
+        // Collect a set of all entities whose turn it is
+        let mut entity_turns = HashSet::new();
+        for (entity, _turn) in (&entities, &turns).join() {
+            entity_turns.insert(entity);
+        }
+
+        // Find status effects affecting entities whose turn it is
         let mut not_my_turn = Vec::new();
-        let mut not_confused = Vec::new();
-        for (entity, _turn, confused) in (&entities, &mut turns, &mut confusion).join() {
-            confused.turns -= 1;
-            if confused.turns < 1 {
-                not_confused.push(entity);
-            } else {
-                let pos = positions.get(entity).unwrap();
-                particle_builder.request(
-                    *pos,
-                    rltk::RGB::named(rltk::MAGENTA),
-                    rltk::RGB::named(rltk::BLACK),
-                    rltk::to_cp437('?'),
-                    200.0,
-                );
-                not_my_turn.push(entity);
+        for (effect_entity, status_effect) in (&entities, &statuses).join() {
+            if entity_turns.contains(&status_effect.target) {
+                // Skip turn for confusion
+                if confusion.get(effect_entity).is_some() {
+                    add_effect(
+                        None,
+                        EffectType::Particle {
+                            glyph: rltk::to_cp437('?'),
+                            fg: rltk::RGB::named(rltk::MAGENTA),
+                            bg: rltk::RGB::named(rltk::BLACK),
+                            lifespan: 200.0,
+                        },
+                        Targets::Single {
+                            target: status_effect.target,
+                        },
+                    );
+                    not_my_turn.push(status_effect.target);
+                }
             }
         }
 
         for e in not_my_turn {
             turns.remove(e);
-        }
-
-        for e in not_confused {
-            confusion.remove(e);
         }
     }
 }

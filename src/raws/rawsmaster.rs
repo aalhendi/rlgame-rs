@@ -8,10 +8,11 @@ use crate::{
     dungeon::MasterDungeonMap,
     gamesystem::{attr_bonus, mana_at_level, npc_hp},
     random_table::RandomTable,
-    Attribute, Attributes, CursedItem, Equipped, Faction, InBackpack, Initiative, IsSerialized,
-    LightSource, LootTable, MagicItem, MagicItemClass, MoveMode, Movement, NaturalAttack,
-    NaturalAttackDefense, ObfuscatedName, Pool, Pools, ProvidesRemoveCurse, Skill, Skills,
-    SpawnParticleBurst, SpawnParticleLine, TownPortal, Vendor, WeaponAttribute, Wearable,
+    Attribute, AttributeBonus, Attributes, CursedItem, Duration, Equipped, Faction, InBackpack,
+    Initiative, IsSerialized, LightSource, LootTable, MagicItem, MagicItemClass, MoveMode,
+    Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools,
+    ProvidesRemoveCurse, Skill, Skills, SpawnParticleBurst, SpawnParticleLine, TownPortal, Vendor,
+    WeaponAttribute, Wearable,
 };
 use regex::Regex;
 use specs::{
@@ -46,9 +47,10 @@ macro_rules! apply_effects {
                     })
                 }
                 "confusion" => {
-                    $eb = $eb.with(Confusion {
+                    $eb = $eb.with(Confusion {});
+                    $eb = $eb.with(Duration {
                         turns: effect.1.parse::<i32>().unwrap(),
-                    })
+                    });
                 }
                 "magic_mapping" => $eb = $eb.with(MagicMapper {}),
                 "town_portal" => $eb = $eb.with(TownPortal {}),
@@ -267,8 +269,21 @@ pub fn spawn_named_item(
         }
     }
 
+    if let Some(ab) = &item_template.attributes {
+        eb = eb.with(AttributeBonus {
+            might: ab.might,
+            fitness: ab.fitness,
+            quickness: ab.quickness,
+            intelligence: ab.intelligence,
+        });
+    }
+
     if let Some(consumable) = &item_template.consumable {
-        eb = eb.with(Consumable {});
+        let max_charges = consumable.charges.unwrap_or(1);
+        eb = eb.with(Consumable {
+            max_charges,
+            charges: max_charges,
+        });
         apply_effects!(consumable.effects, eb);
     }
 

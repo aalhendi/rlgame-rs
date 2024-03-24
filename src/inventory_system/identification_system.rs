@@ -1,6 +1,9 @@
 use specs::{Entities, Join, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::{dungeon::MasterDungeonMap, raws::rawsmaster::is_tag_magic, IdentifiedItem, Item, Name, ObfuscatedName, Player};
+use crate::{
+    dungeon::MasterDungeonMap, raws::rawsmaster::is_tag_magic, IdentifiedItem, Item, Name,
+    ObfuscatedName, Player,
+};
 
 pub struct ItemIdentificationSystem;
 

@@ -1,6 +1,9 @@
 use specs::{Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
 
-use crate::{dungeon::MasterDungeonMap, gamelog::Gamelog, EquipmentChanged, InBackpack, MagicItem, Name, ObfuscatedName, Position, WantsToPickupItem};
+use crate::{
+    dungeon::MasterDungeonMap, gamelog::Gamelog, EquipmentChanged, InBackpack, MagicItem, Name,
+    ObfuscatedName, Position, WantsToPickupItem,
+};
 
 use super::obfuscate_name;
 
