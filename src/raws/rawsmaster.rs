@@ -10,14 +10,14 @@ use crate::{
     random_table::RandomTable,
     Attribute, AttributeBonus, Attributes, CursedItem, Duration, Equipped, Faction, InBackpack,
     Initiative, IsSerialized, LightSource, LootTable, MagicItem, MagicItemClass, MoveMode,
-    Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools,
-    ProvidesRemoveCurse, Skill, Skills, SpawnParticleBurst, SpawnParticleLine, TownPortal, Vendor,
-    WeaponAttribute, Wearable,
+    Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools, ProvidesMana,
+    ProvidesRemoveCurse, Skill, Skills, SpawnParticleBurst, SpawnParticleLine, SpellTemplate,
+    TeachesSpell, TownPortal, Vendor, WeaponAttribute, Wearable,
 };
 use regex::Regex;
 use specs::{
     saveload::{MarkedBuilder, SimpleMarker},
-    Builder, Entity, EntityBuilder, World, WorldExt,
+    Builder, Entity, EntityBuilder, Join, World, WorldExt,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -29,6 +29,11 @@ macro_rules! apply_effects {
                 "provides_healing" => {
                     $eb = $eb.with(ProvidesHealing {
                         heal_amount: effect.1.parse::<i32>().unwrap(),
+                    })
+                }
+                "provides_mana" => {
+                    $eb = $eb.with(ProvidesMana {
+                        mana_amount: effect.1.parse::<i32>().unwrap(),
                     })
                 }
                 "ranged" => {
@@ -59,6 +64,11 @@ macro_rules! apply_effects {
                 "particle_line" => $eb = $eb.with(parse_particle_line(&effect.1)),
                 "particle" => $eb = $eb.with(parse_particle(&effect.1)),
                 "remove_curse" => $eb = $eb.with(ProvidesRemoveCurse {}),
+                "teach_spell" => {
+                    $eb = $eb.with(TeachesSpell {
+                        spell: effect.1.to_string(),
+                    })
+                }
                 _ => rltk::console::log(format!(
                     "Warning: consumable effect {} not implemented.",
                     effect_name
@@ -83,6 +93,7 @@ pub struct RawMaster {
     pub spawn_table: Vec<SpawnTableEntry>,
     pub loot_index: HashMap<String, usize>,
     faction_index: HashMap<String, HashMap<String, Reaction>>,
+    spell_index: HashMap<String, usize>,
 }
 
 impl RawMaster {
@@ -150,6 +161,10 @@ impl RawMaster {
             }
             self.faction_index.insert(faction.name.clone(), reactions);
         }
+
+        for (i, spell) in self.raws.spells.iter().enumerate() {
+            self.spell_index.insert(spell.name.clone(), i);
+        }
     }
 }
 
@@ -168,6 +183,32 @@ pub fn spawn_named_entity(
     }
 
     None
+}
+
+pub fn spawn_all_spells(ecs: &mut World) {
+    let raws = &RAWS.lock().unwrap();
+    for spell in raws.raws.spells.iter() {
+        spawn_named_spell(raws, ecs, &spell.name);
+    }
+}
+
+pub fn spawn_named_spell(raws: &RawMaster, ecs: &mut World, key: &str) -> Option<Entity> {
+    if !raws.spell_index.contains_key(key) {
+        return None;
+    }
+
+    let spell_template = &raws.raws.spells[raws.spell_index[key]];
+
+    let mut eb = ecs.create_entity().marked::<SimpleMarker<IsSerialized>>();
+    eb = eb.with(SpellTemplate {
+        mana_cost: spell_template.mana_cost,
+    });
+    eb = eb.with(Name {
+        name: spell_template.name.clone(),
+    });
+    apply_effects!(spell_template.effects, eb);
+
+    Some(eb.build())
 }
 
 pub fn spawn_named_item(
@@ -813,4 +854,17 @@ fn parse_particle(n: &str) -> SpawnParticleBurst {
         color: rltk::RGB::from_hex(tokens[1]).expect("Bad RGB"),
         lifetime_ms: tokens[2].parse::<f32>().unwrap(),
     }
+}
+
+pub fn find_spell_entity(ecs: &World, name: &str) -> Option<Entity> {
+    let names = ecs.read_storage::<Name>();
+    let spell_templates = ecs.read_storage::<SpellTemplate>();
+    let entities = ecs.entities();
+
+    for (entity, sname, _template) in (&entities, &names, &spell_templates).join() {
+        if name == sname.name {
+            return Some(entity);
+        }
+    }
+    None
 }

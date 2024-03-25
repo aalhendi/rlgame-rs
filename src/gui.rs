@@ -2,8 +2,8 @@ use crate::{
     camera::{self, PANE_WIDTH},
     dungeon::MasterDungeonMap,
     raws::{rawsmaster::get_vendor_items, RAWS},
-    Attribute, Attributes, Consumable, CursedItem, Duration, Item, MagicItem, MagicItemClass,
-    ObfuscatedName, Pools, StatusEffect, Vendor, VendorMode,
+    Attribute, Attributes, Consumable, CursedItem, Duration, Item, KnownSpells, MagicItem,
+    MagicItemClass, ObfuscatedName, Pools, StatusEffect, Vendor, VendorMode,
 };
 
 use super::{
@@ -21,6 +21,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let white = RGB::named(rltk::WHITE);
     let red = RGB::named(rltk::RED);
     let blue = RGB::named(rltk::BLUE);
+    let cyan = RGB::named(rltk::CYAN);
     let green = RGB::named(rltk::GREEN);
     let yellow = RGB::named(rltk::YELLOW);
     let orange = RGB::named(rltk::ORANGE);
@@ -128,6 +129,17 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
             y += 1;
             index += 1;
         }
+    }
+
+    // Spells
+    y += 1;
+    let known_spells_storage = ecs.read_storage::<KnownSpells>();
+    let known_spells = &known_spells_storage.get(*player_entity).unwrap().spells;
+    for (idx, spell) in known_spells.iter().enumerate() {
+        ctx.print_color(50, y, cyan, black, &format!("^{idx}", idx = idx + 1));
+        let spell_str = &format!("{} ({})", spell.display_name, spell.mana_cost);
+        ctx.print_color(53, y, cyan, black, spell_str);
+        y += 1;
     }
 
     // Status

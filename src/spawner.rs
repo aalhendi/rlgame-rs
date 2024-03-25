@@ -9,12 +9,12 @@ use crate::{
     gamesystem::{attr_bonus, mana_at_level, player_hp_at_level},
     random_table::RandomTable,
     raws::{
-        rawsmaster::{get_spawn_table_for_depth, spawn_named_entity, SpawnType},
+        rawsmaster::{get_spawn_table_for_depth, spawn_all_spells, spawn_named_entity, SpawnType},
         RAWS,
     },
     Attribute, AttributeBonus, Attributes, Duration, EntryTrigger, EquipmentChanged, Faction,
-    Initiative, LightSource, OtherLevelPosition, Pool, Pools, SingleActivation, Skill, Skills,
-    StatusEffect, TeleportTo,
+    Initiative, KnownSpells, LightSource, OtherLevelPosition, Pool, Pools, SingleActivation, Skill,
+    Skills, StatusEffect, TeleportTo,
 };
 use rltk::{RandomNumberGenerator, RGB};
 use specs::{
@@ -26,6 +26,9 @@ const MAX_MONSTERS: i32 = 4;
 
 /// Spawns the player and returns its entity object
 pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
+    // Since player only spawns once, ensure they have all spells.
+    spawn_all_spells(ecs);
+
     let mut skills = Skills::default();
     for skill in [Skill::Melee, Skill::Defense, Skill::Magic] {
         skills.skills.insert(skill, 1);
@@ -103,6 +106,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
             name: "Player".to_string(),
         })
         .with(EquipmentChanged {})
+        .with(KnownSpells { spells: Vec::new() })
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
 

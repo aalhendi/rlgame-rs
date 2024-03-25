@@ -41,16 +41,16 @@ pub enum EffectType {
     ItemUse {
         item: Entity,
     },
-    // SpellUse {
-    //     spell: Entity,
-    // },
+    SpellUse {
+        spell: Entity,
+    },
     WellFed,
     Healing {
         amount: i32,
     },
-    // Mana {
-    //     amount: i32,
-    // },
+    Mana {
+        amount: i32,
+    },
     Confusion {
         turns: i32,
     },
@@ -115,6 +115,11 @@ fn target_applicator(ecs: &mut World, effect: &EffectSpawner) {
         return;
     }
 
+    if let EffectType::SpellUse { spell } = effect.effect_type {
+        triggers::spell_trigger(effect.creator, spell, &effect.targets, ecs);
+        return;
+    }
+
     if let EffectType::TriggerFire { trigger } = effect.effect_type {
         triggers::trigger(effect.creator, trigger, &effect.targets, ecs);
         return;
@@ -138,7 +143,7 @@ fn tile_effect_hits_entities(effect: &EffectType) -> bool {
         EffectType::Damage { .. }
             | EffectType::WellFed
             | EffectType::Healing { .. }
-            // | EffectType::Mana { .. }
+            | EffectType::Mana { .. }
             | EffectType::Confusion { .. }
             | EffectType::TeleportTo { .. }
             | EffectType::AttributeEffect { .. } // | EffectType::Slow { .. }
@@ -176,7 +181,7 @@ fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
         EffectType::EntityDeath { .. } => damage::death(ecs, effect, target),
         EffectType::WellFed => hunger::well_fed(ecs, effect, target),
         EffectType::Healing { .. } => damage::heal_damage(ecs, effect, target),
-        // EffectType::Mana { .. } => damage::restore_mana(ecs, effect, target),
+        EffectType::Mana { .. } => damage::restore_mana(ecs, effect, target),
         EffectType::Confusion { .. } => damage::add_confusion(ecs, effect, target),
         EffectType::TeleportTo { .. } => movement::apply_teleport(ecs, effect, target),
         EffectType::AttributeEffect { .. } => damage::attribute_effect(ecs, effect, target),
@@ -184,7 +189,7 @@ fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
         // EffectType::DamageOverTime { .. } => damage::damage_over_time(ecs, effect, target),
         // EffectType::ParticleProjectile { .. }
         EffectType::ItemUse { .. }
-        // | EffectType::SpellUse { .. }
+        | EffectType::SpellUse { .. }
         | EffectType::TriggerFire { .. } => (),
     }
 }

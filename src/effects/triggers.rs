@@ -1,9 +1,10 @@
 use specs::{Entity, World, WorldExt};
 
 use crate::{
-    gamelog::Gamelog, AttributeBonus, Confusion, Consumable, Duration, Hidden, InflictsDamage,
-    MagicMapper, Map, Name, ProvidesFood, ProvidesHealing, ProvidesIdentification,
-    ProvidesRemoveCurse, RunState, SingleActivation, SpawnParticleBurst, SpawnParticleLine,
+    gamelog::Gamelog, raws::rawsmaster::find_spell_entity, AttributeBonus, Confusion, Consumable,
+    Duration, Hidden, InflictsDamage, KnownSpell, KnownSpells, MagicMapper, Map, Name, Pools,
+    ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse,
+    RunState, SingleActivation, SpawnParticleBurst, SpawnParticleLine, SpellTemplate, TeachesSpell,
     TeleportTo, TownPortal,
 };
 
@@ -37,6 +38,20 @@ pub fn item_trigger(creator: Option<Entity>, item: Entity, targets: &Targets, ec
     if did_something && ecs.read_storage::<Consumable>().get(item).is_some() {
         ecs.entities().delete(item).expect("Delete Failed");
     }
+}
+
+pub fn spell_trigger(creator: Option<Entity>, spell: Entity, targets: &Targets, ecs: &mut World) {
+    if let Some(template) = ecs.read_storage::<SpellTemplate>().get(spell) {
+        let mut pools = ecs.write_storage::<Pools>();
+        if let Some(caster) = creator {
+            if let Some(pool) = pools.get_mut(caster) {
+                if template.mana_cost <= pool.mana.current {
+                    pool.mana.current -= template.mana_cost;
+                }
+            }
+        }
+    }
+    event_trigger(creator, spell, targets, ecs);
 }
 
 pub fn trigger(creator: Option<Entity>, trigger: Entity, targets: &Targets, ecs: &mut World) {
@@ -82,7 +97,7 @@ fn event_trigger(
 
     // Line particle spawn
     if let Some(part) = ecs.read_storage::<SpawnParticleLine>().get(entity) {
-        if let Some(start_pos) = find_item_position(ecs, entity) {
+        if let Some(start_pos) = find_item_position(ecs, entity, creator) {
             match targets {
                 Targets::Tile { tile_idx } => spawn_line_particles(ecs, start_pos, *tile_idx, part),
                 Targets::Tiles { tiles } => tiles
@@ -175,6 +190,18 @@ fn event_trigger(
         did_something = true;
     }
 
+    // Mana
+    if let Some(mana) = ecs.read_storage::<ProvidesMana>().get(entity) {
+        add_effect(
+            creator,
+            EffectType::Mana {
+                amount: mana.mana_amount,
+            },
+            targets.clone(),
+        );
+        did_something = true;
+    }
+
     // Damage
     if let Some(damage) = ecs.read_storage::<InflictsDamage>().get(entity) {
         add_effect(
@@ -228,6 +255,30 @@ fn event_trigger(
             },
             targets.clone(),
         );
+        did_something = true;
+    }
+
+    // Learn spells
+    // TODO(aalhendi): refactor, indentation
+    if let Some(spell) = ecs.read_storage::<TeachesSpell>().get(entity) {
+        if let Some(known) = ecs.write_storage::<KnownSpells>().get_mut(creator.unwrap()) {
+            if let Some(spell_entity) = find_spell_entity(ecs, &spell.spell) {
+                if let Some(spell_info) = ecs.read_storage::<SpellTemplate>().get(spell_entity) {
+                    let mut already_known = false;
+                    known.spells.iter().for_each(|s| {
+                        if s.display_name == spell.spell {
+                            already_known = true
+                        }
+                    });
+                    if !already_known {
+                        known.spells.push(KnownSpell {
+                            display_name: spell.spell.clone(),
+                            mana_cost: spell_info.mana_cost,
+                        });
+                    }
+                }
+            }
+        }
         did_something = true;
     }
 

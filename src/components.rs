@@ -456,3 +456,35 @@ pub struct AttributeBonus {
     pub quickness: Option<i32>,
     pub intelligence: Option<i32>,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct KnownSpell {
+    pub display_name: String,
+    pub mana_cost: i32,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct KnownSpells {
+    pub spells: Vec<KnownSpell>,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct SpellTemplate {
+    pub mana_cost: i32,
+}
+
+#[derive(Component, Debug, ConvertSaveload, Clone)]
+pub struct WantsToCastSpell {
+    pub spell: Entity,
+    pub target: Option<Point>,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct ProvidesMana {
+    pub mana_amount: i32,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct TeachesSpell {
+    pub spell: String,
+}
