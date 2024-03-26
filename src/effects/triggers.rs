@@ -2,10 +2,10 @@ use specs::{Entity, World, WorldExt};
 
 use crate::{
     gamelog::Gamelog, raws::rawsmaster::find_spell_entity, AttributeBonus, Confusion, Consumable,
-    Duration, Hidden, InflictsDamage, KnownSpell, KnownSpells, MagicMapper, Map, Name, Pools,
-    ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse,
-    RunState, SingleActivation, SpawnParticleBurst, SpawnParticleLine, SpellTemplate, TeachesSpell,
-    TeleportTo, TownPortal,
+    DamageOverTime, Duration, Hidden, InflictsDamage, KnownSpell, KnownSpells, MagicMapper, Map,
+    Name, Pools, ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana,
+    ProvidesRemoveCurse, RunState, SingleActivation, Slow, SpawnParticleBurst, SpawnParticleLine,
+    SpellTemplate, TeachesSpell, TeleportTo, TownPortal,
 };
 
 use super::{
@@ -279,6 +279,30 @@ fn event_trigger(
                 }
             }
         }
+        did_something = true;
+    }
+
+    // Slow
+    if let Some(slow) = ecs.read_storage::<Slow>().get(entity) {
+        add_effect(
+            creator,
+            EffectType::Slow {
+                initiative_penalty: slow.initiative_penalty,
+            },
+            targets.clone(),
+        );
+        did_something = true;
+    }
+
+    // Damage Over Time
+    if let Some(damage) = ecs.read_storage::<DamageOverTime>().get(entity) {
+        add_effect(
+            creator,
+            EffectType::DamageOverTime {
+                damage: damage.damage,
+            },
+            targets.clone(),
+        );
         did_something = true;
     }
 

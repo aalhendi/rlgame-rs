@@ -8,16 +8,17 @@ use crate::{
     dungeon::MasterDungeonMap,
     gamesystem::{attr_bonus, mana_at_level, npc_hp},
     random_table::RandomTable,
-    Attribute, AttributeBonus, Attributes, CursedItem, Duration, Equipped, Faction, InBackpack,
-    Initiative, IsSerialized, LightSource, LootTable, MagicItem, MagicItemClass, MoveMode,
-    Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools, ProvidesMana,
-    ProvidesRemoveCurse, Skill, Skills, SpawnParticleBurst, SpawnParticleLine, SpellTemplate,
-    TeachesSpell, TownPortal, Vendor, WeaponAttribute, Wearable,
+    Attribute, AttributeBonus, Attributes, CursedItem, DamageOverTime, Duration, Equipped, Faction,
+    InBackpack, Initiative, IsSerialized, LightSource, LootTable, MagicItem, MagicItemClass,
+    MoveMode, Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools,
+    ProvidesMana, ProvidesRemoveCurse, Skill, Skills, Slow, SpawnParticleBurst, SpawnParticleLine,
+    SpecialAbilities, SpecialAbility, SpellTemplate, TeachesSpell, TownPortal, Vendor,
+    WeaponAttribute, Wearable,
 };
 use regex::Regex;
 use specs::{
     saveload::{MarkedBuilder, SimpleMarker},
-    Builder, Entity, EntityBuilder, Join, World, WorldExt,
+    Builder, Entities, Entity, EntityBuilder, Join, ReadStorage, World, WorldExt,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -67,6 +68,16 @@ macro_rules! apply_effects {
                 "teach_spell" => {
                     $eb = $eb.with(TeachesSpell {
                         spell: effect.1.to_string(),
+                    })
+                }
+                "slow" => {
+                    $eb = $eb.with(Slow {
+                        initiative_penalty: effect.1.parse::<f32>().unwrap(),
+                    })
+                }
+                "damage_over_time" => {
+                    $eb = $eb.with(DamageOverTime {
+                        damage: effect.1.parse::<i32>().unwrap(),
                     })
                 }
                 _ => rltk::console::log(format!(
@@ -258,6 +269,8 @@ pub fn spawn_named_item(
             damage_die_type: die_type,
             damage_bonus: bonus,
             hit_bonus: weapon.hit_bonus,
+            proc_chance: weapon.proc_chance,
+            proc_target: weapon.proc_target.clone(),
         };
 
         match weapon.attribute.as_str() {
@@ -266,6 +279,9 @@ pub fn spawn_named_item(
         }
 
         eb = eb.with(wpn);
+        if let Some(proc_effects) = &weapon.proc_effects {
+            apply_effects!(proc_effects, eb);
+        }
     }
 
     if let Some(wearable) = &item_template.wearable {
@@ -571,6 +587,37 @@ pub fn spawn_named_mob(
         });
     }
 
+    if let Some(ability_list) = &mob_template.abilities {
+        let mut a = SpecialAbilities {
+            abilities: Vec::new(),
+        };
+        for ability in ability_list.iter() {
+            a.abilities.push(SpecialAbility {
+                chance: ability.chance,
+                spell: ability.spell.clone(),
+                range: ability.range,
+                min_range: ability.min_range,
+            });
+        }
+    }
+
+    let special_abilities = mob_template
+        .abilities
+        .as_ref()
+        .map(|ability_list| SpecialAbilities {
+            abilities: ability_list
+                .iter()
+                .map(|ability| SpecialAbility {
+                    chance: ability.chance,
+                    spell: ability.spell.clone(),
+                    range: ability.range,
+                    min_range: ability.min_range,
+                })
+                .collect(),
+        });
+
+    eb = eb.with(special_abilities.unwrap_or_default());
+
     let new_mob = eb.build();
 
     // Wearables
@@ -862,6 +909,21 @@ pub fn find_spell_entity(ecs: &World, name: &str) -> Option<Entity> {
     let entities = ecs.entities();
 
     for (entity, sname, _template) in (&entities, &names, &spell_templates).join() {
+        if name == sname.name {
+            return Some(entity);
+        }
+    }
+    None
+}
+
+// In-System version
+pub fn find_spell_entity_by_name(
+    name: &str,
+    names: &ReadStorage<Name>,
+    spell_templates: &ReadStorage<SpellTemplate>,
+    entities: &Entities,
+) -> Option<Entity> {
+    for (entity, sname, _template) in (entities, names, spell_templates).join() {
         if name == sname.name {
             return Some(entity);
         }

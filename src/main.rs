@@ -719,6 +719,9 @@ fn main() -> rltk::BError {
     gs.ecs.register::<SpellTemplate>();
     gs.ecs.register::<ProvidesMana>();
     gs.ecs.register::<TeachesSpell>();
+    gs.ecs.register::<DamageOverTime>();
+    gs.ecs.register::<Slow>();
+    gs.ecs.register::<SpecialAbilities>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

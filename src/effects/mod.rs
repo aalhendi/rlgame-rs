@@ -68,12 +68,12 @@ pub enum EffectType {
         name: String,
         duration: i32,
     },
-    // Slow {
-    //     initiative_penalty: f32,
-    // },
-    // DamageOverTime {
-    //     damage: i32,
-    // },
+    Slow {
+        initiative_penalty: f32,
+    },
+    DamageOverTime {
+        damage: i32,
+    },
 }
 
 #[derive(Clone)]
@@ -146,8 +146,9 @@ fn tile_effect_hits_entities(effect: &EffectType) -> bool {
             | EffectType::Mana { .. }
             | EffectType::Confusion { .. }
             | EffectType::TeleportTo { .. }
-            | EffectType::AttributeEffect { .. } // | EffectType::Slow { .. }
-                                                 // | EffectType::DamageOverTime { .. }
+            | EffectType::AttributeEffect { .. }
+            | EffectType::Slow { .. }
+            | EffectType::DamageOverTime { .. }
     )
 }
 
@@ -185,8 +186,8 @@ fn affect_entity(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
         EffectType::Confusion { .. } => damage::add_confusion(ecs, effect, target),
         EffectType::TeleportTo { .. } => movement::apply_teleport(ecs, effect, target),
         EffectType::AttributeEffect { .. } => damage::attribute_effect(ecs, effect, target),
-        // EffectType::Slow { .. } => damage::slow(ecs, effect, target),
-        // EffectType::DamageOverTime { .. } => damage::damage_over_time(ecs, effect, target),
+        EffectType::Slow { .. } => damage::slow(ecs, effect, target),
+        EffectType::DamageOverTime { .. } => damage::damage_over_time(ecs, effect, target),
         // EffectType::ParticleProjectile { .. }
         EffectType::ItemUse { .. }
         | EffectType::SpellUse { .. }

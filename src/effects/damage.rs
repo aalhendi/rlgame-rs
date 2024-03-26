@@ -6,8 +6,8 @@ use specs::{
 use crate::{
     gamelog::Gamelog,
     gamesystem::{mana_at_level, player_hp_at_level},
-    spatial, Attributes, Confusion, Duration, EquipmentChanged, IsSerialized, Map, Name, Player,
-    Pools, StatusEffect,
+    spatial, Attributes, Confusion, DamageOverTime, Duration, EquipmentChanged, IsSerialized, Map,
+    Name, Player, Pools, Slow, StatusEffect,
 };
 
 use super::{add_effect, targetting::entity_position, EffectSpawner, EffectType, Targets};
@@ -196,5 +196,41 @@ pub fn restore_mana(ecs: &mut World, mana: &EffectSpawner, target: Entity) {
                 Targets::Single { target },
             );
         }
+    }
+}
+
+pub fn slow(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+    if let EffectType::Slow { initiative_penalty } = &effect.effect_type {
+        ecs.create_entity()
+            .with(StatusEffect { target })
+            .with(Slow {
+                initiative_penalty: *initiative_penalty,
+            })
+            .with(Duration { turns: 5 })
+            .with(if *initiative_penalty > 0.0 {
+                Name {
+                    name: "Slowed".to_string(),
+                }
+            } else {
+                Name {
+                    name: "Hasted".to_string(),
+                }
+            })
+            .marked::<SimpleMarker<IsSerialized>>()
+            .build();
+    }
+}
+
+pub fn damage_over_time(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
+    if let EffectType::DamageOverTime { damage } = &effect.effect_type {
+        ecs.create_entity()
+            .with(StatusEffect { target })
+            .with(DamageOverTime { damage: *damage })
+            .with(Duration { turns: 5 })
+            .with(Name {
+                name: "Damage Over Time".to_string(),
+            })
+            .marked::<SimpleMarker<IsSerialized>>()
+            .build();
     }
 }

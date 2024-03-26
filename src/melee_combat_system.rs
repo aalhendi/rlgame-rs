@@ -65,7 +65,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
 
             let target_name = names.get(wants_melee.target).unwrap();
 
-            // Default weapon.
+            // Default weapon. (Unarmed)
             // TODO(aalhendi): Refactor into MeleeWeapon::default()?
             let mut weapon_info = MeleeWeapon {
                 attribute: WeaponAttribute::Might,
@@ -73,6 +73,8 @@ impl<'a> System<'a> for MeleeCombatSystem {
                 damage_die_type: 4,
                 damage_bonus: 0,
                 hit_bonus: 0,
+                proc_chance: None,
+                proc_target: None,
             };
 
             // Check for natural attacks, pick one at random, mutate the weapon to match it
@@ -89,9 +91,11 @@ impl<'a> System<'a> for MeleeCombatSystem {
             }
 
             // If melee weapon, update its data
-            for (equipment, melee) in (&equipped, &melee_weapons).join() {
+            let mut weapon_entity = None;
+            for (wpn_entity, equipment, melee) in (&entities, &equipped, &melee_weapons).join() {
                 if equipment.owner == entity && equipment.slot == EquipmentSlot::Melee {
                     weapon_info = melee.clone();
+                    weapon_entity = Some(wpn_entity);
                 }
             }
 
@@ -184,6 +188,27 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         name = &name.name,
                         target_name = &target_name.name,
                     ));
+
+                    // Proc effects
+                    if weapon_info
+                        .proc_chance
+                        .is_some_and(|chance| rng.roll_dice(1, 100) <= (chance * 100.0) as i32)
+                    {
+                        let effect_target = if weapon_info.proc_target.unwrap() == "Self" {
+                            Targets::Single { target: entity }
+                        } else {
+                            Targets::Single {
+                                target: wants_melee.target,
+                            }
+                        };
+                        add_effect(
+                            Some(entity),
+                            EffectType::ItemUse {
+                                item: weapon_entity.unwrap(),
+                            },
+                            effect_target,
+                        )
+                    }
                 }
 
                 // Miss

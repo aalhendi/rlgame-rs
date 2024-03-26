@@ -146,7 +146,10 @@ pub fn save_game(ecs: &mut World) {
             WantsToCastSpell,
             SpellTemplate,
             ProvidesMana,
-            TeachesSpell
+            TeachesSpell,
+            Slow,
+            DamageOverTime,
+            SpecialAbilities
         );
     }
 
@@ -252,7 +255,10 @@ pub fn load_game(ecs: &mut World) {
             WantsToCastSpell,
             SpellTemplate,
             ProvidesMana,
-            TeachesSpell
+            TeachesSpell,
+            Slow,
+            DamageOverTime,
+            SpecialAbilities
         );
     }
 
