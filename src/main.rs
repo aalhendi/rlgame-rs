@@ -66,6 +66,7 @@ mod movement_system;
 pub mod spatial;
 
 const SHOW_MAPGEN_VISUALIZER: bool = true;
+const SHOW_FPS: bool = true;
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum VendorMode {
@@ -624,6 +625,10 @@ impl GameState for State {
             *runwriter = newrunstate;
         }
         damage_system::delete_the_dead(&mut self.ecs);
+
+        if SHOW_FPS {
+            ctx.print(1, 59, &format!("FPS: {}", ctx.fps));
+        }
     }
 }
 // --- State End ---
@@ -633,6 +638,7 @@ fn main() -> rltk::BError {
     let context = RltkBuilder::simple(80, 60)
         .unwrap()
         .with_title("Rust Roguelike !")
+        .with_vsync(false)
         .build()?;
 
     let mut gs = State {

@@ -7,7 +7,7 @@ use crate::{
     },
     dungeon::MasterDungeonMap,
     gamesystem::{attr_bonus, mana_at_level, npc_hp},
-    random_table::RandomTable,
+    random_table::{MasterTable, RandomTable},
     Attribute, AttributeBonus, Attributes, CursedItem, DamageOverTime, Duration, Equipped, Faction,
     InBackpack, Initiative, IsSerialized, LightSource, LootTable, MagicItem, MagicItemClass,
     MoveMode, Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools,
@@ -723,7 +723,7 @@ fn get_renderable_component(
     }
 }
 
-pub fn get_spawn_table_for_depth(raws: &RawMaster, depth: i32) -> RandomTable {
+pub fn get_spawn_table_for_depth(raws: &RawMaster, depth: i32) -> MasterTable {
     let available_options: Vec<&SpawnTableEntry> = raws
         .raws
         .spawn_table
@@ -731,16 +731,16 @@ pub fn get_spawn_table_for_depth(raws: &RawMaster, depth: i32) -> RandomTable {
         .filter(|a| depth >= a.min_depth && depth <= a.max_depth)
         .collect();
 
-    let mut rt = RandomTable::new();
+    let mut mt = MasterTable::new();
     for e in available_options.iter() {
         let mut weight = e.weight;
         if e.add_map_depth_to_weight == Some(true) {
             weight += depth;
         }
-        rt = rt.add(e.name.clone(), weight);
+        mt.add(e.name.clone(), weight, raws);
     }
 
-    rt
+    mt
 }
 
 pub fn parse_dice_string(dice: &str) -> (i32, i32, i32) {
@@ -803,16 +803,17 @@ pub fn get_item_drop(
     rng: &mut rltk::RandomNumberGenerator,
     table: &str,
 ) -> Option<String> {
-    raws.loot_index.get(table).map(|table_index| {
-        let available_options = &raws.raws.loot_tables[*table_index];
-        let rt = available_options
-            .drops
-            .iter()
-            .fold(RandomTable::new(), |acc, item| {
-                acc.add(item.name.clone(), item.weight)
-            });
-        rt.roll(rng)
-    })
+    if !raws.loot_index.contains_key(table) {
+        return None;
+    }
+
+    let mut rt = RandomTable::new();
+    let available_options = &raws.raws.loot_tables[raws.loot_index[table]];
+    for item in available_options.drops.iter() {
+        rt.add(item.name.clone(), item.weight);
+    }
+    let result = rt.roll(rng);
+    Some(result)
 }
 
 pub fn faction_reaction(my_faction: &str, their_faction: &str, raws: &RawMaster) -> Reaction {
@@ -929,4 +930,20 @@ pub fn find_spell_entity_by_name(
         }
     }
     None
+}
+
+pub enum SpawnTableType {
+    Item,
+    Mob,
+    Prop,
+}
+
+pub fn spawn_type_by_name(raws: &RawMaster, key: &str) -> SpawnTableType {
+    if raws.item_index.contains_key(key) {
+        SpawnTableType::Item
+    } else if raws.mob_index.contains_key(key) {
+        SpawnTableType::Mob
+    } else {
+        SpawnTableType::Prop
+    }
 }

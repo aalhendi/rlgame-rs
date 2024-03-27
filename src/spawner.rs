@@ -7,7 +7,7 @@ use super::{
 use crate::{
     dungeon::MasterDungeonMap,
     gamesystem::{attr_bonus, mana_at_level, player_hp_at_level},
-    random_table::RandomTable,
+    random_table::MasterTable,
     raws::{
         rawsmaster::{get_spawn_table_for_depth, spawn_all_spells, spawn_named_entity, SpawnType},
         RAWS,
@@ -287,6 +287,6 @@ pub fn spawn_town_portal(ecs: &mut World) {
         .build();
 }
 
-fn room_table(map_depth: i32) -> RandomTable {
+fn room_table(map_depth: i32) -> MasterTable {
     get_spawn_table_for_depth(&RAWS.lock().unwrap(), map_depth)
 }
