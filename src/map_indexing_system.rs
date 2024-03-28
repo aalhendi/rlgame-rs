@@ -1,4 +1,4 @@
-use crate::{spatial, Pools};
+use crate::{spatial, Pools, TileSize};
 
 use super::{BlocksTile, Map, Position};
 use specs::prelude::*;
@@ -12,10 +12,11 @@ impl<'a> System<'a> for MapIndexingSystem {
         ReadStorage<'a, BlocksTile>,
         ReadStorage<'a, Pools>,
         Entities<'a>,
+        ReadStorage<'a, TileSize>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (map, positions, blockers, pools, entities) = data;
+        let (map, positions, blockers, pools, entities, sizes) = data;
 
         spatial::clear();
         spatial::populate_blocked_from_map(&map);
@@ -25,8 +26,23 @@ impl<'a> System<'a> for MapIndexingSystem {
                 .map_or(true, |pools| pools.hit_points.current >= 1);
 
             if alive {
+                let blocks_tile = blockers.get(entity).is_some();
+
+                if let Some(size) = sizes.get(entity) {
+                    // Multi-tile
+                    for y in position.y..position.y + size.y {
+                        for x in position.x..position.x + size.x {
+                            if x > 0 && x < map.width - 1 && y > 0 && y < map.height - 1 {
+                                let idx = map.xy_idx(x, y);
+                                spatial::index_entity(entity, idx, blocks_tile);
+                            }
+                        }
+                    }
+                    continue;
+                }
+                // Single tile
                 let idx = map.xy_idx(position.x, position.y);
-                spatial::index_entity(entity, idx, blockers.get(entity).is_some());
+                spatial::index_entity(entity, idx, blocks_tile);
             }
         }
     }

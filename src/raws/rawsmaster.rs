@@ -4,16 +4,7 @@ use crate::{
         AreaOfEffect, BlocksTile, BlocksVisibility, Confusion, Consumable, Door, EntryTrigger,
         EquipmentSlot, Equippable, Hidden, InflictsDamage, Item, MagicMapper, MeleeWeapon, Name,
         Position, ProvidesFood, ProvidesHealing, Quips, Ranged, SingleActivation, Viewshed,
-    },
-    dungeon::MasterDungeonMap,
-    gamesystem::{attr_bonus, mana_at_level, npc_hp},
-    random_table::{MasterTable, RandomTable},
-    Attribute, AttributeBonus, Attributes, CursedItem, DamageOverTime, Duration, Equipped, Faction,
-    InBackpack, Initiative, IsSerialized, LightSource, LootTable, MagicItem, MagicItemClass,
-    MoveMode, Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools,
-    ProvidesMana, ProvidesRemoveCurse, Skill, Skills, Slow, SpawnParticleBurst, SpawnParticleLine,
-    SpecialAbilities, SpecialAbility, SpellTemplate, TeachesSpell, TownPortal, Vendor,
-    WeaponAttribute, Wearable,
+    }, dungeon::MasterDungeonMap, gamesystem::{attr_bonus, mana_at_level, npc_hp}, random_table::{MasterTable, RandomTable}, Attribute, AttributeBonus, Attributes, CursedItem, DamageOverTime, Duration, Equipped, Faction, InBackpack, Initiative, IsSerialized, LightSource, LootTable, MagicItem, MagicItemClass, MoveMode, Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools, ProvidesMana, ProvidesRemoveCurse, Skill, Skills, Slow, SpawnParticleBurst, SpawnParticleLine, SpecialAbilities, SpecialAbility, SpellTemplate, TeachesSpell, TileSize, TownPortal, Vendor, WeaponAttribute, Wearable
 };
 use regex::Regex;
 use specs::{
@@ -365,6 +356,12 @@ pub fn spawn_named_mob(
     // Renderable
     if let Some(renderable) = &mob_template.renderable {
         eb = eb.with(get_renderable_component(renderable));
+        if renderable.x_size.is_some() || renderable.y_size.is_some() {
+            eb = eb.with(TileSize {
+                x: renderable.x_size.unwrap_or(1),
+                y: renderable.y_size.unwrap_or(1),
+            });
+        }
     }
 
     match mob_template.movement.as_ref() {

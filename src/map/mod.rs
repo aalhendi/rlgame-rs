@@ -168,4 +168,31 @@ impl Map {
         let idx = self.xy_idx(x, y);
         self.tiles[idx] == TileType::Wall && self.revealed_tiles[idx]
     }
+
+    pub fn populate_blocked_multi(&mut self, width: i32, height: i32) {
+        self.populate_blocked();
+        for y in 1..self.height - 1 {
+            for x in 1..self.width - 1 {
+                let idx = self.xy_idx(x, y);
+                if spatial::is_blocked(idx) {
+                    continue;
+                }
+
+                for cy in 0..height {
+                    for cx in 0..width {
+                        let tx = x + cx;
+                        let ty = y + cy;
+                        if tx < self.width - 1 && ty < self.height - 1 {
+                            let tidx = self.xy_idx(tx, ty);
+                            if spatial::is_blocked(tidx) {
+                                spatial::set_blocked(idx, true);
+                            }
+                        } else {
+                            spatial::set_blocked(idx, true);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

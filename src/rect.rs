@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::Position;
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Copy)]
@@ -29,5 +31,15 @@ impl Rect {
             x: (self.x1 + self.x2) / 2,
             y: (self.y1 + self.y2) / 2,
         }
+    }
+
+    pub fn get_all_tiles(&self) -> HashSet<(i32, i32)> {
+        let mut result = HashSet::new();
+        for y in self.y1..self.y2 {
+            for x in self.x1..self.x2 {
+                result.insert((x, y));
+            }
+        }
+        result
     }
 }

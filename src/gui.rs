@@ -2,13 +2,13 @@ use crate::{
     camera::{self, PANE_WIDTH},
     dungeon::MasterDungeonMap,
     raws::{rawsmaster::get_vendor_items, RAWS},
-    Attribute, Attributes, Consumable, CursedItem, Duration, Item, KnownSpells, MagicItem,
+    spatial, Attribute, Attributes, Consumable, CursedItem, Duration, Item, KnownSpells, MagicItem,
     MagicItemClass, ObfuscatedName, Pools, StatusEffect, Vendor, VendorMode,
 };
 
 use super::{
     gamelog::Gamelog, Equipped, Hidden, HungerClock, HungerState, InBackpack, Map, Name, Owned,
-    Position, RunState, State, Viewshed,
+    RunState, State, Viewshed,
 };
 use rltk::{Point, Rltk, VirtualKeyCode, RGB};
 use specs::prelude::*;
@@ -230,11 +230,9 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
     let box_gray: RGB = RGB::from_hex("#999999").expect("Could not parse color from hex");
 
     let map = ecs.fetch::<Map>();
-    let positions = ecs.read_storage::<Position>();
     let hidden = ecs.read_storage::<Hidden>();
     let attributes = ecs.read_storage::<Attributes>();
     let pools = ecs.read_storage::<Pools>();
-    let entities = ecs.entities();
     let statuses = ecs.read_storage::<StatusEffect>();
     let durations = ecs.read_storage::<Duration>();
     let names = ecs.read_storage::<Name>();
@@ -254,68 +252,71 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
         return;
     }
 
-    if !map.visible_tiles[map.xy_idx(mouse_map_pos.0, mouse_map_pos.1)] {
+    let mouse_idx = map.xy_idx(mouse_map_pos.0, mouse_map_pos.1);
+    if !map.visible_tiles[mouse_idx] {
         return;
     }
 
     // Check if mouse-pos is on an entity, add its TT
     let mut tip_boxes: Vec<Tooltip> = Vec::new();
-    for (entity, position, _hidden) in (&entities, &positions, !&hidden).join() {
-        if position.x == mouse_map_pos.0 && position.y == mouse_map_pos.1 {
-            let mut tip = Tooltip::new();
-            tip.add_line(get_item_display_name(ecs, entity));
-
-            // Comment on attributes
-            if let Some(attr) = attributes.get(entity) {
-                let mut tip_text = String::new();
-
-                match attr.might.bonus.cmp(&0) {
-                    std::cmp::Ordering::Less => tip_text += "Weak. ",
-                    std::cmp::Ordering::Equal => (),
-                    std::cmp::Ordering::Greater => tip_text += "Strong. ",
-                }
-
-                match attr.quickness.bonus.cmp(&0) {
-                    std::cmp::Ordering::Less => tip_text += "Clumsy. ",
-                    std::cmp::Ordering::Equal => (),
-                    std::cmp::Ordering::Greater => tip_text += "Agile. ",
-                }
-
-                match attr.fitness.bonus.cmp(&0) {
-                    std::cmp::Ordering::Less => tip_text += "Unhealthy. ",
-                    std::cmp::Ordering::Equal => (),
-                    std::cmp::Ordering::Greater => tip_text += "Healthy. ",
-                }
-
-                match attr.intelligence.bonus.cmp(&0) {
-                    std::cmp::Ordering::Less => tip_text += "Unintelligent. ",
-                    std::cmp::Ordering::Equal => (),
-                    std::cmp::Ordering::Greater => tip_text += "Smart. ",
-                }
-
-                if tip_text.is_empty() {
-                    tip_text = "Quite average".to_string();
-                }
-
-                tip.add_line(tip_text);
-            }
-
-            // Comment on pools
-            let stat = pools.get(entity);
-            if let Some(stat) = stat {
-                tip.add_line(format!("Level: {lvl}", lvl = stat.level));
-            }
-
-            // Comment on durations (Status effects)
-            for (status, duration, name) in (&statuses, &durations, &names).join() {
-                if status.target == entity {
-                    tip.add_line(format!("{} ({})", name.name, duration.turns));
-                }
-            }
-
-            tip_boxes.push(tip);
+    spatial::for_each_tile_content(mouse_idx, |entity| {
+        if hidden.get(entity).is_some() {
+            return;
         }
-    }
+
+        let mut tip = Tooltip::new();
+        tip.add_line(get_item_display_name(ecs, entity));
+
+        // Comment on attributes
+        if let Some(attr) = attributes.get(entity) {
+            let mut tip_text = String::new();
+
+            match attr.might.bonus.cmp(&0) {
+                std::cmp::Ordering::Less => tip_text += "Weak. ",
+                std::cmp::Ordering::Equal => (),
+                std::cmp::Ordering::Greater => tip_text += "Strong. ",
+            }
+
+            match attr.quickness.bonus.cmp(&0) {
+                std::cmp::Ordering::Less => tip_text += "Clumsy. ",
+                std::cmp::Ordering::Equal => (),
+                std::cmp::Ordering::Greater => tip_text += "Agile. ",
+            }
+
+            match attr.fitness.bonus.cmp(&0) {
+                std::cmp::Ordering::Less => tip_text += "Unhealthy. ",
+                std::cmp::Ordering::Equal => (),
+                std::cmp::Ordering::Greater => tip_text += "Healthy. ",
+            }
+
+            match attr.intelligence.bonus.cmp(&0) {
+                std::cmp::Ordering::Less => tip_text += "Unintelligent. ",
+                std::cmp::Ordering::Equal => (),
+                std::cmp::Ordering::Greater => tip_text += "Smart. ",
+            }
+
+            if tip_text.is_empty() {
+                tip_text = "Quite average".to_string();
+            }
+
+            tip.add_line(tip_text);
+        }
+
+        // Comment on pools
+        let stat = pools.get(entity);
+        if let Some(stat) = stat {
+            tip.add_line(format!("Level: {lvl}", lvl = stat.level));
+        }
+
+        // Comment on durations (Status effects)
+        for (status, duration, name) in (&statuses, &durations, &names).join() {
+            if status.target == entity {
+                tip.add_line(format!("{} ({})", name.name, duration.turns));
+            }
+        }
+
+        tip_boxes.push(tip);
+    });
 
     // No TT on mouse-pos
     if tip_boxes.is_empty() {

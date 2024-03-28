@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use specs::{Entities, Join, ReadExpect, System, WriteStorage};
+use specs::{Entities, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
-use crate::{ApplyMove, Chasing, Map, MyTurn, Position};
+use crate::{ApplyMove, Chasing, Map, MyTurn, Position, TileSize};
 
 pub struct ChaseAI;
 
@@ -14,10 +14,11 @@ impl<'a> System<'a> for ChaseAI {
         ReadExpect<'a, Map>,
         Entities<'a>,
         WriteStorage<'a, ApplyMove>,
+        ReadStorage<'a, TileSize>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut turns, mut chasing, mut positions, map, entities, mut apply_move) = data;
+        let (mut turns, mut chasing, mut positions, map, entities, mut apply_move, sizes) = data;
 
         let mut targets = HashMap::new();
         let mut end_chase = Vec::new();
@@ -39,7 +40,15 @@ impl<'a> System<'a> for ChaseAI {
             turn_done.push(entity);
             let (tgt_x, tgt_y) = targets[&entity];
             let idx = map.xy_idx(pos.x, pos.y);
-            let path = rltk::a_star_search(idx, map.xy_idx(tgt_x, tgt_y), &*map);
+            let path = if let Some(size) = sizes.get(entity) {
+                let mut map_copy = map.clone();
+                map_copy.populate_blocked_multi(size.x, size.y);
+                let start = map_copy.xy_idx(pos.x, pos.y) as i32;
+                let end = map_copy.xy_idx(tgt_x, tgt_y) as i32;
+                rltk::a_star_search(start, end, &map_copy)
+            } else {
+                rltk::a_star_search(idx, map.xy_idx(tgt_x, tgt_y), &*map)
+            };
             if path.success && path.steps.len() > 1 && path.steps.len() < 15 {
                 apply_move
                     .insert(

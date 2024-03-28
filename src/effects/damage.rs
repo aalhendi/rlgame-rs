@@ -19,6 +19,12 @@ pub fn inflict_damage(ecs: &mut World, damage: &EffectSpawner, target: Entity) {
             return;
         }
 
+        // aoe spells dont hurt caster but can hurt friendlies
+        // NOTE(aalhendi): This makes fireball too strong. Suggest an AffectsCaster{} tag that can be checked
+        if damage.creator.is_some_and(|c| c == target) {
+            return;
+        }
+
         if let EffectType::Damage { amount } = damage.effect_type {
             pool.hit_points.current -= amount;
             add_effect(None, EffectType::Bloodstain, Targets::Single { target });

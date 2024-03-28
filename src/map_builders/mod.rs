@@ -1,25 +1,7 @@
 use crate::{rect::Rect, spawner};
 
 use self::{
-    area_starting_points::{AreaStartingPosition, XStart, YStart},
-    cull_unreachable::CullUnreachable,
-    distant_exit::DistantExit,
-    door_placement::DoorPlacement,
-    limestone_cavern::{limestone_deep_cavern_builder, limestone_transition_builder},
-    room_based_spawner::RoomBasedSpawner,
-    room_based_stairs::RoomBasedStairs,
-    room_based_starting_position::RoomBasedStartingPosition,
-    room_corner_rounding::RoomCornerRounder,
-    room_corridor_spawner::CorridorSpawner,
-    room_draw::RoomDrawer,
-    room_exploder::RoomExploder,
-    room_sorter::{RoomSort, RoomSorter},
-    rooms_corridors_bsp::BspCorridors,
-    rooms_corridors_dogleg::DoglegCorridors,
-    rooms_corridors_lines::StraightLineCorridors,
-    rooms_corridors_nearest::NearestCorridors,
-    voronoi_spawning::VoronoiSpawning,
-    waveform_collapse::WaveformCollapseBuilder,
+    area_starting_points::{AreaStartingPosition, XStart, YStart}, cull_unreachable::CullUnreachable, distant_exit::DistantExit, door_placement::DoorPlacement, dwarf_fort::dwarf_fort_builder, limestone_cavern::{limestone_deep_cavern_builder, limestone_transition_builder}, room_based_spawner::RoomBasedSpawner, room_based_stairs::RoomBasedStairs, room_based_starting_position::RoomBasedStartingPosition, room_corner_rounding::RoomCornerRounder, room_corridor_spawner::CorridorSpawner, room_draw::RoomDrawer, room_exploder::RoomExploder, room_sorter::{RoomSort, RoomSorter}, rooms_corridors_bsp::BspCorridors, rooms_corridors_dogleg::DoglegCorridors, rooms_corridors_lines::StraightLineCorridors, rooms_corridors_nearest::NearestCorridors, voronoi_spawning::VoronoiSpawning, waveform_collapse::WaveformCollapseBuilder
 };
 
 use super::{Map, Position};
@@ -69,6 +51,7 @@ mod limestone_cavern;
 mod yellow_brick_road;
 use limestone_cavern::limestone_cavern_builder;
 mod area_ending_point;
+mod dwarf_fort;
 
 pub struct BuilderMap {
     pub spawn_list: Vec<(usize, String)>,
@@ -324,6 +307,7 @@ pub fn level_builder(
         3 => limestone_cavern_builder(new_depth, rng, width, height),
         4 => limestone_deep_cavern_builder(new_depth, rng, width, height),
         5 => limestone_transition_builder(new_depth, rng, width, height),
+        6 => dwarf_fort_builder(new_depth, rng, width, height),
         _ => random_builder(new_depth, rng, width, height),
     }
 }

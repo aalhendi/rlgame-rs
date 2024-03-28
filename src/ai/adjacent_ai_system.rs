@@ -2,7 +2,7 @@ use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorag
 
 use crate::{
     raws::{faction_structs::Reaction, rawsmaster::faction_reaction, RAWS},
-    spatial, Faction, Map, MyTurn, Position, WantsToMelee,
+    spatial, Faction, Map, MyTurn, Position, TileSize, WantsToMelee,
 };
 
 pub struct AdjacentAI;
@@ -16,10 +16,11 @@ impl<'a> System<'a> for AdjacentAI {
         WriteStorage<'a, WantsToMelee>,
         Entities<'a>,
         ReadExpect<'a, Entity>,
+        ReadStorage<'a, TileSize>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (mut turns, factions, positions, map, mut want_melee, entities, player) = data;
+        let (mut turns, factions, positions, map, mut want_melee, entities, player, sizes) = data;
 
         let mut turn_done = Vec::new();
         for (entity, _turn, my_fac, pos) in (&entities, &turns, &factions, &positions).join() {
@@ -30,6 +31,25 @@ impl<'a> System<'a> for AdjacentAI {
             let idx = map.xy_idx(pos.x, pos.y) as i32;
             let w = map.width;
             let h = map.height;
+
+            // If multitile
+            if let Some(size) = sizes.get(entity) {
+                use crate::rect::Rect;
+                let mob_rect = Rect::new(pos.x, pos.y, size.x, size.y).get_all_tiles();
+                let parent_rect = Rect::new(pos.x - 1, pos.y - 1, size.x + 2, size.y + 2);
+                parent_rect
+                    .get_all_tiles()
+                    .iter()
+                    .filter(|t| !mob_rect.contains(t))
+                    .for_each(|t| {
+                        if t.0 > 0 && t.0 < w - 1 && t.1 > 0 && t.1 < h - 1 {
+                            let tgt_idx = map.xy_idx(t.0, t.1) as i32;
+                            evaluate(tgt_idx, &factions, &my_fac.name, &mut reactions);
+                        }
+                    });
+                continue;
+            }
+
             // Add possible reactions to adjacents for each direction
             if pos.x > 0 {
                 evaluate(idx - 1, &factions, &my_fac.name, &mut reactions);

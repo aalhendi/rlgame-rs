@@ -120,3 +120,8 @@ pub fn remove_entity(entity: Entity, idx: usize) {
     let from_blocked = lock.tile_content[idx].iter().any(|&(_, blocks)| blocks);
     lock.blocked[idx].1 = from_blocked;
 }
+
+pub fn set_blocked(idx: usize, blocked: bool) {
+    let mut lock = SPATIAL_MAP.lock().unwrap();
+    lock.blocked[idx] = (lock.blocked[idx].0, blocked);
+}

@@ -149,7 +149,8 @@ pub fn save_game(ecs: &mut World) {
             TeachesSpell,
             Slow,
             DamageOverTime,
-            SpecialAbilities
+            SpecialAbilities,
+            TileSize
         );
     }
 
@@ -258,7 +259,8 @@ pub fn load_game(ecs: &mut World) {
             TeachesSpell,
             Slow,
             DamageOverTime,
-            SpecialAbilities
+            SpecialAbilities,
+            TileSize
         );
     }
 
