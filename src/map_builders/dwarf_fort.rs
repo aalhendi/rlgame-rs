@@ -124,9 +124,9 @@ impl DragonSpawner {
         });
 
         // Add the dragon
-        // let dragon_idx = build_data.map.xy_idx(start_x, start_y);
-        // build_data
-        //     .spawn_list
-        //     .push((dragon_idx, "Black Dragon".to_string()));
+        let dragon_idx = build_data.map.xy_idx(start_x, start_y);
+        build_data
+            .spawn_list
+            .push((dragon_idx, "Black Dragon".to_string()));
     }
 }
