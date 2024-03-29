@@ -729,6 +729,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Slow>();
     gs.ecs.register::<SpecialAbilities>();
     gs.ecs.register::<TileSize>();
+    gs.ecs.register::<OnDeath>();
+    gs.ecs.register::<AlwaysTargetsSelf>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

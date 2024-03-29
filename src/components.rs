@@ -519,3 +519,11 @@ pub struct TileSize {
     pub x: i32,
     pub y: i32,
 }
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone, Default)]
+pub struct OnDeath {
+    pub abilities: Vec<SpecialAbility>,
+}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct AlwaysTargetsSelf {}

@@ -1,9 +1,10 @@
 use crate::{
+    effects::{add_effect, targetting::aoe_tiles, EffectType, Targets},
     raws::{
-        rawsmaster::{get_item_drop, spawn_named_item, SpawnType},
+        rawsmaster::{find_spell_entity, get_item_drop, spawn_named_item, SpawnType},
         RAWS,
     },
-    Equipped, InBackpack, LootTable, Pools,
+    AreaOfEffect, Equipped, InBackpack, LootTable, Map, OnDeath, Pools,
 };
 
 use super::{gamelog::Gamelog, Name, Player, Position, RunState};
@@ -100,6 +101,40 @@ pub fn delete_the_dead(ecs: &mut World) {
                 y: spawn_pos.y,
             },
         );
+    }
+
+    for victim in dead.iter() {
+        let death_effects = ecs.read_storage::<OnDeath>();
+        if let Some(death_effect) = death_effects.get(*victim) {
+            let mut rng = ecs.fetch_mut::<rltk::RandomNumberGenerator>();
+            for effect in death_effect.abilities.iter() {
+                if rng.roll_dice(1, 100) > (effect.chance * 100.0) as i32 {
+                    continue;
+                }
+                let map = ecs.fetch::<Map>();
+                if ecs.read_storage::<Position>().get(*victim).is_none() {
+                    continue;
+                }
+                let pos = *ecs.read_storage::<Position>().get(*victim).unwrap();
+                let spell_entity = find_spell_entity(ecs, &effect.spell).unwrap();
+                let tile_idx = map.xy_idx(pos.x, pos.y) as i32;
+                let target = if let Some(aoe) = ecs.read_storage::<AreaOfEffect>().get(spell_entity)
+                {
+                    Targets::Tiles {
+                        tiles: aoe_tiles(&map, rltk::Point::new(pos.x, pos.y), aoe.radius),
+                    }
+                } else {
+                    Targets::Tile { tile_idx }
+                };
+                add_effect(
+                    None,
+                    EffectType::SpellUse {
+                        spell: find_spell_entity(ecs, &effect.spell).unwrap(),
+                    },
+                    target,
+                );
+            }
+        }
     }
 
     for victim in dead {

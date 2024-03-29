@@ -4,7 +4,16 @@ use crate::{
         AreaOfEffect, BlocksTile, BlocksVisibility, Confusion, Consumable, Door, EntryTrigger,
         EquipmentSlot, Equippable, Hidden, InflictsDamage, Item, MagicMapper, MeleeWeapon, Name,
         Position, ProvidesFood, ProvidesHealing, Quips, Ranged, SingleActivation, Viewshed,
-    }, dungeon::MasterDungeonMap, gamesystem::{attr_bonus, mana_at_level, npc_hp}, random_table::{MasterTable, RandomTable}, Attribute, AttributeBonus, Attributes, CursedItem, DamageOverTime, Duration, Equipped, Faction, InBackpack, Initiative, IsSerialized, LightSource, LootTable, MagicItem, MagicItemClass, MoveMode, Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName, Pool, Pools, ProvidesMana, ProvidesRemoveCurse, Skill, Skills, Slow, SpawnParticleBurst, SpawnParticleLine, SpecialAbilities, SpecialAbility, SpellTemplate, TeachesSpell, TileSize, TownPortal, Vendor, WeaponAttribute, Wearable
+    },
+    dungeon::MasterDungeonMap,
+    gamesystem::{attr_bonus, mana_at_level, npc_hp},
+    random_table::{MasterTable, RandomTable},
+    AlwaysTargetsSelf, Attribute, AttributeBonus, Attributes, CursedItem, DamageOverTime, Duration,
+    Equipped, Faction, InBackpack, Initiative, IsSerialized, LightSource, LootTable, MagicItem,
+    MagicItemClass, MoveMode, Movement, NaturalAttack, NaturalAttackDefense, ObfuscatedName,
+    OnDeath, Pool, Pools, ProvidesMana, ProvidesRemoveCurse, Skill, Skills, Slow,
+    SpawnParticleBurst, SpawnParticleLine, SpecialAbilities, SpecialAbility, SpellTemplate,
+    TeachesSpell, TileSize, TownPortal, Vendor, WeaponAttribute, Wearable,
 };
 use regex::Regex;
 use specs::{
@@ -56,6 +65,7 @@ macro_rules! apply_effects {
                 "particle_line" => $eb = $eb.with(parse_particle_line(&effect.1)),
                 "particle" => $eb = $eb.with(parse_particle(&effect.1)),
                 "remove_curse" => $eb = $eb.with(ProvidesRemoveCurse {}),
+                "target_self" => $eb = $eb.with(AlwaysTargetsSelf {}),
                 "teach_spell" => {
                     $eb = $eb.with(TeachesSpell {
                         spell: effect.1.to_string(),
@@ -584,20 +594,6 @@ pub fn spawn_named_mob(
         });
     }
 
-    if let Some(ability_list) = &mob_template.abilities {
-        let mut a = SpecialAbilities {
-            abilities: Vec::new(),
-        };
-        for ability in ability_list.iter() {
-            a.abilities.push(SpecialAbility {
-                chance: ability.chance,
-                spell: ability.spell.clone(),
-                range: ability.range,
-                min_range: ability.min_range,
-            });
-        }
-    }
-
     let special_abilities = mob_template
         .abilities
         .as_ref()
@@ -614,6 +610,20 @@ pub fn spawn_named_mob(
         });
 
     eb = eb.with(special_abilities.unwrap_or_default());
+
+    let death_abilities = mob_template.on_death.as_ref().map(|ability_list| OnDeath {
+        abilities: ability_list
+            .iter()
+            .map(|ability| SpecialAbility {
+                chance: ability.chance,
+                spell: ability.spell.clone(),
+                range: ability.range,
+                min_range: ability.min_range,
+            })
+            .collect(),
+    });
+
+    eb = eb.with(death_abilities.unwrap_or_default());
 
     let new_mob = eb.build();
 

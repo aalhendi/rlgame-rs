@@ -86,8 +86,15 @@
     { "name": "Shield", "weight": 3, "min_depth": 0, "max_depth": 100 },
     { "name": "Longsword", "weight": 2, "min_depth": 3, "max_depth": 100 },
     { "name": "Longsword +1", "weight": 1, "min_depth": 3, "max_depth": 100 },
+    { "name": "Longsword +2", "weight": 1, "min_depth": 7, "max_depth": 100 },
     { "name": "Longsword -1", "weight": 1, "min_depth": 3, "max_depth": 100 },
     { "name": "Tower Shield", "weight": 1, "min_depth": 3, "max_depth": 100 },
+    {
+      "name": "Tower Shield +1",
+      "weight": 1,
+      "min_depth": 7,
+      "max_depth": 100
+    },
     { "name": "Leather Armor", "weight": 1, "min_depth": 2, "max_depth": 100 },
     { "name": "Leather Boots", "weight": 1, "min_depth": 2, "max_depth": 100 },
     {
@@ -96,7 +103,21 @@
       "min_depth": 4,
       "max_depth": 100
     },
-    { "name": "Chain Coif", "weight": 1, "min_depth": 4, "max_depth": 100 },
+    { "name": "Cloth Cap", "weight": 5, "min_depth": 4, "max_depth": 100 },
+    { "name": "Leather Cap", "weight": 4, "min_depth": 4, "max_depth": 100 },
+    { "name": "Chain Coif", "weight": 3, "min_depth": 4, "max_depth": 100 },
+    { "name": "Steel Helm", "weight": 2, "min_depth": 4, "max_depth": 100 },
+    { "name": "Cloth Pants", "weight": 6, "min_depth": 1, "max_depth": 100 },
+    { "name": "Leather Pants", "weight": 5, "min_depth": 1, "max_depth": 100 },
+    { "name": "Chain Leggings", "weight": 4, "min_depth": 1, "max_depth": 100 },
+    { "name": "Steel Greaves", "weight": 3, "min_depth": 5, "max_depth": 100 },
+    { "name": "Leather Boots", "weight": 5, "min_depth": 1, "max_depth": 100 },
+    { "name": "Chain Boots", "weight": 4, "min_depth": 3, "max_depth": 100 },
+    { "name": "Steel Boots", "weight": 2, "min_depth": 5, "max_depth": 100 },
+    { "name": "Cloth Gloves", "weight": 6, "min_depth": 1, "max_depth": 100 },
+    { "name": "Leather Gloves", "weight": 5, "min_depth": 1, "max_depth": 100 },
+    { "name": "Chain Gloves", "weight": 3, "min_depth": 1, "max_depth": 100 },
+    { "name": "Steel Gloves", "weight": 2, "min_depth": 5, "max_depth": 100 },
     { "name": "Rations", "weight": 10, "min_depth": 0, "max_depth": 100 },
     {
       "name": "Magic Mapping Scroll",
@@ -109,18 +130,39 @@
     { "name": "Kobold", "weight": 15, "min_depth": 3, "max_depth": 3 },
     { "name": "Rat", "weight": 15, "min_depth": 2, "max_depth": 2 },
     { "name": "Mangy Wolf", "weight": 13, "min_depth": 2, "max_depth": 2 },
-    { "name": "Deer", "weight": 8, "min_depth": 2, "max_depth": 2 },
     { "name": "Bandit", "weight": 9, "min_depth": 2, "max_depth": 3 },
     { "name": "Bat", "weight": 15, "min_depth": 3, "max_depth": 3 },
     { "name": "Large Spider", "weight": 3, "min_depth": 3, "max_depth": 3 },
     { "name": "Gelatinous Cube", "weight": 3, "min_depth": 3, "max_depth": 3 },
-    { "name": "Dragon Wyrmling", "weight": 1, "min_depth": 5, "max_depth": 7 },
+    { "name": "Dragon Wyrmling", "weight": 1, "min_depth": 5, "max_depth": 6 },
     { "name": "Lizardman", "weight": 10, "min_depth": 5, "max_depth": 7 },
     { "name": "Giant Lizard", "weight": 4, "min_depth": 5, "max_depth": 7 },
     { "name": "Rock Golem", "weight": 4, "min_depth": 5, "max_depth": 7 },
-    { "name": "Stonefall Trap", "weight": 4, "min_depth": 5, "max_depth": 7 },
-    { "name": "Landmine", "weight": 1, "min_depth": 5, "max_depth": 7 },
+    {
+      "name": "Firecap Mushroom",
+      "weight": 10,
+      "min_depth": 7,
+      "max_depth": 9
+    },
+    {
+      "name": "Sporecap Mushroom",
+      "weight": 10,
+      "min_depth": 7,
+      "max_depth": 9
+    },
+    {
+      "name": "Deathcap Mushroom",
+      "weight": 7,
+      "min_depth": 7,
+      "max_depth": 9
+    },
+    { "name": "Fungus Man", "weight": 8, "min_depth": 7, "max_depth": 9 },
+    { "name": "Spore Zombie", "weight": 7, "min_depth": 7, "max_depth": 9 },
+    { "name": "Fungal Beast", "weight": 9, "min_depth": 7, "max_depth": 9 },
+    { "name": "Stonefall Trap", "weight": 4, "min_depth": 5, "max_depth": 6 },
+    { "name": "Landmine", "weight": 1, "min_depth": 5, "max_depth": 6 },
     { "name": "Breastplate", "weight": 7, "min_depth": 5, "max_depth": 7 },
+    { "name": "Breastplate +1", "weight": 1, "min_depth": 7, "max_depth": 100 },
     { "name": "War Axe", "weight": 7, "min_depth": 5, "max_depth": 7 },
     { "name": "Methril Shirt", "weight": 1, "min_depth": 5, "max_depth": 7 }
   ],
@@ -173,7 +215,10 @@
       "name": "Hungry Rodents",
       "responses": { "Default": "attack", "Hungry Rodents": "ignore" }
     },
-    { "name": "Wyrm", "responses": { "Default": "attack", "Wyrm": "ignore" } },
+    {
+      "name": "Wyrm",
+      "responses": { "Default": "attack", "Wyrm": "ignore", "Fungi": "ignore" }
+    },
     {
       "name": "Dwarven Remnant",
       "responses": {
@@ -181,6 +226,10 @@
         "Player": "ignore",
         "Dwarven Remnant": "ignore"
       }
+    },
+    {
+      "name": "Fungi",
+      "responses": { "Default": "attack", "Fungi": "ignore", "Wyrm": "ignore" }
     }
   ],
 
@@ -716,6 +765,27 @@
     },
 
     {
+      "name": "Longsword +2",
+      "renderable": {
+        "glyph": "/",
+        "fg": "#FFAAFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "weapon": {
+        "range": "melee",
+        "attribute": "might",
+        "base_damage": "1d8+2",
+        "hit_bonus": 2
+      },
+      "weight_lbs": 1.0,
+      "base_value": 100.0,
+      "initiative_penalty": 0,
+      "vendor_category": "weapon",
+      "magic": { "class": "common", "naming": "Unidentified Longsword" }
+    },
+
+    {
       "name": "Longsword -1",
       "renderable": {
         "glyph": "/",
@@ -813,6 +883,24 @@
       "weight_lbs": 45.0,
       "base_value": 30.0,
       "initiative_penalty": 1.0,
+      "vendor_category": "armor"
+    },
+
+    {
+      "name": "Tower Shield +1",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Shield",
+        "armor_class": 3.0
+      },
+      "weight_lbs": 45.0,
+      "base_value": 30.0,
+      "initiative_penalty": 0.0,
       "vendor_category": "armor"
     },
 
@@ -927,6 +1015,60 @@
     },
 
     {
+      "name": "Leather Pants",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Legs",
+        "armor_class": 0.2
+      },
+      "weight_lbs": 5.0,
+      "base_value": 25.0,
+      "initiative_penalty": 0.2,
+      "vendor_category": "clothes"
+    },
+
+    {
+      "name": "Chain Leggings",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Legs",
+        "armor_class": 0.3
+      },
+      "weight_lbs": 10.0,
+      "base_value": 50.0,
+      "initiative_penalty": 0.3,
+      "vendor_category": "clothes"
+    },
+
+    {
+      "name": "Steel Greaves",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Legs",
+        "armor_class": 0.5
+      },
+      "weight_lbs": 20.0,
+      "base_value": 100.0,
+      "initiative_penalty": 0.5,
+      "vendor_category": "clothes"
+    },
+
+    {
       "name": "Slippers",
       "renderable": {
         "glyph": "[",
@@ -999,6 +1141,25 @@
     },
 
     {
+      "name": "Breastplate +1",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Torso",
+        "armor_class": 4.0
+      },
+      "weight_lbs": 20.0,
+      "base_value": 200.0,
+      "initiative_penalty": 1.0,
+      "vendor_category": "armor",
+      "magic": { "class": "common", "naming": "Unidentified Breastplate" }
+    },
+
+    {
       "name": "Methril Shirt",
       "renderable": {
         "glyph": "[",
@@ -1013,6 +1174,42 @@
       "weight_lbs": 5.0,
       "base_value": 500.0,
       "initiative_penalty": 0.0,
+      "vendor_category": "armor"
+    },
+
+    {
+      "name": "Cloth Cap",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Head",
+        "armor_class": 0.2
+      },
+      "weight_lbs": 0.25,
+      "base_value": 5.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "armor"
+    },
+
+    {
+      "name": "Leather Cap",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Head",
+        "armor_class": 0.4
+      },
+      "weight_lbs": 0.5,
+      "base_value": 10.0,
+      "initiative_penalty": 0.2,
       "vendor_category": "armor"
     },
 
@@ -1035,6 +1232,24 @@
     },
 
     {
+      "name": "Steel Helm",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Head",
+        "armor_class": 2.0
+      },
+      "weight_lbs": 15.0,
+      "base_value": 100.0,
+      "initiative_penalty": 1.0,
+      "vendor_category": "armor"
+    },
+
+    {
       "name": "Leather Boots",
       "renderable": {
         "glyph": "[",
@@ -1049,6 +1264,114 @@
       "weight_lbs": 2.0,
       "base_value": 5.0,
       "initiative_penalty": 0.25,
+      "vendor_category": "clothes"
+    },
+
+    {
+      "name": "Chain Boots",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Feet",
+        "armor_class": 0.3
+      },
+      "weight_lbs": 3.0,
+      "base_value": 10.0,
+      "initiative_penalty": 0.25,
+      "vendor_category": "armor"
+    },
+
+    {
+      "name": "Steel Boots",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Feet",
+        "armor_class": 0.5
+      },
+      "weight_lbs": 5.0,
+      "base_value": 10.0,
+      "initiative_penalty": 0.4,
+      "vendor_category": "armor"
+    },
+
+    {
+      "name": "Cloth Gloves",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#FF9999",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Hands",
+        "armor_class": 0.1
+      },
+      "weight_lbs": 0.5,
+      "base_value": 1.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "clothes"
+    },
+
+    {
+      "name": "Leather Gloves",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#FF9999",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Hands",
+        "armor_class": 0.2
+      },
+      "weight_lbs": 1.0,
+      "base_value": 1.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "clothes"
+    },
+
+    {
+      "name": "Chain Gloves",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#FF9999",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Hands",
+        "armor_class": 0.3
+      },
+      "weight_lbs": 2.0,
+      "base_value": 10.0,
+      "initiative_penalty": 0.2,
+      "vendor_category": "clothes"
+    },
+
+    {
+      "name": "Steel Gloves",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#FF9999",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Hands",
+        "armor_class": 0.5
+      },
+      "weight_lbs": 5.0,
+      "base_value": 10.0,
+      "initiative_penalty": 0.3,
       "vendor_category": "clothes"
     },
 
@@ -1784,6 +2107,146 @@
       "attributes": {},
       "faction": "Dwarven Remnant",
       "level": 3
+    },
+
+    {
+      "name": "Firecap Mushroom",
+      "renderable": {
+        "glyph": "♠",
+        "fg": "#FFAA50",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 3,
+      "movement": "static",
+      "attributes": {},
+      "faction": "Fungi",
+      "level": 1,
+      "abilities": [
+        { "spell": "Explode", "chance": 1.0, "range": 3.0, "min_range": 0.0 }
+      ],
+      "on_death": [
+        { "spell": "Explode", "chance": 1.0, "range": 0.0, "min_range": 0.0 }
+      ]
+    },
+
+    {
+      "name": "Sporecap Mushroom",
+      "renderable": {
+        "glyph": "♠",
+        "fg": "#00AAFF",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 3,
+      "movement": "static",
+      "attributes": {},
+      "faction": "Fungi",
+      "level": 1,
+      "abilities": [
+        {
+          "spell": "ConfusionCloud",
+          "chance": 1.0,
+          "range": 3.0,
+          "min_range": 0.0
+        }
+      ],
+      "on_death": [
+        {
+          "spell": "ConfusionCloud",
+          "chance": 1.0,
+          "range": 0.0,
+          "min_range": 0.0
+        }
+      ]
+    },
+
+    {
+      "name": "Deathcap Mushroom",
+      "renderable": {
+        "glyph": "♠",
+        "fg": "#55FF55",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 3,
+      "movement": "static",
+      "attributes": {},
+      "faction": "Fungi",
+      "level": 1,
+      "abilities": [
+        {
+          "spell": "PoisonCloud",
+          "chance": 1.0,
+          "range": 3.0,
+          "min_range": 0.0
+        }
+      ],
+      "on_death": [
+        {
+          "spell": "PoisonCloud",
+          "chance": 1.0,
+          "range": 0.0,
+          "min_range": 0.0
+        }
+      ]
+    },
+
+    {
+      "name": "Fungus Man",
+      "renderable": {
+        "glyph": "f",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 8,
+      "movement": "random_waypoint",
+      "attributes": {},
+      "faction": "Fungi",
+      "gold": "2d8",
+      "level": 4,
+      "loot_table": "Animal"
+    },
+
+    {
+      "name": "Spore Zombie",
+      "renderable": {
+        "glyph": "z",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 8,
+      "movement": "random_waypoint",
+      "attributes": {},
+      "faction": "Fungi",
+      "gold": "2d8",
+      "level": 5
+    },
+
+    {
+      "name": "Fungal Beast",
+      "renderable": {
+        "glyph": "F",
+        "fg": "#995555",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 6,
+      "movement": "random",
+      "attributes": {},
+      "natural": {
+        "armor_class": 11,
+        "attacks": [{ "name": "bite", "hit_bonus": 0, "damage": "1d4" }]
+      },
+      "faction": "Fungi"
     }
   ],
 
@@ -2086,6 +2549,45 @@
         "damage": "10",
         "area_of_effect": "3",
         "particle": "☼;#00FF00;400.0"
+      }
+    },
+
+    {
+      "name": "Explode",
+      "mana_cost": 1,
+      "effects": {
+        "ranged": "3",
+        "damage": "20",
+        "area_of_effect": "3",
+        "particle": "▒;#FFAA50;400.0",
+        "single_activation": "1",
+        "target_self": "1"
+      }
+    },
+
+    {
+      "name": "ConfusionCloud",
+      "mana_cost": 1,
+      "effects": {
+        "ranged": "3",
+        "confusion": "4",
+        "area_of_effect": "3",
+        "particle": "?;#FFFF00;400.0",
+        "single_activation": "1",
+        "target_self": "1"
+      }
+    },
+
+    {
+      "name": "PoisonCloud",
+      "mana_cost": 1,
+      "effects": {
+        "ranged": "3",
+        "damage_over_time": "4",
+        "area_of_effect": "3",
+        "particle": "*;#00FF00;400.0",
+        "single_activation": "1",
+        "target_self": "1"
       }
     }
   ]

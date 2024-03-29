@@ -150,7 +150,9 @@ pub fn save_game(ecs: &mut World) {
             Slow,
             DamageOverTime,
             SpecialAbilities,
-            TileSize
+            TileSize,
+            OnDeath,
+            AlwaysTargetsSelf
         );
     }
 
@@ -260,7 +262,9 @@ pub fn load_game(ecs: &mut World) {
             Slow,
             DamageOverTime,
             SpecialAbilities,
-            TileSize
+            TileSize,
+            OnDeath,
+            AlwaysTargetsSelf
         );
     }
 

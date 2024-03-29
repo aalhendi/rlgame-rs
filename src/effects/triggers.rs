@@ -1,16 +1,17 @@
 use specs::{Entity, World, WorldExt};
 
 use crate::{
-    gamelog::Gamelog, raws::rawsmaster::find_spell_entity, AttributeBonus, Confusion, Consumable,
-    DamageOverTime, Duration, Hidden, InflictsDamage, KnownSpell, KnownSpells, MagicMapper, Map,
-    Name, Pools, ProvidesFood, ProvidesHealing, ProvidesIdentification, ProvidesMana,
-    ProvidesRemoveCurse, RunState, SingleActivation, Slow, SpawnParticleBurst, SpawnParticleLine,
-    SpellTemplate, TeachesSpell, TeleportTo, TownPortal,
+    gamelog::Gamelog, raws::rawsmaster::find_spell_entity, AlwaysTargetsSelf, AreaOfEffect,
+    AttributeBonus, Confusion, Consumable, DamageOverTime, Duration, Hidden, InflictsDamage,
+    KnownSpell, KnownSpells, MagicMapper, Map, Name, Pools, Position, ProvidesFood,
+    ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, RunState,
+    SingleActivation, Slow, SpawnParticleBurst, SpawnParticleLine, SpellTemplate, TeachesSpell,
+    TeleportTo, TownPortal,
 };
 
 use super::{
     add_effect,
-    targetting::{entity_position, find_item_position},
+    targetting::{aoe_tiles, entity_position, find_item_position},
     EffectType, Targets,
 };
 
@@ -41,6 +42,8 @@ pub fn item_trigger(creator: Option<Entity>, item: Entity, targets: &Targets, ec
 }
 
 pub fn spell_trigger(creator: Option<Entity>, spell: Entity, targets: &Targets, ecs: &mut World) {
+    let mut targeting = targets.clone();
+    let mut self_destruct = false;
     if let Some(template) = ecs.read_storage::<SpellTemplate>().get(spell) {
         let mut pools = ecs.write_storage::<Pools>();
         if let Some(caster) = creator {
@@ -49,9 +52,34 @@ pub fn spell_trigger(creator: Option<Entity>, spell: Entity, targets: &Targets, 
                     pool.mana.current -= template.mana_cost;
                 }
             }
+
+            // Handle self-targeting override
+            if ecs.read_storage::<AlwaysTargetsSelf>().get(spell).is_some() {
+                if let Some(pos) = ecs.read_storage::<Position>().get(caster) {
+                    let map = ecs.fetch::<Map>();
+                    targeting = if let Some(aoe) = ecs.read_storage::<AreaOfEffect>().get(spell) {
+                        Targets::Tiles {
+                            tiles: aoe_tiles(&map, rltk::Point::new(pos.x, pos.y), aoe.radius),
+                        }
+                    } else {
+                        Targets::Tile {
+                            tile_idx: map.xy_idx(pos.x, pos.y) as i32,
+                        }
+                    }
+                }
+            }
         }
+        self_destruct = ecs.read_storage::<SingleActivation>().get(spell).is_some();
     }
-    event_trigger(creator, spell, targets, ecs);
+    event_trigger(creator, spell, &targeting, ecs);
+    match creator {
+        Some(creator) if self_destruct => {
+            ecs.entities()
+                .delete(creator)
+                .expect("Unable to delete owner");
+        }
+        _ => (),
+    }
 }
 
 pub fn trigger(creator: Option<Entity>, trigger: Entity, targets: &Targets, ecs: &mut World) {
