@@ -14,8 +14,9 @@ use rawsmaster::RawMaster;
 use spawn_table_structs::SpawnTableEntry;
 pub mod faction_structs;
 use faction_structs::FactionInfo;
+mod weapon_traits;
 
-use self::spell_structs::Spell;
+use self::{spell_structs::Spell, weapon_traits::WeaponTrait};
 mod spell_structs;
 
 #[derive(Deserialize, Debug, Default)]
@@ -27,6 +28,7 @@ pub struct Raws {
     pub loot_tables: Vec<LootTable>,
     pub faction_table: Vec<FactionInfo>,
     pub spells: Vec<Spell>,
+    pub weapon_traits: Vec<WeaponTrait>,
 }
 
 rltk::embedded_resource!(RAW_FILE, "../../raws/spawns.json");

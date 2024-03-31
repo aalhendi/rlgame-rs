@@ -125,7 +125,7 @@ impl PrefabBuilder {
     // TODO(aalhendi): Refactor
     fn set_tile_from_char(&mut self, ch: char, idx: usize, build_data: &mut BuilderMap) {
         let tile = match ch {
-            ' ' | '@' | 'g' | '^' | '!' | '%' | 'O' | '☼' => Some(TileType::Floor),
+            ' ' | '@' | 'g' | '^' | '!' | '%' | 'O' | '☼' | 'o' | 'e' => Some(TileType::Floor),
             '#' => Some(TileType::Wall),
             '>' => Some(TileType::DownStairs),
             _ => None,
@@ -136,6 +136,7 @@ impl PrefabBuilder {
 
         let spawn = match ch {
             'g' => Some("Goblin".to_string()),
+            'e' => Some("Dark Elf".to_string()),
             //'o' => Some(Monster::Orc), // TODO: Use enum for spawns. to_string() allocs to heap
             'o' => Some("Orc".to_string()),
             'O' => Some("Orc Leader".to_string()),

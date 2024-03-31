@@ -7,7 +7,7 @@ use self::{
     door_placement::DoorPlacement,
     dwarf_fort::dwarf_fort_builder,
     limestone_cavern::{limestone_deep_cavern_builder, limestone_transition_builder},
-    mushroom_forest::mushroom_entrance,
+    mushroom_forest::{mushroom_builder, mushroom_entrance, mushroom_exit},
     room_based_spawner::RoomBasedSpawner,
     room_based_stairs::RoomBasedStairs,
     room_based_starting_position::RoomBasedStartingPosition,
@@ -330,6 +330,8 @@ pub fn level_builder(
         5 => limestone_transition_builder(new_depth, rng, width, height),
         6 => dwarf_fort_builder(new_depth, rng, width, height),
         7 => mushroom_entrance(new_depth, rng, width, height),
+        8 => mushroom_builder(new_depth, rng, width, height),
+        9 => mushroom_exit(new_depth, rng, width, height),
         _ => random_builder(new_depth, rng, width, height),
     }
 }

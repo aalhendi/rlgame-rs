@@ -4,9 +4,10 @@ use crate::{camera::PANE_WIDTH, Map, TileType};
 
 pub fn tile_glyph(idx: usize, map: &Map) -> (FontCharType, RGB, RGB) {
     let (glyph, mut fg, mut bg) = match map.depth {
+        8 | 9 => get_mushroom_glyph(idx, map),
         7 => {
             let (x, _y) = map.idx_xy(idx);
-            if x > map.width - (PANE_WIDTH / 3) {
+            if x > map.width - (PANE_WIDTH as f32 / 2.75) as i32 {
                 get_tile_glyph_default(idx, map)
             } else {
                 get_mushroom_glyph(idx, map)

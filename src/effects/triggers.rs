@@ -36,7 +36,12 @@ pub fn item_trigger(creator: Option<Entity>, item: Entity, targets: &Targets, ec
     let did_something = event_trigger(creator, item, targets, ecs);
 
     // If it was a consumable, then it gets deleted
-    if did_something && ecs.read_storage::<Consumable>().get(item).is_some() {
+    if did_something
+        && ecs
+            .read_storage::<Consumable>()
+            .get(item)
+            .is_some_and(|c| c.charges < 1)
+    {
         ecs.entities().delete(item).expect("Delete Failed");
     }
 }

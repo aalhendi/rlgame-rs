@@ -76,25 +76,10 @@
       "min_depth": 0,
       "max_depth": 100
     },
-    {
-      "name": "Dagger of Venom",
-      "weight": 2,
-      "min_depth": 0,
-      "max_depth": 100
-    },
     { "name": "Dagger", "weight": 3, "min_depth": 0, "max_depth": 100 },
     { "name": "Shield", "weight": 3, "min_depth": 0, "max_depth": 100 },
     { "name": "Longsword", "weight": 2, "min_depth": 3, "max_depth": 100 },
-    { "name": "Longsword +1", "weight": 1, "min_depth": 3, "max_depth": 100 },
-    { "name": "Longsword +2", "weight": 1, "min_depth": 7, "max_depth": 100 },
-    { "name": "Longsword -1", "weight": 1, "min_depth": 3, "max_depth": 100 },
     { "name": "Tower Shield", "weight": 1, "min_depth": 3, "max_depth": 100 },
-    {
-      "name": "Tower Shield +1",
-      "weight": 1,
-      "min_depth": 7,
-      "max_depth": 100
-    },
     { "name": "Leather Armor", "weight": 1, "min_depth": 2, "max_depth": 100 },
     { "name": "Leather Boots", "weight": 1, "min_depth": 2, "max_depth": 100 },
     {
@@ -162,7 +147,6 @@
     { "name": "Stonefall Trap", "weight": 4, "min_depth": 5, "max_depth": 6 },
     { "name": "Landmine", "weight": 1, "min_depth": 5, "max_depth": 6 },
     { "name": "Breastplate", "weight": 7, "min_depth": 5, "max_depth": 7 },
-    { "name": "Breastplate +1", "weight": 1, "min_depth": 7, "max_depth": 100 },
     { "name": "War Axe", "weight": 7, "min_depth": 5, "max_depth": 7 },
     { "name": "Methril Shirt", "weight": 1, "min_depth": 5, "max_depth": 7 }
   ],
@@ -230,6 +214,10 @@
     {
       "name": "Fungi",
       "responses": { "Default": "attack", "Fungi": "ignore", "Wyrm": "ignore" }
+    },
+    {
+      "name": "DarkElf",
+      "responses": { "Default": "attack", "DarkElf": "ignore" }
     }
   ],
 
@@ -676,31 +664,13 @@
       "weight_lbs": 1.0,
       "base_value": 2.0,
       "initiative_penalty": 0,
-      "vendor_category": "weapon"
-    },
-
-    {
-      "name": "Dagger of Venom",
-      "renderable": {
-        "glyph": "/",
-        "fg": "#FFAAAA",
-        "bg": "#000000",
-        "order": 2
-      },
-      "weapon": {
-        "range": "melee",
-        "attribute": "Quickness",
-        "base_damage": "1d4+1",
-        "hit_bonus": 1,
-        "proc_chance": 0.5,
-        "proc_target": "Target",
-        "proc_effects": { "damage_over_time": "2" }
-      },
-      "weight_lbs": 1.0,
-      "base_value": 2.0,
-      "initiative_penalty": -1,
       "vendor_category": "weapon",
-      "magic": { "class": "common", "naming": "Unidentified Dagger" }
+      "template_magic": {
+        "unidentified_name": "Unidentified Dagger",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -720,7 +690,13 @@
       "weight_lbs": 2.0,
       "base_value": 10.0,
       "initiative_penalty": 1,
-      "vendor_category": "weapon"
+      "vendor_category": "weapon",
+      "template_magic": {
+        "unidentified_name": "Unidentified Shortsword",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -740,11 +716,17 @@
       "weight_lbs": 3.0,
       "base_value": 15.0,
       "initiative_penalty": 2,
-      "vendor_category": "weapon"
+      "vendor_category": "weapon",
+      "template_magic": {
+        "unidentified_name": "Unidentified Longsword",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
-      "name": "Longsword +1",
+      "name": "Scimitar",
       "renderable": {
         "glyph": "/",
         "fg": "#FFAAFF",
@@ -754,59 +736,18 @@
       "weapon": {
         "range": "melee",
         "attribute": "might",
-        "base_damage": "1d8+1",
+        "base_damage": "1d6+2",
         "hit_bonus": 1
       },
-      "weight_lbs": 2.0,
-      "base_value": 100.0,
+      "weight_lbs": 2.5,
+      "base_value": 25.0,
       "initiative_penalty": 1,
       "vendor_category": "weapon",
-      "magic": { "class": "common", "naming": "Unidentified Longsword" }
-    },
-
-    {
-      "name": "Longsword +2",
-      "renderable": {
-        "glyph": "/",
-        "fg": "#FFAAFF",
-        "bg": "#000000",
-        "order": 2
-      },
-      "weapon": {
-        "range": "melee",
-        "attribute": "might",
-        "base_damage": "1d8+2",
-        "hit_bonus": 2
-      },
-      "weight_lbs": 1.0,
-      "base_value": 100.0,
-      "initiative_penalty": 0,
-      "vendor_category": "weapon",
-      "magic": { "class": "common", "naming": "Unidentified Longsword" }
-    },
-
-    {
-      "name": "Longsword -1",
-      "renderable": {
-        "glyph": "/",
-        "fg": "#FFAAFF",
-        "bg": "#000000",
-        "order": 2
-      },
-      "weapon": {
-        "range": "melee",
-        "attribute": "might",
-        "base_damage": "1d8-1",
-        "hit_bonus": -1
-      },
-      "weight_lbs": 2.0,
-      "base_value": 100.0,
-      "initiative_penalty": 3,
-      "vendor_category": "weapon",
-      "magic": {
-        "class": "common",
-        "naming": "Unidentified Longsword",
-        "cursed": true
+      "template_magic": {
+        "unidentified_name": "Unidentified Scimitar",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
       }
     },
 
@@ -827,7 +768,13 @@
       "weight_lbs": 4.0,
       "base_value": 10.0,
       "initiative_penalty": 2,
-      "vendor_category": "weapon"
+      "vendor_category": "weapon",
+      "template_magic": {
+        "unidentified_name": "Unidentified Battleaxe",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -847,7 +794,13 @@
       "weight_lbs": 4.0,
       "base_value": 100.0,
       "initiative_penalty": 2,
-      "vendor_category": "weapon"
+      "vendor_category": "weapon",
+      "template_magic": {
+        "unidentified_name": "Unidentified War Axe",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -865,7 +818,13 @@
       "weight_lbs": 5.0,
       "base_value": 3.0,
       "initiative_penalty": 0.5,
-      "vendor_category": "armor"
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Shield",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -883,25 +842,13 @@
       "weight_lbs": 45.0,
       "base_value": 30.0,
       "initiative_penalty": 1.0,
-      "vendor_category": "armor"
-    },
-
-    {
-      "name": "Tower Shield +1",
-      "renderable": {
-        "glyph": "[",
-        "fg": "#00FFFF",
-        "bg": "#000000",
-        "order": 2
-      },
-      "wearable": {
-        "slot": "Shield",
-        "armor_class": 3.0
-      },
-      "weight_lbs": 45.0,
-      "base_value": 30.0,
-      "initiative_penalty": 0.0,
-      "vendor_category": "armor"
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Tower Shield",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -975,7 +922,13 @@
       "weight_lbs": 2.0,
       "base_value": 0.1,
       "initiative_penalty": 2.0,
-      "vendor_category": "junk"
+      "vendor_category": "junk",
+      "template_magic": {
+        "unidentified_name": "Unidentified Cudgel",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1029,7 +982,13 @@
       "weight_lbs": 5.0,
       "base_value": 25.0,
       "initiative_penalty": 0.2,
-      "vendor_category": "clothes"
+      "vendor_category": "clothes",
+      "template_magic": {
+        "unidentified_name": "Unidentified Leather Pants",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1047,7 +1006,37 @@
       "weight_lbs": 10.0,
       "base_value": 50.0,
       "initiative_penalty": 0.3,
-      "vendor_category": "clothes"
+      "vendor_category": "clothes",
+      "template_magic": {
+        "unidentified_name": "Unidentified Chain Leggings",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
+    },
+
+    {
+      "name": "Drow Leggings",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FFFF",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Legs",
+        "armor_class": 0.4
+      },
+      "weight_lbs": 10.0,
+      "base_value": 50.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "clothes",
+      "template_magic": {
+        "unidentified_name": "Unidentified Drow Leggings",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1065,7 +1054,13 @@
       "weight_lbs": 20.0,
       "base_value": 100.0,
       "initiative_penalty": 0.5,
-      "vendor_category": "clothes"
+      "vendor_category": "clothes",
+      "template_magic": {
+        "unidentified_name": "Unidentified Steel Greaves",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1101,7 +1096,13 @@
       "weight_lbs": 15.0,
       "base_value": 10.0,
       "initiative_penalty": 0.5,
-      "vendor_category": "clothes"
+      "vendor_category": "clothes",
+      "template_magic": {
+        "unidentified_name": "Unidentified Leather Armor",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1119,7 +1120,37 @@
       "weight_lbs": 20.0,
       "base_value": 50.0,
       "initiative_penalty": 1.0,
-      "vendor_category": "armor"
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Chainmail Armor",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
+    },
+
+    {
+      "name": "Drow Chain",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Torso",
+        "armor_class": 3.0
+      },
+      "weight_lbs": 5.0,
+      "base_value": 50.0,
+      "initiative_penalty": 0.0,
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Drow Chain",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1137,26 +1168,13 @@
       "weight_lbs": 25.0,
       "base_value": 100.0,
       "initiative_penalty": 2.0,
-      "vendor_category": "armor"
-    },
-
-    {
-      "name": "Breastplate +1",
-      "renderable": {
-        "glyph": "[",
-        "fg": "#00FF00",
-        "bg": "#000000",
-        "order": 2
-      },
-      "wearable": {
-        "slot": "Torso",
-        "armor_class": 4.0
-      },
-      "weight_lbs": 20.0,
-      "base_value": 200.0,
-      "initiative_penalty": 1.0,
       "vendor_category": "armor",
-      "magic": { "class": "common", "naming": "Unidentified Breastplate" }
+      "template_magic": {
+        "unidentified_name": "Unidentified Breastplate",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1174,7 +1192,13 @@
       "weight_lbs": 5.0,
       "base_value": 500.0,
       "initiative_penalty": 0.0,
-      "vendor_category": "armor"
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Dwarf-Steel Shirt",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1210,7 +1234,13 @@
       "weight_lbs": 0.5,
       "base_value": 10.0,
       "initiative_penalty": 0.2,
-      "vendor_category": "armor"
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Leather Cap",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1228,7 +1258,13 @@
       "weight_lbs": 5.0,
       "base_value": 20.0,
       "initiative_penalty": 0.5,
-      "vendor_category": "armor"
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Chain Coif",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1246,7 +1282,13 @@
       "weight_lbs": 15.0,
       "base_value": 100.0,
       "initiative_penalty": 1.0,
-      "vendor_category": "armor"
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Steel Helm",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1264,7 +1306,13 @@
       "weight_lbs": 2.0,
       "base_value": 5.0,
       "initiative_penalty": 0.25,
-      "vendor_category": "clothes"
+      "vendor_category": "clothes",
+      "template_magic": {
+        "unidentified_name": "Unidentified Leather Boots",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1282,7 +1330,37 @@
       "weight_lbs": 3.0,
       "base_value": 10.0,
       "initiative_penalty": 0.25,
-      "vendor_category": "armor"
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Chain Boots",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
+    },
+
+    {
+      "name": "Drow Boots",
+      "renderable": {
+        "glyph": "[",
+        "fg": "#00FF00",
+        "bg": "#000000",
+        "order": 2
+      },
+      "wearable": {
+        "slot": "Feet",
+        "armor_class": 0.4
+      },
+      "weight_lbs": 2.0,
+      "base_value": 10.0,
+      "initiative_penalty": 0.1,
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Drow Boots",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1300,7 +1378,13 @@
       "weight_lbs": 5.0,
       "base_value": 10.0,
       "initiative_penalty": 0.4,
-      "vendor_category": "armor"
+      "vendor_category": "armor",
+      "template_magic": {
+        "unidentified_name": "Unidentified Steel Boots",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1336,7 +1420,13 @@
       "weight_lbs": 1.0,
       "base_value": 1.0,
       "initiative_penalty": 0.1,
-      "vendor_category": "clothes"
+      "vendor_category": "clothes",
+      "template_magic": {
+        "unidentified_name": "Unidentified Leather Gloves",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1354,7 +1444,13 @@
       "weight_lbs": 2.0,
       "base_value": 10.0,
       "initiative_penalty": 0.2,
-      "vendor_category": "clothes"
+      "vendor_category": "clothes",
+      "template_magic": {
+        "unidentified_name": "Unidentified Chain Gloves",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1372,7 +1468,13 @@
       "weight_lbs": 5.0,
       "base_value": 10.0,
       "initiative_penalty": 0.3,
-      "vendor_category": "clothes"
+      "vendor_category": "clothes",
+      "template_magic": {
+        "unidentified_name": "Unidentified Gauntlets",
+        "bonus_min": 1,
+        "bonus_max": 5,
+        "include_cursed": true
+      }
     },
 
     {
@@ -1842,6 +1944,30 @@
       },
       "faction": "Bandits",
       "gold": "1d6"
+    },
+
+    {
+      "name": "Dark Elf",
+      "renderable": {
+        "glyph": "e",
+        "fg": "#FF0000",
+        "bg": "#000000",
+        "order": 1
+      },
+      "blocks_tile": true,
+      "vision_range": 8,
+      "movement": "random_waypoint",
+      "attributes": {},
+      "equipped": [
+        "Scimitar",
+        "Buckler",
+        "Drow Chain",
+        "Drow Leggings",
+        "Drow Boots"
+      ],
+      "faction": "DarkElf",
+      "gold": "3d6",
+      "level": 6
     },
 
     {
@@ -2589,6 +2715,17 @@
         "single_activation": "1",
         "target_self": "1"
       }
+    }
+  ],
+
+  "weapon_traits": [
+    {
+      "name": "Venomous",
+      "effects": { "damage_over_time": "2" }
+    },
+    {
+      "name": "Dazzling",
+      "effects": { "confusion": "2" }
     }
   ]
 }
