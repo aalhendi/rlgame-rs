@@ -1,21 +1,35 @@
 use super::{ParticleLifetime, Position, Renderable, Rltk};
 use specs::prelude::*;
 
-pub fn cull_dead_particles(ecs: &mut World, ctx: &Rltk) {
-    let mut dead_particles: Vec<Entity> = Vec::new();
+pub fn update_particles(ecs: &mut World, ctx: &Rltk) {
+    let mut dead_particles = Vec::new();
     {
+        // Age out particles
         let mut particles = ecs.write_storage::<ParticleLifetime>();
         let entities = ecs.entities();
         for (entity, particle) in (&entities, &mut particles).join() {
+            if let Some(animation) = &mut particle.animation {
+                animation.timer += ctx.frame_time_ms;
+                if animation.timer > animation.step_time
+                    && animation.current_step < animation.path.len() - 2
+                {
+                    animation.current_step += 1;
+
+                    if let Some(pos) = ecs.write_storage::<Position>().get_mut(entity) {
+                        pos.x = animation.path[animation.current_step].x;
+                        pos.y = animation.path[animation.current_step].y;
+                    }
+                }
+            }
+
             particle.lifetime_ms -= ctx.frame_time_ms;
-            if particle.lifetime_ms < 0. {
+            if particle.lifetime_ms < 0.0 {
                 dead_particles.push(entity);
             }
         }
     }
-    for dead_particle in dead_particles.iter() {
-        ecs.delete_entity(*dead_particle)
-            .expect("Unable to delete particle")
+    for dead in dead_particles.iter() {
+        ecs.delete_entity(*dead).expect("Particle will not die");
     }
 }
 
@@ -93,6 +107,7 @@ impl<'a> System<'a> for ParticleSpawnSystem {
                     particle,
                     ParticleLifetime {
                         lifetime_ms: new_particle.lifetime,
+                        animation: None,
                     },
                 )
                 .expect("Unable to insert lifetime");

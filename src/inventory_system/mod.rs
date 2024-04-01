@@ -38,5 +38,5 @@ pub fn obfuscate_name(
     obfuscated_names
         .get(item)
         .map(|obfuscated| obfuscated.name.clone())
-        .unwrap_or_else(|| "Nameless item (bug)".to_string())
+        .unwrap_or_else(|| "Unidentified magic item".to_string())
 }

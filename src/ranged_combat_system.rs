@@ -1,21 +1,22 @@
 use crate::{
     effects::{add_effect, EffectType, Targets},
     gamesystem::skill_bonus,
-    Attributes, EquipmentSlot, NaturalAttackDefense, Pools, Skill, Skills, WeaponAttribute,
+    Attributes, EquipmentSlot, Map, NaturalAttackDefense, Pools, Position, Skill, Skills,
+    WantsToShoot, WeaponAttribute,
 };
 
-use super::{
-    gamelog::Gamelog, Equipped, HungerClock, HungerState, Name, WantsToMelee, Weapon, Wearable,
-};
-use rltk::RandomNumberGenerator;
+use super::{gamelog::Gamelog, Equipped, HungerClock, HungerState, Name, Weapon, Wearable};
+use rltk::{to_cp437, Point, RandomNumberGenerator, RGB};
 use specs::prelude::*;
 
-pub struct MeleeCombatSystem;
+/// NOTE(aalhendi): THIS IS A DIRECT CLONE OF MELEE_COMBAT_SYSTEM. with map, positons and an extra particle effect
+/// TODO(aalhendi): maybe make a generic wants_attack_system. and add melee and ranged
+pub struct RangedCombatSystem;
 
-impl<'a> System<'a> for MeleeCombatSystem {
+impl<'a> System<'a> for RangedCombatSystem {
     type SystemData = (
         Entities<'a>,
-        WriteStorage<'a, WantsToMelee>,
+        WriteStorage<'a, WantsToShoot>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, Attributes>,
         ReadStorage<'a, Skills>,
@@ -27,11 +28,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
         ReadStorage<'a, Pools>,
         ReadStorage<'a, NaturalAttackDefense>,
         WriteExpect<'a, RandomNumberGenerator>,
+        ReadStorage<'a, Position>,
+        ReadExpect<'a, Map>,
     );
     fn run(&mut self, data: Self::SystemData) {
         let (
             entities,
-            mut wants_melee,
+            mut wants_shoot,
             names,
             attributes,
             skills,
@@ -43,11 +46,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
             pools,
             naturals,
             mut rng,
+            positions,
+            map,
         ) = data;
 
-        for (entity, wants_melee, name, attacker_attributes, attacker_skills, attacker_pools) in (
+        for (entity, wants_shoot, name, attacker_attributes, attacker_skills, attacker_pools) in (
             &entities,
-            &wants_melee,
+            &wants_shoot,
             &names,
             &attributes,
             &skills,
@@ -55,15 +60,37 @@ impl<'a> System<'a> for MeleeCombatSystem {
         )
             .join()
         {
-            let target_pools = pools.get(wants_melee.target).unwrap();
-            let target_attributes = attributes.get(wants_melee.target).unwrap();
-            let target_skills = skills.get(wants_melee.target).unwrap();
+            let target_pools = pools.get(wants_shoot.target).unwrap();
+            let target_attributes = attributes.get(wants_shoot.target).unwrap();
+            let target_skills = skills.get(wants_shoot.target).unwrap();
             // if attacker or target is dead, no need to calculate
             if attacker_pools.hit_points.current <= 0 || target_pools.hit_points.current <= 0 {
                 continue;
             }
 
-            let target_name = names.get(wants_melee.target).unwrap();
+            let target_name = names.get(wants_shoot.target).unwrap();
+
+            // Fire projectile effect
+            let apos = positions.get(entity).unwrap();
+            let dpos = positions.get(wants_shoot.target).unwrap();
+            add_effect(
+                None,
+                EffectType::ParticleProjectile {
+                    glyph: to_cp437('*'),
+                    fg: RGB::named(rltk::CYAN),
+                    bg: RGB::named(rltk::BLACK),
+                    lifespan: 300.0,
+                    speed: 50.0,
+                    path: rltk::line2d(
+                        rltk::LineAlg::Bresenham,
+                        Point::new(apos.x, apos.y),
+                        Point::new(dpos.x, dpos.y),
+                    ),
+                },
+                Targets::Tile {
+                    tile_idx: map.xy_idx(apos.x, apos.y) as i32,
+                },
+            );
 
             // Default weapon. (Unarmed)
             // TODO(aalhendi): Refactor into MeleeWeapon::default()?
@@ -124,12 +151,12 @@ impl<'a> System<'a> for MeleeCombatSystem {
             // NOTE: Floats because D&D armor is per set. Here we can equip items seperately.
             let mut armor_item_bonus = 0_f32;
             for (equipment, armor) in (&equipped, &wearables).join() {
-                if equipment.owner == wants_melee.target {
+                if equipment.owner == wants_shoot.target {
                     armor_item_bonus += armor.armor_class;
                 }
             }
 
-            let base_armor_class = match naturals.get(wants_melee.target) {
+            let base_armor_class = match naturals.get(wants_shoot.target) {
                 Some(nat) => nat.armor_class.unwrap_or(10),
                 None => 10,
             };
@@ -150,13 +177,13 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     add_effect(
                         None,
                         EffectType::Particle {
-                            glyph: rltk::to_cp437('‼'),
-                            fg: rltk::RGB::named(rltk::BLUE),
-                            bg: rltk::RGB::named(rltk::BLACK),
+                            glyph: to_cp437('‼'),
+                            fg: RGB::named(rltk::BLUE),
+                            bg: RGB::named(rltk::BLACK),
                             lifespan: 200.0,
                         },
                         Targets::Single {
-                            target: wants_melee.target,
+                            target: wants_shoot.target,
                         },
                     );
                 }
@@ -181,7 +208,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         Some(entity),
                         EffectType::Damage { amount: damage },
                         Targets::Single {
-                            target: wants_melee.target,
+                            target: wants_shoot.target,
                         },
                     );
                     log.entries.push(format!(
@@ -199,7 +226,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                             Targets::Single { target: entity }
                         } else {
                             Targets::Single {
-                                target: wants_melee.target,
+                                target: wants_shoot.target,
                             }
                         };
                         add_effect(
@@ -222,19 +249,19 @@ impl<'a> System<'a> for MeleeCombatSystem {
                     add_effect(
                         None,
                         EffectType::Particle {
-                            glyph: rltk::to_cp437('‼'),
-                            fg: rltk::RGB::named(rltk::CYAN),
-                            bg: rltk::RGB::named(rltk::BLACK),
+                            glyph: to_cp437('‼'),
+                            fg: RGB::named(rltk::CYAN),
+                            bg: RGB::named(rltk::BLACK),
                             lifespan: 200.0,
                         },
                         Targets::Single {
-                            target: wants_melee.target,
+                            target: wants_shoot.target,
                         },
                     );
                 }
             }
         }
 
-        wants_melee.clear();
+        wants_shoot.clear();
     }
 }

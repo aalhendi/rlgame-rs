@@ -29,14 +29,14 @@ pub enum EffectType {
         bg: rltk::RGB,
         lifespan: f32,
     },
-    // ParticleProjectile {
-    //     glyph: rltk::FontCharType,
-    //     fg: rltk::RGB,
-    //     bg: rltk::RGB,
-    //     lifespan: f32,
-    //     speed: f32,
-    //     path: Vec<rltk::Point>,
-    // },
+    ParticleProjectile {
+        glyph: rltk::FontCharType,
+        fg: rltk::RGB,
+        bg: rltk::RGB,
+        lifespan: f32,
+        speed: f32,
+        path: Vec<rltk::Point>,
+    },
     EntityDeath,
     ItemUse {
         item: Entity,
@@ -164,6 +164,7 @@ fn affect_tile(ecs: &mut World, effect: &mut EffectSpawner, tile_idx: i32) {
     match effect.effect_type {
         EffectType::Bloodstain => damage::bloodstain(ecs, tile_idx),
         EffectType::Particle { .. } => particles::particle_to_tile(ecs, tile_idx, effect),
+        EffectType::ParticleProjectile { .. } => particles::projectile(ecs, tile_idx, effect),
         _ => (),
     }
 }
@@ -195,8 +196,8 @@ fn affect_entity(ecs: &mut World, effect: &mut EffectSpawner, target: Entity) {
         EffectType::AttributeEffect { .. } => damage::attribute_effect(ecs, effect, target),
         EffectType::Slow { .. } => damage::slow(ecs, effect, target),
         EffectType::DamageOverTime { .. } => damage::damage_over_time(ecs, effect, target),
-        // EffectType::ParticleProjectile { .. }
-        EffectType::ItemUse { .. }
+        EffectType::ParticleProjectile { .. }
+        | EffectType::ItemUse { .. }
         | EffectType::SpellUse { .. }
         | EffectType::TriggerFire { .. } => (),
     }

@@ -177,7 +177,7 @@ pub enum WeaponAttribute {
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
-pub struct MeleeWeapon {
+pub struct Weapon {
     pub attribute: WeaponAttribute,
     pub damage_n_dice: i32,
     pub damage_die_type: i32,
@@ -185,6 +185,7 @@ pub struct MeleeWeapon {
     pub hit_bonus: i32,
     pub proc_chance: Option<f32>,
     pub proc_target: Option<String>,
+    pub range: Option<i32>,
 }
 
 #[derive(Component, Serialize, Deserialize, Clone)]
@@ -205,6 +206,15 @@ pub trait Owned {
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct ParticleLifetime {
     pub lifetime_ms: f32,
+    pub animation: Option<ParticleAnimation>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ParticleAnimation {
+    pub step_time: f32,
+    pub path: Vec<Point>,
+    pub current_step: usize,
+    pub timer: f32,
 }
 
 #[derive(Serialize, Deserialize, Copy, Clone, PartialEq)]
@@ -527,3 +537,11 @@ pub struct OnDeath {
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct AlwaysTargetsSelf {}
+
+#[derive(Component, Debug, Serialize, Deserialize, Clone)]
+pub struct Target {}
+
+#[derive(Component, Debug, ConvertSaveload, Clone)]
+pub struct WantsToShoot {
+    pub target: Entity,
+}

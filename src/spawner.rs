@@ -138,6 +138,7 @@ pub fn player(ecs: &mut World, player_pos: Position) -> Entity {
         SpawnType::Equipped { by: player },
     );
     spawn_named_entity(raws, ecs, "Old Boots", SpawnType::Equipped { by: player });
+    spawn_named_entity(raws, ecs, "Shortbow", SpawnType::Carried { by: player });
 
     // Starting hangover
     ecs.create_entity()

@@ -1,9 +1,11 @@
+use std::cmp::Ordering;
+
 use crate::{
     camera::{self, PANE_WIDTH},
     dungeon::MasterDungeonMap,
     raws::{rawsmaster::get_vendor_items, RAWS},
     spatial, Attribute, Attributes, Consumable, CursedItem, Duration, Item, KnownSpells, MagicItem,
-    MagicItemClass, ObfuscatedName, Pools, StatusEffect, Vendor, VendorMode,
+    MagicItemClass, ObfuscatedName, Pools, StatusEffect, Vendor, VendorMode, Weapon,
 };
 
 use super::{
@@ -108,11 +110,35 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // Wearables / Equipped
     let mut y = 13; // Starting pt
     let equipped = ecs.read_storage::<Equipped>();
+    let weapons = ecs.read_storage::<Weapon>();
     for (entity, equipped_by) in (&entities, &equipped).join() {
         if equipped_by.owner == *player_entity {
             let name = &get_item_display_name(ecs, entity);
             ctx.print_color(50, y, get_item_color(ecs, entity), black, name);
             y += 1;
+
+            if let Some(weapon) = weapons.get(entity) {
+                let mut weapon_info = match weapon.damage_bonus.cmp(&0) {
+                    Ordering::Less => format!(
+                        "┤ {} ({}d{}{})",
+                        &name, weapon.damage_n_dice, weapon.damage_die_type, weapon.damage_bonus
+                    ),
+                    Ordering::Equal => format!(
+                        "┤ {} ({}d{})",
+                        &name, weapon.damage_n_dice, weapon.damage_die_type
+                    ),
+                    Ordering::Greater => format!(
+                        "┤ {} ({}d{}+{})",
+                        &name, weapon.damage_n_dice, weapon.damage_die_type, weapon.damage_bonus
+                    ),
+                };
+
+                if let Some(range) = weapon.range {
+                    weapon_info += &format!(" (range: {range}, F to fire, V cycle targets)");
+                }
+                weapon_info += " ├";
+                ctx.print_color(3, 45, yellow, black, &weapon_info);
+            }
         }
     }
 
@@ -199,9 +225,9 @@ fn draw_attribute(name: &str, attribute: &Attribute, y: i32, ctx: &mut Rltk) {
     let attr_gray: RGB = RGB::from_hex("#CCCCCC").expect("Couldn't parse color from hex.");
     let (modifiers, base, bonus) = (attribute.modifiers, attribute.base, attribute.bonus);
     let color = match modifiers.cmp(&0) {
-        std::cmp::Ordering::Less => RGB::named(rltk::RED),
-        std::cmp::Ordering::Equal => RGB::named(rltk::WHITE),
-        std::cmp::Ordering::Greater => RGB::named(rltk::GREEN),
+        Ordering::Less => RGB::named(rltk::RED),
+        Ordering::Equal => RGB::named(rltk::WHITE),
+        Ordering::Greater => RGB::named(rltk::GREEN),
     };
 
     // Name
@@ -272,27 +298,27 @@ fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
             let mut tip_text = String::new();
 
             match attr.might.bonus.cmp(&0) {
-                std::cmp::Ordering::Less => tip_text += "Weak. ",
-                std::cmp::Ordering::Equal => (),
-                std::cmp::Ordering::Greater => tip_text += "Strong. ",
+                Ordering::Less => tip_text += "Weak. ",
+                Ordering::Equal => (),
+                Ordering::Greater => tip_text += "Strong. ",
             }
 
             match attr.quickness.bonus.cmp(&0) {
-                std::cmp::Ordering::Less => tip_text += "Clumsy. ",
-                std::cmp::Ordering::Equal => (),
-                std::cmp::Ordering::Greater => tip_text += "Agile. ",
+                Ordering::Less => tip_text += "Clumsy. ",
+                Ordering::Equal => (),
+                Ordering::Greater => tip_text += "Agile. ",
             }
 
             match attr.fitness.bonus.cmp(&0) {
-                std::cmp::Ordering::Less => tip_text += "Unhealthy. ",
-                std::cmp::Ordering::Equal => (),
-                std::cmp::Ordering::Greater => tip_text += "Healthy. ",
+                Ordering::Less => tip_text += "Unhealthy. ",
+                Ordering::Equal => (),
+                Ordering::Greater => tip_text += "Healthy. ",
             }
 
             match attr.intelligence.bonus.cmp(&0) {
-                std::cmp::Ordering::Less => tip_text += "Unintelligent. ",
-                std::cmp::Ordering::Equal => (),
-                std::cmp::Ordering::Greater => tip_text += "Smart. ",
+                Ordering::Less => tip_text += "Unintelligent. ",
+                Ordering::Equal => (),
+                Ordering::Greater => tip_text += "Smart. ",
             }
 
             if tip_text.is_empty() {
@@ -965,37 +991,34 @@ pub fn get_item_color(ecs: &World, item: Entity) -> RGB {
 // Outside ECS function
 pub fn get_item_display_name(ecs: &World, item: Entity) -> String {
     // Early return for items without a name
-    let name_storage = ecs.read_storage::<Name>();
-    let name = match name_storage.get(item) {
-        Some(name) => name,
-        None => return "Nameless item (bug)".to_string(),
+    let name = if let Some(name) = ecs.read_storage::<Name>().get(item) {
+        name.name.clone()
+    } else {
+        return "Nameless item (bug)".to_string();
     };
 
     // Non-magic items just return their name
     if ecs.read_storage::<MagicItem>().get(item).is_none() {
-        return name.name.clone();
+        return name;
     }
 
     // For magic items, check if they are identified
-    if ecs
-        .fetch::<MasterDungeonMap>()
-        .identified_items
-        .contains(&name.name)
-    {
+    let dm = ecs.fetch::<MasterDungeonMap>();
+    if dm.identified_items.contains(&name) {
         if let Some(c) = ecs.read_storage::<Consumable>().get(item) {
             if c.max_charges > 1 {
-                return format!("{} ({})", name.name.clone(), c.charges).to_string();
-            } else {
-                return name.name.clone();
+                return format!("{} ({})", name, c.charges);
             }
         }
+        return name;
     }
 
     // Return the obfuscated name if available, else a default message
-    ecs.read_storage::<ObfuscatedName>()
-        .get(item)
-        .map(|obfuscated| obfuscated.name.clone())
-        .unwrap_or_else(|| "Nameless item (bug)".to_string())
+    if let Some(obfuscated) = ecs.read_storage::<ObfuscatedName>().get(item) {
+        obfuscated.name.clone()
+    } else {
+        "Unidentified magic item".to_string()
+    }
 }
 
 pub fn remove_curse_menu(gs: &mut State, ctx: &mut Rltk) -> (ItemMenuResult, Option<Entity>) {

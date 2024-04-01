@@ -98,14 +98,19 @@ const ORC_CAMP_TXT: &str = "
 pub const DROW_ENTRY: PrefabSection = PrefabSection {
     template: DROW_ENTRY_TXT,
     width: 12,
-    height: 10,
+    height: 11,
     placement: (HorizontalPlacement::Center, VerticalPlacement::Center),
 };
 
 const DROW_ENTRY_TXT: &str = "
-            
- ######### 
-    e     # 
- ######### 
+           
+ ##########
+ #        #
+ #   >    #
+ #        #
+ #e       #
+    e     #
+ #e       #
+ ##########
             
 ";

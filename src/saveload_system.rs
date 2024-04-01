@@ -111,7 +111,7 @@ pub fn save_game(ecs: &mut World) {
             Attributes,
             Skills,
             Pools,
-            MeleeWeapon,
+            Weapon,
             Wearable,
             NaturalAttackDefense,
             LootTable,
@@ -152,7 +152,9 @@ pub fn save_game(ecs: &mut World) {
             SpecialAbilities,
             TileSize,
             OnDeath,
-            AlwaysTargetsSelf
+            AlwaysTargetsSelf,
+            Target,
+            WantsToShoot
         );
     }
 
@@ -225,7 +227,7 @@ pub fn load_game(ecs: &mut World) {
             Attributes,
             Skills,
             Pools,
-            MeleeWeapon,
+            Weapon,
             Wearable,
             NaturalAttackDefense,
             LootTable,
@@ -264,7 +266,9 @@ pub fn load_game(ecs: &mut World) {
             SpecialAbilities,
             TileSize,
             OnDeath,
-            AlwaysTargetsSelf
+            AlwaysTargetsSelf,
+            Target,
+            WantsToShoot
         );
     }
 

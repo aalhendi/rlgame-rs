@@ -11,15 +11,20 @@ use crate::raws::rawsmaster::find_spell_entity;
 use crate::raws::RAWS;
 use crate::spatial;
 use crate::Consumable;
+use crate::Equipped;
 use crate::Faction;
 use crate::InBackpack;
 use crate::KnownSpells;
+use crate::Name;
 use crate::Pools;
 use crate::Ranged;
+use crate::Target;
 use crate::Vendor;
 use crate::VendorMode;
 use crate::WantsToCastSpell;
+use crate::WantsToShoot;
 use crate::WantsToUseItem;
+use crate::Weapon;
 use rltk::{Point, Rltk, VirtualKeyCode};
 use specs::prelude::*;
 
@@ -201,6 +206,13 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             Numpad3 | N => try_move_player(1, 1, &mut gs.ecs),
             Numpad1 | B => try_move_player(-1, 1, &mut gs.ecs),
             Numpad9 | U => try_move_player(1, -1, &mut gs.ecs),
+
+            // Ranged
+            V => {
+                cycle_target(&mut gs.ecs);
+                RunState::AwaitingInput
+            }
+            F => fire_on_target(&mut gs.ecs),
 
             // Item
             G => {
@@ -425,4 +437,128 @@ fn skip_turn(ecs: &mut World) -> RunState {
         }
     }
     RunState::Ticking
+}
+
+fn get_player_target_list(ecs: &mut World) -> Vec<(f32, Entity)> {
+    let mut possible_targets = Vec::new();
+    let viewsheds = ecs.read_storage::<Viewshed>();
+    let player_entity = ecs.fetch::<Entity>();
+    let equipped = ecs.read_storage::<Equipped>();
+    let weapon = ecs.read_storage::<Weapon>();
+    let map = ecs.fetch::<Map>();
+    let positions = ecs.read_storage::<Position>();
+    let factions = ecs.read_storage::<Faction>();
+    for (equipped, weapon) in (&equipped, &weapon).join() {
+        if equipped.owner != *player_entity || weapon.range.is_none() {
+            continue;
+        }
+
+        let maybe_vs = viewsheds.get(*player_entity);
+        if maybe_vs.is_none() {
+            continue;
+        }
+        let vs = maybe_vs.unwrap();
+        let range = weapon.range.unwrap();
+        let ppos = positions.get(*player_entity).unwrap();
+
+        for tile_point in vs.visible_tiles.iter() {
+            let tile_idx = map.xy_idx(tile_point.x, tile_point.y);
+            let distance_to_target = rltk::DistanceAlg::Pythagoras
+                .distance2d(*tile_point, rltk::Point::new(ppos.x, ppos.y));
+            if distance_to_target < range as f32 {
+                spatial::for_each_tile_content(tile_idx, |possible_target| {
+                    if possible_target != *player_entity && factions.get(possible_target).is_some()
+                    {
+                        possible_targets.push((distance_to_target, possible_target));
+                    }
+                });
+            }
+        }
+    }
+
+    possible_targets.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+    possible_targets
+}
+
+pub fn end_turn_targeting(ecs: &mut World) {
+    let possible_targets = get_player_target_list(ecs);
+    let mut targets = ecs.write_storage::<Target>();
+    targets.clear();
+
+    if possible_targets.is_empty() {
+        return;
+    }
+
+    targets
+        .insert(possible_targets[0].1, Target {})
+        .expect("Insert fail");
+}
+
+// finds index of current target in current targeting list. If multiple targets, selects next one in list.
+// If at end of list, moves back to beginning.
+fn cycle_target(ecs: &mut World) {
+    let possible_targets = get_player_target_list(ecs);
+    let mut targets = ecs.write_storage::<Target>();
+    let entities = ecs.entities();
+
+    // Find the current target entity, if any
+    let current_target = (&entities, &targets).join().next().map(|(e, _)| e);
+
+    // No targets
+    if current_target.is_none() || possible_targets.is_empty() {
+        return;
+    }
+
+    let current_target = current_target.unwrap();
+    targets.clear();
+
+    // If there's only one possible target, set it as the current target
+    if possible_targets.len() == 1 {
+        targets
+            .insert(possible_targets[0].1, Target {})
+            .expect("Insert failed");
+        return;
+    }
+
+    // If there's a current target and more than one possible target
+    // Find the index of the current target in the possible targets list
+    if let Some(index) = possible_targets
+        .iter()
+        .position(|(_, e)| *e == current_target)
+    {
+        // Cycle to the next target in the list
+        let next_index = (index + 1) % possible_targets.len();
+        targets
+            .insert(possible_targets[next_index].1, Target {})
+            .expect("Insert failed");
+    }
+}
+
+fn fire_on_target(ecs: &mut World) -> RunState {
+    let targets = ecs.read_storage::<Target>();
+    let entities = ecs.entities();
+    let mut current_target = None;
+    let mut log = ecs.fetch_mut::<Gamelog>();
+
+    for (e, _t) in (&entities, &targets).join() {
+        current_target = Some(e);
+    }
+
+    if let Some(target) = current_target {
+        let player_entity = ecs.fetch::<Entity>();
+        let mut shoot_store = ecs.write_storage::<WantsToShoot>();
+        let names = ecs.read_storage::<Name>();
+        if let Some(name) = names.get(target) {
+            log.entries.push(format!("You fire at {}", name.name));
+        }
+        shoot_store
+            .insert(*player_entity, WantsToShoot { target })
+            .expect("Insert failed");
+
+        RunState::Ticking
+    } else {
+        log.entries
+            .push("You don't have a target selected!".to_string());
+        RunState::AwaitingInput
+    }
 }

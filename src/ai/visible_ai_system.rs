@@ -3,8 +3,8 @@ use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect
 
 use crate::{
     raws::{faction_structs::Reaction, rawsmaster::faction_reaction, RAWS},
-    spatial, Chasing, Faction, Map, MyTurn, Name, Position, SpecialAbilities, SpellTemplate,
-    Viewshed, WantsToApproach, WantsToCastSpell, WantsToFlee,
+    spatial, Chasing, Equipped, Faction, Map, MyTurn, Name, Position, SpecialAbilities,
+    SpellTemplate, Viewshed, WantsToApproach, WantsToCastSpell, WantsToFlee, WantsToShoot, Weapon,
 };
 
 pub struct VisibleAI;
@@ -26,6 +26,9 @@ impl<'a> System<'a> for VisibleAI {
         WriteStorage<'a, WantsToCastSpell>,
         ReadStorage<'a, Name>,
         ReadStorage<'a, SpellTemplate>,
+        ReadStorage<'a, Weapon>,
+        WriteStorage<'a, WantsToShoot>,
+        ReadStorage<'a, Equipped>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
@@ -45,6 +48,9 @@ impl<'a> System<'a> for VisibleAI {
             mut casting,
             names,
             spells,
+            weapons,
+            mut wants_shoot,
+            equipped,
         ) = data;
 
         for (entity, _turn, my_faction, pos, viewshed) in
@@ -69,11 +75,11 @@ impl<'a> System<'a> for VisibleAI {
                 match reaction {
                     // TODO(aalhendi): Refactor!
                     Reaction::Attack => {
+                        let (end_x, end_y) = map.idx_xy(tgt_idx);
+                        let end_point = Point::new(end_x, end_y);
+                        let range =
+                            DistanceAlg::Pythagoras.distance2d(Point::new(pos.x, pos.y), end_point);
                         if let Some(abilities) = abilities.get(entity) {
-                            let (end_x, end_y) = map.idx_xy(tgt_idx);
-                            let end_point = Point::new(end_x, end_y);
-                            let range = DistanceAlg::Pythagoras
-                                .distance2d(Point::new(pos.x, pos.y), end_point);
                             for ability in abilities.abilities.iter() {
                                 if range < ability.min_range
                                     || range > ability.range
@@ -98,6 +104,19 @@ impl<'a> System<'a> for VisibleAI {
                                     )
                                     .expect("Unable to insert");
                                 done = true;
+                            }
+                        }
+
+                        if !done {
+                            for (weapon, equip) in (&weapons, &equipped).join() {
+                                if let Some(wrange) = weapon.range {
+                                    if equip.owner == entity && wrange >= range as i32 {
+                                        wants_shoot
+                                            .insert(entity, WantsToShoot { target: tgt_entity })
+                                            .expect("Insert fail");
+                                        done = true;
+                                    }
+                                }
                             }
                         }
 

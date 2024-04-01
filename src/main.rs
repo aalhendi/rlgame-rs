@@ -6,6 +6,7 @@ use ai::{
 use encumbrance_system::EncumbranceSystem;
 use gui::VendorResult;
 use movement_system::MovementSystem;
+use ranged_combat_system::RangedCombatSystem;
 use raws::{
     rawsmaster::{spawn_named_item, SpawnType},
     RAWS,
@@ -64,8 +65,9 @@ mod ai;
 mod effects;
 mod movement_system;
 pub mod spatial;
+mod ranged_combat_system;
 
-const SHOW_MAPGEN_VISUALIZER: bool = true;
+const SHOW_MAPGEN_VISUALIZER: bool = false;
 const SHOW_FPS: bool = true;
 
 #[derive(PartialEq, Copy, Clone)]
@@ -222,6 +224,9 @@ impl State {
         let mut melee_combat_system = MeleeCombatSystem;
         melee_combat_system.run_now(&self.ecs);
 
+        let mut ranged_combat_system = RangedCombatSystem;
+        ranged_combat_system.run_now(&self.ecs);
+
         let mut item_collection_system = ItemCollectionSystem;
         item_collection_system.run_now(&self.ecs);
 
@@ -262,7 +267,7 @@ impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         let mut newrunstate = { *self.ecs.fetch::<RunState>() };
         ctx.cls();
-        particle_system::cull_dead_particles(&mut self.ecs, ctx);
+        particle_system::update_particles(&mut self.ecs, ctx);
 
         // Either draw Main Menu or draw map
         match newrunstate {
@@ -285,12 +290,17 @@ impl GameState for State {
                 newrunstate = player_input(self, ctx);
             }
             RunState::Ticking => {
+                let mut should_change_target = false;
+
                 // runs all initiative cycles until it's the player's turn
                 while newrunstate == RunState::Ticking {
                     self.run_systems();
                     self.ecs.maintain();
                     match *self.ecs.fetch::<RunState>() {
-                        RunState::AwaitingInput => newrunstate = RunState::AwaitingInput,
+                        RunState::AwaitingInput => {
+                            newrunstate = RunState::AwaitingInput;
+                            should_change_target = true;
+                        }
                         RunState::TownPortal => newrunstate = RunState::TownPortal,
                         RunState::ShowRemoveCurse => newrunstate = RunState::ShowRemoveCurse,
                         RunState::ShowIdentify => newrunstate = RunState::ShowIdentify,
@@ -302,6 +312,9 @@ impl GameState for State {
                         }
                         _ => newrunstate = RunState::Ticking,
                     }
+                }
+                if should_change_target {
+                    player::end_turn_targeting(&mut self.ecs);
                 }
             }
             RunState::ShowDropItem => {
@@ -675,7 +688,7 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Equipped>();
     gs.ecs.register::<SimpleMarker<IsSerialized>>();
     gs.ecs.register::<SerializationHelper>();
-    gs.ecs.register::<MeleeWeapon>();
+    gs.ecs.register::<Weapon>();
     gs.ecs.register::<Wearable>();
     gs.ecs.register::<ParticleLifetime>();
     gs.ecs.register::<HungerClock>();
@@ -731,6 +744,8 @@ fn main() -> rltk::BError {
     gs.ecs.register::<TileSize>();
     gs.ecs.register::<OnDeath>();
     gs.ecs.register::<AlwaysTargetsSelf>();
+    gs.ecs.register::<Target>();
+    gs.ecs.register::<WantsToShoot>();
 
     gs.ecs.insert(SimpleMarkerAllocator::<IsSerialized>::new());
     raws::load_raws();

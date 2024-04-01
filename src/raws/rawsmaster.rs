@@ -2,8 +2,8 @@ use super::{faction_structs::Reaction, spawn_table_structs::SpawnTableEntry, Raw
 use crate::{
     components::{
         AreaOfEffect, BlocksTile, BlocksVisibility, Confusion, Consumable, Door, EntryTrigger,
-        EquipmentSlot, Equippable, Hidden, InflictsDamage, Item, MagicMapper, MeleeWeapon, Name,
-        Position, ProvidesFood, ProvidesHealing, Quips, Ranged, SingleActivation, Viewshed,
+        EquipmentSlot, Equippable, Hidden, InflictsDamage, Item, MagicMapper, Name, Position,
+        ProvidesFood, ProvidesHealing, Quips, Ranged, SingleActivation, Viewshed, Weapon,
     },
     dungeon::MasterDungeonMap,
     gamesystem::{attr_bonus, mana_at_level, npc_hp},
@@ -186,11 +186,11 @@ impl RawMaster {
             let final_bonus = plus + nmw.bonus;
             match final_bonus.cmp(&0) {
                 Ordering::Less => {
-                    weapon.base_damage = format!("{}d{}-{}", n, die, i32::abs(final_bonus))
+                    weapon.base_damage = format!("{n}d{die}{final_bonus}"); // - sign included in negatives
                 }
                 Ordering::Equal => (),
                 Ordering::Greater => {
-                    weapon.base_damage = format!("{}d{}+{}", n, die, final_bonus);
+                    weapon.base_damage = format!("{n}d{die}+{final_bonus}");
                 }
             }
         }
@@ -417,7 +417,7 @@ pub fn spawn_named_item(
         });
 
         let (n_dice, die_type, bonus) = parse_dice_string(&weapon.base_damage);
-        let mut wpn = MeleeWeapon {
+        let mut wpn = Weapon {
             attribute: WeaponAttribute::Might,
             damage_n_dice: n_dice,
             damage_die_type: die_type,
@@ -425,6 +425,11 @@ pub fn spawn_named_item(
             hit_bonus: weapon.hit_bonus,
             proc_chance: weapon.proc_chance,
             proc_target: weapon.proc_target.clone(),
+            range: if weapon.range == "melee" {
+                None
+            } else {
+                Some(weapon.range.parse::<i32>().expect("Not a number"))
+            },
         };
 
         match weapon.attribute.as_str() {
