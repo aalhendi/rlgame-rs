@@ -1,7 +1,7 @@
 use specs::{Entity, World, WorldExt};
 
 use crate::{
-    gamelog::Gamelog, raws::rawsmaster::find_spell_entity, AlwaysTargetsSelf, AreaOfEffect,
+    gamelog::Logger, raws::rawsmaster::find_spell_entity, AlwaysTargetsSelf, AreaOfEffect,
     AttributeBonus, Confusion, Consumable, DamageOverTime, Duration, Hidden, InflictsDamage,
     KnownSpell, KnownSpells, MagicMapper, Map, Name, Pools, Position, ProvidesFood,
     ProvidesHealing, ProvidesIdentification, ProvidesMana, ProvidesRemoveCurse, RunState,
@@ -21,11 +21,10 @@ pub fn item_trigger(creator: Option<Entity>, item: Entity, targets: &Targets, ec
         match c.charges.cmp(&1) {
             std::cmp::Ordering::Less => {
                 // Cancel
-                let mut gamelog = ecs.fetch_mut::<Gamelog>();
-                gamelog.entries.push(format!(
-                    "{} is out of charges!",
-                    ecs.read_storage::<Name>().get(item).unwrap().name
-                ));
+                Logger::new()
+                    .cyan(&ecs.read_storage::<Name>().get(item).unwrap().name)
+                    .white("is out of charges!")
+                    .log();
                 return;
             }
             std::cmp::Ordering::Equal | std::cmp::Ordering::Greater => c.charges -= 1,
@@ -112,7 +111,6 @@ fn event_trigger(
     ecs: &mut World,
 ) -> bool {
     let mut did_something = false;
-    let mut gamelog = ecs.fetch_mut::<Gamelog>();
 
     // Simple particle spawn
     if let Some(part) = ecs.read_storage::<SpawnParticleBurst>().get(entity) {
@@ -156,18 +154,17 @@ fn event_trigger(
     if ecs.read_storage::<ProvidesFood>().get(entity).is_some() {
         add_effect(creator, EffectType::WellFed, targets.clone());
         let names = ecs.read_storage::<Name>();
-        gamelog
-            .entries
-            .push(format!("You eat the {}.", names.get(entity).unwrap().name));
+        Logger::new()
+            .white("You eat the")
+            .cyan(&names.get(entity).unwrap().name)
+            .log();
         did_something = true;
     }
 
     // Magic mapper
     if ecs.read_storage::<MagicMapper>().get(entity).is_some() {
         let mut runstate = ecs.fetch_mut::<RunState>();
-        gamelog
-            .entries
-            .push("The map is revealed to you!".to_string());
+        Logger::new().white("The map is revealed to you!").log();
         *runstate = RunState::MagicMapReveal { row: 0 };
         did_something = true;
     }
@@ -198,13 +195,11 @@ fn event_trigger(
     if ecs.read_storage::<TownPortal>().get(entity).is_some() {
         let map = ecs.fetch::<Map>();
         if map.depth == 1 {
-            gamelog
-                .entries
-                .push("You are already in town, so the scroll does nothing.".to_string());
+            Logger::new()
+                .white("You are already in town, so the scroll does nothing.")
+                .log();
         } else {
-            gamelog
-                .entries
-                .push("You are telported back to town!".to_string());
+            Logger::new().white("You are telported back to town!").log();
             let mut runstate = ecs.fetch_mut::<RunState>();
             *runstate = RunState::TownPortal;
             did_something = true;

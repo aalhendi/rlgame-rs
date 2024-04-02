@@ -7,7 +7,7 @@ use specs::{
 use specs_derive::*;
 use std::{collections::HashMap, convert::Infallible as NoError};
 
-use crate::map;
+use crate::{gamelog::LogFragment, map};
 
 #[derive(Component, ConvertSaveload, Clone, Default, Copy)]
 pub struct Position {
@@ -140,6 +140,7 @@ pub struct SerializationHelper {
 #[derive(Component, Serialize, Deserialize, Clone)]
 pub struct DMSerializationHelper {
     pub map: map::dungeon::MasterDungeonMap,
+    pub log: Vec<Vec<LogFragment>>,
 }
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]

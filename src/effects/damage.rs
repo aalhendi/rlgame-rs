@@ -5,7 +5,7 @@ use specs::{
 };
 
 use crate::{
-    gamelog::Gamelog,
+    gamelog::Logger,
     gamesystem::{mana_at_level, player_hp_at_level},
     spatial, Attributes, Confusion, DamageOverTime, Duration, EquipmentChanged, IsSerialized, Map,
     Name, Player, Pools, Skills, Slow, StatusEffect,
@@ -82,7 +82,6 @@ pub fn death(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
             return;
         }
 
-        let mut log = ecs.fetch_mut::<Gamelog>();
         let player_stats = pools.get_mut(source).unwrap();
         let player_attributes = attributes.get_mut(source).unwrap();
         player_stats.xp += xp_gain;
@@ -90,10 +89,12 @@ pub fn death(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
         if player_stats.xp >= player_stats.level * 1000 {
             // We've gone up a level!
             player_stats.level += 1;
-            log.entries.push(format!(
-                "Congratulations, you are now level {lvl}",
-                lvl = player_stats.level
-            ));
+            Logger::new()
+                .magenta(format!(
+                    "Congratulations, you are now level {}",
+                    player_stats.level
+                ))
+                .log();
 
             // Improve a random attribute
             let mut rng = ecs.fetch_mut::<RandomNumberGenerator>();
@@ -101,22 +102,22 @@ pub fn death(ecs: &mut World, effect: &EffectSpawner, target: Entity) {
             match attr_to_boost {
                 1 => {
                     player_attributes.might.base += 1;
-                    log.entries.push("You feel stronger!".to_string());
+                    Logger::new().green("You feel stronger!").log();
                 }
 
                 2 => {
                     player_attributes.fitness.base += 1;
-                    log.entries.push("You feel healthier!".to_string());
+                    Logger::new().green("You feel healther!").log();
                 }
 
                 3 => {
                     player_attributes.quickness.base += 1;
-                    log.entries.push("You feel quicker!".to_string());
+                    Logger::new().green("You feel quicker!").log();
                 }
 
                 _ => {
                     player_attributes.intelligence.base += 1;
-                    log.entries.push("You feel smarter!".to_string());
+                    Logger::new().green("You feel smarter!").log();
                 }
             }
 

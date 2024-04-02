@@ -1,7 +1,7 @@
-use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::{
-    dungeon::MasterDungeonMap, gamelog::Gamelog, EquipmentChanged, InBackpack, MagicItem, Name,
+    dungeon::MasterDungeonMap, gamelog::Logger, EquipmentChanged, InBackpack, MagicItem, Name,
     ObfuscatedName, Position, WantsToDropItem,
 };
 
@@ -12,7 +12,6 @@ pub struct ItemDropSystem;
 impl<'a> System<'a> for ItemDropSystem {
     type SystemData = (
         ReadExpect<'a, Entity>,
-        WriteExpect<'a, Gamelog>,
         Entities<'a>,
         WriteStorage<'a, WantsToDropItem>,
         ReadStorage<'a, Name>,
@@ -27,7 +26,6 @@ impl<'a> System<'a> for ItemDropSystem {
     fn run(&mut self, data: Self::SystemData) {
         let (
             player_entity,
-            mut gamelog,
             entities,
             mut wants_drop,
             names,
@@ -51,11 +49,16 @@ impl<'a> System<'a> for ItemDropSystem {
                 .expect("Unable to mark equipment changed");
 
             if entity == *player_entity {
-                gamelog.entries.push(format!(
-                    "You drop the {item_name}.",
-                    item_name =
-                        obfuscate_name(to_drop.item, &names, &magic_items, &obfuscated_names, &dm)
-                ));
+                Logger::new()
+                    .white("You drop the")
+                    .cyan(obfuscate_name(
+                        to_drop.item,
+                        &names,
+                        &magic_items,
+                        &obfuscated_names,
+                        &dm,
+                    ))
+                    .log();
             }
         }
         wants_drop.clear();

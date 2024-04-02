@@ -1,5 +1,6 @@
 use crate::{
     effects::{add_effect, targetting::aoe_tiles, EffectType, Targets},
+    gamelog::Logger,
     raws::{
         rawsmaster::{find_spell_entity, get_item_drop, spawn_named_item, SpawnType},
         RAWS,
@@ -7,7 +8,7 @@ use crate::{
     AreaOfEffect, Equipped, InBackpack, LootTable, Map, OnDeath, Pools,
 };
 
-use super::{gamelog::Gamelog, Name, Player, Position, RunState};
+use super::{Name, Player, Position, RunState};
 use specs::prelude::*;
 
 pub fn delete_the_dead(ecs: &mut World) {
@@ -18,7 +19,6 @@ pub fn delete_the_dead(ecs: &mut World) {
         let players = ecs.read_storage::<Player>();
         let entities = ecs.entities();
         let names = ecs.read_storage::<Name>();
-        let mut log = ecs.write_resource::<Gamelog>();
 
         for (entity, stats) in (&entities, &pools).join() {
             if stats.hit_points.current < 1 {
@@ -26,8 +26,10 @@ pub fn delete_the_dead(ecs: &mut World) {
                 match players.get(entity) {
                     None => {
                         if let Some(victim_name) = names.get(entity) {
-                            log.entries
-                                .push(format!("{name} is dead", name = &victim_name.name))
+                            Logger::new()
+                                .yellow(&victim_name.name)
+                                .white("is dead.")
+                                .log()
                         }
                         dead.push(entity)
                     }

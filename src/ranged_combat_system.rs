@@ -1,11 +1,12 @@
 use crate::{
     effects::{add_effect, EffectType, Targets},
+    gamelog::Logger,
     gamesystem::skill_bonus,
     Attributes, EquipmentSlot, Map, NaturalAttackDefense, Pools, Position, Skill, Skills,
     WantsToShoot, WeaponAttribute,
 };
 
-use super::{gamelog::Gamelog, Equipped, HungerClock, HungerState, Name, Weapon, Wearable};
+use super::{Equipped, HungerClock, HungerState, Name, Weapon, Wearable};
 use rltk::{to_cp437, Point, RandomNumberGenerator, RGB};
 use specs::prelude::*;
 
@@ -20,7 +21,6 @@ impl<'a> System<'a> for RangedCombatSystem {
         ReadStorage<'a, Name>,
         ReadStorage<'a, Attributes>,
         ReadStorage<'a, Skills>,
-        WriteExpect<'a, Gamelog>,
         ReadStorage<'a, Weapon>,
         ReadStorage<'a, Wearable>,
         ReadStorage<'a, Equipped>,
@@ -38,7 +38,6 @@ impl<'a> System<'a> for RangedCombatSystem {
             names,
             attributes,
             skills,
-            mut log,
             melee_weapons,
             wearables,
             equipped,
@@ -169,11 +168,12 @@ impl<'a> System<'a> for RangedCombatSystem {
             match natural_roll {
                 // Natural 1 miss
                 1 => {
-                    log.entries.push(format!(
-                        "{name} considers attacking {target_name}, but misjudges the timing.",
-                        name = name.name,
-                        target_name = target_name.name
-                    ));
+                    Logger::new()
+                        .cyan(&name.name)
+                        .white("considers attacking")
+                        .cyan(&target_name.name)
+                        .white("but misjudges the timing!")
+                        .log();
                     add_effect(
                         None,
                         EffectType::Particle {
@@ -211,11 +211,14 @@ impl<'a> System<'a> for RangedCombatSystem {
                             target: wants_shoot.target,
                         },
                     );
-                    log.entries.push(format!(
-                        "{name} hits {target_name}, for {damage} hp.",
-                        name = &name.name,
-                        target_name = &target_name.name,
-                    ));
+                    Logger::new()
+                        .yellow(&name.name)
+                        .white("hits")
+                        .yellow(&target_name.name)
+                        .white("for")
+                        .red(format!("{}", damage))
+                        .white("hp.")
+                        .log();
 
                     // Proc effects
                     if weapon_info
@@ -241,11 +244,12 @@ impl<'a> System<'a> for RangedCombatSystem {
 
                 // Miss
                 _ => {
-                    log.entries.push(format!(
-                        "{name} attacks {target_name}, but can't connect.",
-                        name = name.name,
-                        target_name = target_name.name
-                    ));
+                    Logger::new()
+                        .cyan(&name.name)
+                        .white("attacks")
+                        .cyan(&target_name.name)
+                        .white("but can't connect.")
+                        .log();
                     add_effect(
                         None,
                         EffectType::Particle {

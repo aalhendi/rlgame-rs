@@ -1,7 +1,7 @@
-use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entities, Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::{
-    gamelog::Gamelog, CursedItem, EquipmentChanged, Equippable, Equipped, IdentifiedItem,
+    gamelog::Logger, CursedItem, EquipmentChanged, Equippable, Equipped, IdentifiedItem,
     InBackpack, Name, WantsToUseItem,
 };
 
@@ -10,7 +10,6 @@ pub struct ItemEquipOnUse;
 impl<'a> System<'a> for ItemEquipOnUse {
     type SystemData = (
         ReadExpect<'a, Entity>,
-        WriteExpect<'a, Gamelog>,
         Entities<'a>,
         WriteStorage<'a, WantsToUseItem>,
         ReadStorage<'a, Name>,
@@ -25,7 +24,6 @@ impl<'a> System<'a> for ItemEquipOnUse {
     fn run(&mut self, data: Self::SystemData) {
         let (
             player_entity,
-            mut gamelog,
             entities,
             mut wants_use,
             names,
@@ -53,13 +51,15 @@ impl<'a> System<'a> for ItemEquipOnUse {
                 if already_equipped.owner == target && already_equipped.slot == target_slot {
                     if cursed.get(item_entity).is_some() {
                         can_equip = false;
-                        gamelog
-                            .entries
-                            .push(format!("You cannot unequip {}, it is cursed.", name.name));
+                        Logger::new()
+                            .white("You cannot unequip")
+                            .cyan(&name.name)
+                            .white("- it is cursed!")
+                            .log();
                     } else {
                         to_unequip.push(item_entity);
                         if target == *player_entity {
-                            gamelog.entries.push(format!("You unequip {}.", name.name));
+                            Logger::new().white("You unequip").cyan(&name.name).log();
                         }
                     }
                 }
@@ -96,8 +96,10 @@ impl<'a> System<'a> for ItemEquipOnUse {
                     .expect("Unable to insert equipped component");
                 backpack.remove(useitem.item);
                 if target == *player_entity {
-                    let entry = format!("You equip {}.", names.get(useitem.item).unwrap().name);
-                    gamelog.entries.push(entry);
+                    Logger::new()
+                        .white("You equip")
+                        .cyan(&names.get(useitem.item).unwrap().name)
+                        .log();
                 }
             }
 

@@ -3,7 +3,7 @@ use super::{
     Position, Renderable, RunState, State, Viewshed, WantsToPickupItem,
 };
 use crate::components::WantsToMelee;
-use crate::gamelog::Gamelog;
+use crate::gamelog::Logger;
 use crate::map::TileType;
 use crate::raws::faction_structs::Reaction;
 use crate::raws::rawsmaster::faction_reaction;
@@ -318,10 +318,9 @@ fn use_spell_hotkey(gs: &mut State, key: usize) -> RunState {
                 return RunState::Ticking;
             }
         } else {
-            let mut gamelog = gs.ecs.fetch_mut::<Gamelog>();
-            gamelog
-                .entries
-                .push("You don't have enough mana to cast that!".to_string());
+            Logger::new()
+                .white("You don't have enough mana to cast that!")
+                .log()
         }
     }
 
@@ -335,7 +334,6 @@ fn get_item(ecs: &mut World) {
     let entities = ecs.entities();
     let items = ecs.read_storage::<Item>();
     let positions = ecs.read_storage::<Position>();
-    let mut gamelog = ecs.fetch_mut::<Gamelog>();
 
     let mut target_item: Option<Entity> = None;
     for (item_entity, _item, position) in (&entities, &items, &positions).join() {
@@ -346,9 +344,9 @@ fn get_item(ecs: &mut World) {
     }
 
     match target_item {
-        None => gamelog
-            .entries
-            .push("There is nothing here to pick up.".to_string()),
+        None => Logger::new()
+            .white("There is nothing here to pick up.")
+            .log(),
         Some(item) => {
             let mut pickup = ecs.write_storage::<WantsToPickupItem>();
             pickup
@@ -370,10 +368,7 @@ fn try_next_level(ecs: &mut World) -> bool {
     let player_idx = map.xy_idx(p_pos.x, p_pos.y);
     let is_down_stairs = map.tiles[player_idx] == TileType::DownStairs;
     if !is_down_stairs {
-        let mut gamelog = ecs.fetch_mut::<Gamelog>();
-        gamelog
-            .entries
-            .push("There is no way down from here".to_string());
+        Logger::new().white("There is no way down from here.").log()
     }
     is_down_stairs
 }
@@ -384,10 +379,7 @@ fn try_previous_level(ecs: &mut World) -> bool {
     let player_idx = map.xy_idx(player_pos.x, player_pos.y);
     let is_up_stairs = map.tiles[player_idx] == TileType::UpStairs;
     if !is_up_stairs {
-        let mut gamelog = ecs.fetch_mut::<Gamelog>();
-        gamelog
-            .entries
-            .push("There is no way up from here".to_string());
+        Logger::new().white("There is no way up from here.").log()
     }
     is_up_stairs
 }
@@ -538,7 +530,6 @@ fn fire_on_target(ecs: &mut World) -> RunState {
     let targets = ecs.read_storage::<Target>();
     let entities = ecs.entities();
     let mut current_target = None;
-    let mut log = ecs.fetch_mut::<Gamelog>();
 
     for (e, _t) in (&entities, &targets).join() {
         current_target = Some(e);
@@ -549,7 +540,7 @@ fn fire_on_target(ecs: &mut World) -> RunState {
         let mut shoot_store = ecs.write_storage::<WantsToShoot>();
         let names = ecs.read_storage::<Name>();
         if let Some(name) = names.get(target) {
-            log.entries.push(format!("You fire at {}", name.name));
+            Logger::new().white("You fire at").cyan(&name.name).log();
         }
         shoot_store
             .insert(*player_entity, WantsToShoot { target })
@@ -557,8 +548,9 @@ fn fire_on_target(ecs: &mut World) -> RunState {
 
         RunState::Ticking
     } else {
-        log.entries
-            .push("You don't have a target selected!".to_string());
+        Logger::new()
+            .white("You don't have a target selected!")
+            .log();
         RunState::AwaitingInput
     }
 }

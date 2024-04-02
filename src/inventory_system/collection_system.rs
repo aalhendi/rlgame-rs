@@ -1,7 +1,7 @@
-use specs::{Entity, Join, ReadExpect, ReadStorage, System, WriteExpect, WriteStorage};
+use specs::{Entity, Join, ReadExpect, ReadStorage, System, WriteStorage};
 
 use crate::{
-    dungeon::MasterDungeonMap, gamelog::Gamelog, EquipmentChanged, InBackpack, MagicItem, Name,
+    dungeon::MasterDungeonMap, gamelog::Logger, EquipmentChanged, InBackpack, MagicItem, Name,
     ObfuscatedName, Position, WantsToPickupItem,
 };
 
@@ -12,7 +12,6 @@ pub struct ItemCollectionSystem;
 impl<'a> System<'a> for ItemCollectionSystem {
     type SystemData = (
         ReadExpect<'a, Entity>,
-        WriteExpect<'a, Gamelog>,
         WriteStorage<'a, WantsToPickupItem>,
         WriteStorage<'a, Position>,
         ReadStorage<'a, Name>,
@@ -26,7 +25,6 @@ impl<'a> System<'a> for ItemCollectionSystem {
     fn run(&mut self, data: Self::SystemData) {
         let (
             player_entity,
-            mut gamelog,
             mut wants_pickup,
             mut positions,
             names,
@@ -52,10 +50,16 @@ impl<'a> System<'a> for ItemCollectionSystem {
                 .expect("Unable to mark EquipmentChanged");
 
             if pickup.collected_by == *player_entity {
-                gamelog.entries.push(format!(
-                    "You pick up the {}.",
-                    obfuscate_name(pickup.item, &names, &magic_items, &obfuscated_names, &dm)
-                ));
+                Logger::new()
+                    .white("You pick up the")
+                    .cyan(obfuscate_name(
+                        pickup.item,
+                        &names,
+                        &magic_items,
+                        &obfuscated_names,
+                        &dm,
+                    ))
+                    .log();
             }
         }
 

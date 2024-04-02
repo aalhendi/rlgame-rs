@@ -4,6 +4,7 @@ use ai::{
     turn_status_system::TurnStatusSystem, visible_ai_system::VisibleAI,
 };
 use encumbrance_system::EncumbranceSystem;
+use gamelog::Logger;
 use gui::VendorResult;
 use movement_system::MovementSystem;
 use ranged_combat_system::RangedCombatSystem;
@@ -64,8 +65,8 @@ use lighting_system::LightingSystem;
 mod ai;
 mod effects;
 mod movement_system;
-pub mod spatial;
 mod ranged_combat_system;
+pub mod spatial;
 
 const SHOW_MAPGEN_VISUALIZER: bool = false;
 const SHOW_FPS: bool = true;
@@ -160,8 +161,7 @@ impl State {
         self.generate_world_map(new_depth, offset);
 
         // Notify the player
-        let mut gamelog = self.ecs.fetch_mut::<gamelog::Gamelog>();
-        gamelog.entries.push("You change level.".to_string());
+        Logger::new().white("You change level.");
     }
 
     fn game_over_cleanup(&mut self) {
@@ -765,9 +765,12 @@ fn main() -> rltk::BError {
             menu_selection: gui::MainMenuSelection::NewGame,
         });
     }
-    gs.ecs.insert(gamelog::Gamelog {
-        entries: vec!["Welcome to Rusty Rougelike".to_string()],
-    });
+
+    gamelog::clear_log();
+    gamelog::Logger::new()
+        .white("Welcome to")
+        .cyan("Rusty Roguelike")
+        .log();
     gs.ecs.insert(particle_system::ParticleBuilder::new());
 
     gs.generate_world_map(1, 0);

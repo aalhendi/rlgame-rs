@@ -1,6 +1,9 @@
-use crate::effects::{add_effect, EffectType, Targets};
+use crate::{
+    effects::{add_effect, EffectType, Targets},
+    gamelog::Logger,
+};
 
-use super::{gamelog::Gamelog, HungerClock, HungerState, MyTurn, RunState};
+use super::{HungerClock, HungerState, MyTurn, RunState};
 use specs::prelude::*;
 
 pub struct HungerSystem;
@@ -11,12 +14,11 @@ impl<'a> System<'a> for HungerSystem {
         WriteStorage<'a, HungerClock>,
         ReadExpect<'a, Entity>, // The player
         ReadExpect<'a, RunState>,
-        WriteExpect<'a, Gamelog>,
         ReadStorage<'a, MyTurn>,
     );
 
     fn run(&mut self, data: Self::SystemData) {
-        let (entities, mut hunger_clock, player_entity, _runstate, mut log, turns) = data;
+        let (entities, mut hunger_clock, player_entity, _runstate, turns) = data;
 
         for (entity, clock, _myturn) in (&entities, &mut hunger_clock, &turns).join() {
             clock.duration -= 1;
@@ -29,30 +31,29 @@ impl<'a> System<'a> for HungerSystem {
                     clock.state = HungerState::Normal;
                     clock.duration = 200;
                     if entity == *player_entity {
-                        log.entries.push("You are no longer well fed.".to_string());
+                        Logger::new().orange("You are no longer well fed").log();
                     }
                 }
                 HungerState::Normal => {
                     clock.state = HungerState::Hungry;
                     clock.duration = 200;
                     if entity == *player_entity {
-                        log.entries.push("You are hungry.".to_string());
+                        Logger::new().orange("You are hungry").log();
                     }
                 }
                 HungerState::Hungry => {
                     clock.state = HungerState::Starving;
                     clock.duration = 200;
                     if entity == *player_entity {
-                        log.entries.push("You are starving!".to_string());
+                        Logger::new().red("You are starving!").log();
                     }
                 }
                 HungerState::Starving => {
                     // Inflict damage from hunger
                     if entity == *player_entity {
-                        log.entries.push(
-                            "Your hunger pangs are getting painful! You suffer 1 hp damage."
-                                .to_string(),
-                        );
+                        Logger::new()
+                            .red("Your hunger pangs are getting painful! You suffer 1 hp damage.")
+                            .log();
                     }
                     add_effect(
                         None,

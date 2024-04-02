@@ -3,16 +3,17 @@ use std::cmp::Ordering;
 use crate::{
     camera::{self, PANE_WIDTH},
     dungeon::MasterDungeonMap,
+    gamelog,
     raws::{rawsmaster::get_vendor_items, RAWS},
     spatial, Attribute, Attributes, Consumable, CursedItem, Duration, Item, KnownSpells, MagicItem,
     MagicItemClass, ObfuscatedName, Pools, StatusEffect, Vendor, VendorMode, Weapon,
 };
 
 use super::{
-    gamelog::Gamelog, Equipped, Hidden, HungerClock, HungerState, InBackpack, Map, Name, Owned,
-    RunState, State, Viewshed,
+    Equipped, Hidden, HungerClock, HungerState, InBackpack, Map, Name, Owned, RunState, State,
+    Viewshed,
 };
-use rltk::{Point, Rltk, VirtualKeyCode, RGB};
+use rltk::{Point, Rltk, TextBlock, VirtualKeyCode, RGB};
 use specs::prelude::*;
 
 pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
@@ -196,15 +197,12 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     }
     // ctx.draw_box(0, 43, 79, 6, white, black);
 
-    // Log
-    let log = ecs.fetch::<Gamelog>();
-    let mut y = 46;
-    for entry in log.entries.iter().rev() {
-        if y < 59 {
-            ctx.print(2, y, entry);
-        }
-        y += 1;
-    }
+    // Draw the log
+    let mut block = TextBlock::new(1, 46, 79, 58);
+    block
+        .print(&gamelog::log_display())
+        .expect("Unable to print log");
+    block.render(&mut rltk::BACKEND_INTERNAL.lock().consoles[0].console);
 
     // Tooltips
     draw_tooltips(ecs, ctx);

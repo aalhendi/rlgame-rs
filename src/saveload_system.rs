@@ -4,9 +4,10 @@ use specs::saveload::{DeserializeComponents, SimpleMarker, SimpleMarkerAllocator
 #[cfg(not(target_arch = "wasm32"))]
 use specs::saveload::{MarkedBuilder, SerializeComponents};
 
+use crate::gamelog;
 use crate::spatial;
 
-use super::components::*;
+use super::{components::*, map};
 use std::convert::Infallible as NoError;
 use std::path::Path;
 
@@ -44,9 +45,9 @@ macro_rules! deserialize_individually {
 #[cfg(not(target_arch = "wasm32"))]
 pub fn save_game(ecs: &mut World) {
     // Create helper
-    let mapcopy = ecs.get_mut::<super::map::Map>().unwrap().clone();
+    let mapcopy = ecs.get_mut::<map::Map>().unwrap().clone();
     let dungeon_master = ecs
-        .get_mut::<super::map::dungeon::MasterDungeonMap>()
+        .get_mut::<map::dungeon::MasterDungeonMap>()
         .unwrap()
         .clone();
 
@@ -60,6 +61,7 @@ pub fn save_game(ecs: &mut World) {
         .create_entity()
         .with(DMSerializationHelper {
             map: dungeon_master,
+            log: gamelog::clone_log(),
         })
         .marked::<SimpleMarker<IsSerialized>>()
         .build();
@@ -281,15 +283,16 @@ pub fn load_game(ecs: &mut World) {
         let player = ecs.read_storage::<Player>();
         let position = ecs.read_storage::<Position>();
         for (e, h) in (&entities, &helper).join() {
-            let mut worldmap = ecs.write_resource::<super::map::Map>();
+            let mut worldmap = ecs.write_resource::<map::Map>();
             *worldmap = h.map.clone();
             spatial::set_size((worldmap.height * worldmap.width) as usize);
             deleteme = Some(e);
         }
         for (e, h) in (&entities, &helper2).join() {
-            let mut dungeonmaster = ecs.write_resource::<super::map::dungeon::MasterDungeonMap>();
+            let mut dungeonmaster = ecs.write_resource::<map::dungeon::MasterDungeonMap>();
             *dungeonmaster = h.map.clone();
             deleteme2 = Some(e);
+            gamelog::restore_log(&mut h.log.clone());
         }
         for (e, _p, pos) in (&entities, &player, &position).join() {
             let mut ppos = ecs.write_resource::<rltk::Point>();
