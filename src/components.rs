@@ -141,6 +141,7 @@ pub struct SerializationHelper {
 pub struct DMSerializationHelper {
     pub map: map::dungeon::MasterDungeonMap,
     pub log: Vec<Vec<LogFragment>>,
+    pub events: HashMap<String, i32>,
 }
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]

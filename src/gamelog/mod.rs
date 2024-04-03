@@ -1,6 +1,7 @@
 use rltk::RGB;
 
 mod builder;
+pub mod events;
 mod logstore;
 pub use builder::*;
 pub use logstore::{clear_log, clone_log, log_display, restore_log};

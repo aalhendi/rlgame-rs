@@ -288,6 +288,9 @@ impl GameState for State {
             }
             RunState::AwaitingInput => {
                 newrunstate = player_input(self, ctx);
+                if newrunstate != RunState::AwaitingInput {
+                    gamelog::events::record_event("Turn", 1);
+                }
             }
             RunState::Ticking => {
                 let mut should_change_target = false;
@@ -771,6 +774,8 @@ fn main() -> rltk::BError {
         .white("Welcome to")
         .cyan("Rusty Roguelike")
         .log();
+    gamelog::events::clear_events();
+
     gs.ecs.insert(particle_system::ParticleBuilder::new());
 
     gs.generate_world_map(1, 0);
