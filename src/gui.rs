@@ -198,10 +198,11 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     // ctx.draw_box(0, 43, 79, 6, white, black);
 
     // Draw the log
-    let mut block = TextBlock::new(1, 46, 79, 58);
-    block
-        .print(&gamelog::log_display())
-        .expect("Unable to print log");
+    let block = TextBlock::new(1, 46, 79, 58);
+    gamelog::print_log(
+        &mut rltk::BACKEND_INTERNAL.lock().consoles[1].console,
+        Point::new(1, 23),
+    );
     block.render(&mut rltk::BACKEND_INTERNAL.lock().consoles[0].console);
 
     // Tooltips

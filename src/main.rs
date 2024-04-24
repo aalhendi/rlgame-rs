@@ -266,6 +266,9 @@ impl State {
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         let mut newrunstate = { *self.ecs.fetch::<RunState>() };
+        ctx.set_active_console(1);
+        ctx.cls();
+        ctx.set_active_console(0);
         ctx.cls();
         particle_system::update_particles(&mut self.ecs, ctx);
 
@@ -655,6 +658,8 @@ fn main() -> rltk::BError {
         .unwrap()
         .with_title("Rust Roguelike !")
         .with_vsync(false)
+        .with_font("vga8x16.png", 8, 16)
+        .with_sparse_console(80, 30, "vga8x16.png")
         .build()?;
 
     let mut gs = State {

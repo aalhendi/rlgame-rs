@@ -4,7 +4,9 @@ mod builder;
 pub mod events;
 mod logstore;
 pub use builder::*;
-pub use logstore::{clear_log, clone_log, log_display, restore_log};
+#[cfg(not(target_arch = "wasm32"))]
+pub use logstore::clone_log;
+pub use logstore::{clear_log, print_log, restore_log};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]

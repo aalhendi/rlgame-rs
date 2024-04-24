@@ -24,6 +24,7 @@ pub fn get_event_count<T: Into<String>>(event: T) -> i32 {
     events.get(&event.into()).map_or(0, |e| *e)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn clone_events() -> HashMap<String, i32> {
     EVENTS.lock().unwrap().clone()
 }
