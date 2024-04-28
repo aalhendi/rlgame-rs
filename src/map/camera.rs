@@ -1,6 +1,6 @@
-use crate::{map::themes::tile_glyph, Target, TileSize};
+use crate::{map::themes::tile_glyph, Hidden, Position, Renderable, Target, TileSize};
 
-use super::{Hidden, Map, Position, Renderable};
+use super::Map;
 use rltk::{Point, Rltk, RGB};
 use specs::{Join, World, WorldExt};
 
