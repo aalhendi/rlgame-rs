@@ -140,7 +140,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     for (entity, carried_by, _consumable) in (&entities, &backpack, &consumables).join() {
         if carried_by.owner == *player_entity && index < 10 {
             let name = &get_item_display_name(ecs, entity);
-            ctx.print_color(50, y, yellow, black, &format!("↑{index}"));
+            ctx.print_color(50, y, yellow, black, format!("↑{index}"));
             ctx.print_color(53, y, get_item_color(ecs, entity), black, name);
             y += 1;
             index += 1;
@@ -152,7 +152,7 @@ pub fn draw_ui(ecs: &World, ctx: &mut Rltk) {
     let known_spells_storage = ecs.read_storage::<KnownSpells>();
     let known_spells = &known_spells_storage.get(*player_entity).unwrap().spells;
     for (idx, spell) in known_spells.iter().enumerate() {
-        ctx.print_color(50, y, cyan, black, &format!("^{idx}", idx = idx + 1));
+        ctx.print_color(50, y, cyan, black, format!("^{idx}", idx = idx + 1));
         let spell_str = &format!("{} ({})", spell.display_name, spell.mana_cost);
         ctx.print_color(53, y, cyan, black, spell_str);
         y += 1;
@@ -227,10 +227,11 @@ fn draw_attribute(name: &str, attribute: &Attribute, y: i32, ctx: &mut Rltk) {
         y,
         color,
         black,
-        &format!("{total}", total = base + modifiers),
+        format!("{total}", total = base + modifiers),
     );
     // Bonus
-    ctx.print_color(73, y, color, black, &format!("{bonus}"));
+    let var_name = format!("{bonus}");
+    ctx.print_color(73, y, color, black, &var_name);
 
     // TODO(aalhendi): move glyph to color calc, add ('-')
     if bonus > 0 {

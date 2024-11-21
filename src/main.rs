@@ -5,7 +5,15 @@ use ai::{
 };
 use encumbrance_system::EncumbranceSystem;
 use gamelog::Logger;
-use gui::menu::{cheat::{show_cheat_mode, CheatMenuResult}, game_over::{game_over, GameOverResult}, identify::identify_menu, main_menu::{main_menu, MainMenuResult, MainMenuSelection}, remove_curse::remove_curse_menu, vendor::{show_vendor_menu, VendorResult}, ItemMenuResult};
+use gui::menu::{
+    cheat::{show_cheat_mode, CheatMenuResult},
+    game_over::{game_over, GameOverResult},
+    identify::identify_menu,
+    main_menu::{main_menu, MainMenuResult, MainMenuSelection},
+    remove_curse::remove_curse_menu,
+    vendor::{show_vendor_menu, VendorResult},
+    ItemMenuResult,
+};
 use movement_system::MovementSystem;
 use ranged_combat_system::RangedCombatSystem;
 use raws::{
@@ -85,32 +93,18 @@ pub enum RunState {
     ShowInventory,
     ShowDropItem,
     ShowRemoveItem,
-    ShowTargeting {
-        range: i32,
-        item: Entity,
-    },
-    MainMenu {
-        menu_selection: MainMenuSelection,
-    },
+    ShowTargeting { range: i32, item: Entity },
+    MainMenu { menu_selection: MainMenuSelection },
     SaveGame,
     NextLevel,
     PreviousLevel,
     TownPortal,
     GameOver,
-    MagicMapReveal {
-        row: i32,
-    },
+    MagicMapReveal { row: i32 },
     MapGeneration,
     ShowCheatMenu,
-    ShowVendor {
-        vendor: Entity,
-        mode: VendorMode,
-    },
-    TeleportingToOtherLevel {
-        x: i32,
-        y: i32,
-        depth: i32,
-    },
+    ShowVendor { vendor: Entity, mode: VendorMode },
+    TeleportingToOtherLevel { x: i32, y: i32, depth: i32 },
     ShowRemoveCurse,
     ShowIdentify,
 }
@@ -389,7 +383,8 @@ impl GameState for State {
                 }
             }
             RunState::ShowTargeting { range, item } => {
-                let (item_menu_result, item_entity) = gui::menu::ranged_target::ranged_target(self, ctx, range);
+                let (item_menu_result, item_entity) =
+                    gui::menu::ranged_target::ranged_target(self, ctx, range);
                 match item_menu_result {
                     ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     ItemMenuResult::NoResponse => {}
@@ -645,7 +640,7 @@ impl GameState for State {
         damage_system::delete_the_dead(&mut self.ecs);
 
         if SHOW_FPS {
-            ctx.print(1, 59, &format!("FPS: {}", ctx.fps));
+            ctx.print(1, 59, format!("FPS: {}", ctx.fps));
         }
     }
 }

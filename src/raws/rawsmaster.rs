@@ -658,11 +658,7 @@ pub fn spawn_named_mob(
     }
     eb = eb.with(skills);
 
-    let mob_level = if let Some(level) = mob_template.level {
-        level
-    } else {
-        1
-    };
+    let mob_level = mob_template.level.unwrap_or(1);
     let mob_hp = npc_hp(mob_fitness, mob_level);
     let mob_mana = mana_at_level(mob_int, mob_level);
 

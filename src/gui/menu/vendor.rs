@@ -63,7 +63,7 @@ fn vendor_sell_menu(
         let color = Some(get_item_color(&gs.ecs, entity));
         let name = &get_item_display_name(&gs.ecs, entity);
         print_item_label(ctx, y, label_char, name, color);
-        ctx.print(50, y, &format!("{val:.1} gp", val = item.base_value * 0.8));
+        ctx.print(50, y, format!("{val:.1} gp", val = item.base_value * 0.8));
         equippable.push(entity);
         y += 1;
     }
@@ -114,7 +114,7 @@ fn vendor_buy_menu(
     for (j, sale) in inventory.iter().enumerate() {
         let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
         print_item_label(ctx, y, label_char, &sale.0, None);
-        ctx.print(50, y, &format!("{val:.1} gp", val = sale.1 * 1.2));
+        ctx.print(50, y, format!("{val:.1} gp", val = sale.1 * 1.2));
         y += 1;
     }
 
