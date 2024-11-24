@@ -1,9 +1,12 @@
 use std::cmp::Ordering;
 
-use rltk::{Rltk, RGB};
+use rltk::{ColorPair, DrawBatch, Point, Rect, Rltk, RGB};
 use specs::{Join, World, WorldExt};
 
-use crate::{map::camera::{self, PANE_WIDTH}, spatial, Attributes, Duration, Hidden, Map, Name, Pools, StatusEffect};
+use crate::{
+    map::camera::{self, PANE_WIDTH},
+    spatial, Attributes, Duration, Hidden, Map, Name, Pools, StatusEffect,
+};
 
 use super::item_render::get_item_display_name;
 
@@ -29,27 +32,34 @@ impl Tooltip {
         self.lines.len() + 2 // +2 for border
     }
 
-    fn render(&self, ctx: &mut Rltk, x: i32, y: i32) {
+    fn render(&self, draw_batch: &mut DrawBatch, x: i32, y: i32) {
         let box_gray: RGB = RGB::from_hex("#999999").expect("Oops");
         let light_gray: RGB = RGB::from_hex("#DDDDDD").expect("Oops");
         let white = RGB::named(rltk::WHITE);
         let black = RGB::named(rltk::BLACK);
-        ctx.draw_box(
-            x,
-            y,
-            self.get_width() - 1,
-            self.get_height() - 1,
-            white,
-            box_gray,
+        draw_batch.draw_box(
+            Rect::with_size(
+                x,
+                y,
+                self.get_width() as i32 - 1,
+                self.get_height() as i32 - 1,
+            ),
+            ColorPair::new(white, box_gray),
         );
         for (i, s) in self.lines.iter().enumerate() {
             let col = if i == 0 { white } else { light_gray };
-            ctx.print_color(x + 1, y + i as i32 + 1, col, black, s);
+            draw_batch.print_color(
+                Point::new(x + 1, y + i as i32 + 1),
+                s,
+                ColorPair::new(col, black),
+            );
         }
     }
 }
 
 pub fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
+    let mut draw_batch = DrawBatch::new();
+
     let (min_x, _max_x, min_y, _max_y) = camera::get_screen_bounds(ecs, ctx);
     let white = RGB::named(rltk::WHITE);
     let box_gray: RGB = RGB::from_hex("#999999").expect("Could not parse color from hex");
@@ -158,7 +168,11 @@ pub fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
         (rltk::to_cp437('←'), mouse_pos.0 + 1)
     };
 
-    ctx.set(arrow_x, arrow_y, white, box_gray, arrow);
+    draw_batch.set(
+        Point::new(arrow_x, arrow_y),
+        ColorPair::new(white, box_gray),
+        arrow,
+    );
 
     let mut total_height = 0;
     for tt in tip_boxes.iter() {
@@ -179,7 +193,9 @@ pub fn draw_tooltips(ecs: &World, ctx: &mut Rltk) {
         } else {
             mouse_pos.0 + (1 + tt.get_width() as i32)
         };
-        tt.render(ctx, x, y);
+        tt.render(&mut draw_batch, x, y);
         y += tt.get_height() as i32;
     }
+
+    let _ = draw_batch.submit(7000);
 }

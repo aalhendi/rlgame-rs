@@ -1,12 +1,13 @@
 use crate::{map::themes::tile_glyph, Hidden, Position, Renderable, Target, TileSize};
 
 use super::Map;
-use rltk::{Point, Rltk, RGB};
+use rltk::{to_cp437, ColorPair, DrawBatch, Point, Rltk, RGB};
 use specs::{Join, World, WorldExt};
 
 const SHOW_BOUNDARIES: bool = true;
 pub const PANE_WIDTH: i32 = 44;
 
+// TODO(aalhendi): batch drawing here?
 pub fn render_debug_map(map: &Map, ctx: &mut Rltk) {
     let player_pos = Point::new(map.width / 2, map.height / 2);
     let (x_chars, y_chars) = ctx.get_char_size();
@@ -44,6 +45,7 @@ pub fn render_debug_map(map: &Map, ctx: &mut Rltk) {
 }
 
 pub fn render_camera(ecs: &World, ctx: &mut Rltk) {
+    let mut draw_batch = DrawBatch::new();
     let map = ecs.fetch::<Map>();
     let (min_x, max_x, min_y, max_y) = get_screen_bounds(ecs, ctx);
 
@@ -56,15 +58,13 @@ pub fn render_camera(ecs: &World, ctx: &mut Rltk) {
                 let idx = map.xy_idx(tx, ty);
                 if map.revealed_tiles[idx] {
                     let (glyph, fg, bg) = tile_glyph(idx, &map);
-                    ctx.set(x, y, fg, bg, glyph);
+                    draw_batch.set(Point::new(x, y), ColorPair::new(fg, bg), glyph);
                 }
             } else if SHOW_BOUNDARIES {
-                ctx.set(
-                    x,
-                    y,
-                    RGB::named(rltk::GRAY),
-                    RGB::named(rltk::BLACK),
-                    rltk::to_cp437('·'),
+                draw_batch.set(
+                    Point::new(x, y),
+                    ColorPair::new(rltk::GRAY, rltk::BLACK),
+                    to_cp437('·'),
                 );
             }
         }
@@ -98,11 +98,9 @@ pub fn render_camera(ecs: &World, ctx: &mut Rltk) {
                             && entity_screen_y > 0
                             && entity_screen_y < map_height
                         {
-                            ctx.set(
-                                entity_screen_x + 1,
-                                entity_screen_y + 1,
-                                render.fg,
-                                render.bg,
+                            draw_batch.set(
+                                Point::new(entity_screen_x + 1, entity_screen_y + 1),
+                                ColorPair::new(render.fg, render.bg),
                                 render.glyph,
                             );
                         }
@@ -119,11 +117,9 @@ pub fn render_camera(ecs: &World, ctx: &mut Rltk) {
                     && entity_screen_y > 0
                     && entity_screen_y < map_height
                 {
-                    ctx.set(
-                        entity_screen_x,
-                        entity_screen_y,
-                        render.fg,
-                        render.bg,
+                    draw_batch.set(
+                        Point::new(entity_screen_x, entity_screen_y),
+                        ColorPair::new(render.fg, render.bg),
                         render.glyph,
                     );
                 }
@@ -133,22 +129,19 @@ pub fn render_camera(ecs: &World, ctx: &mut Rltk) {
         if targets.get(*entity).is_some() {
             let entity_screen_x = pos.x - min_x;
             let entity_screen_y = pos.y - min_y;
-            ctx.set(
-                entity_screen_x - 1,
-                entity_screen_y,
-                rltk::RGB::named(rltk::RED),
-                rltk::RGB::named(rltk::YELLOW),
-                rltk::to_cp437('['),
+            draw_batch.set(
+                Point::new(entity_screen_x - 1, entity_screen_y),
+                ColorPair::new(rltk::RED, rltk::YELLOW),
+                to_cp437('['),
             );
-            ctx.set(
-                entity_screen_x + 1,
-                entity_screen_y,
-                rltk::RGB::named(rltk::RED),
-                rltk::RGB::named(rltk::YELLOW),
-                rltk::to_cp437(']'),
+            draw_batch.set(
+                Point::new(entity_screen_x + 1, entity_screen_y),
+                ColorPair::new(rltk::RED, rltk::YELLOW),
+                to_cp437(']'),
             );
         }
     }
+    let _ = draw_batch.submit(0);
 }
 
 pub fn get_screen_bounds(ecs: &World, _ctx: &mut Rltk) -> (i32, i32, i32, i32) {

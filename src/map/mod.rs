@@ -1,9 +1,9 @@
 use rltk::{Point, RandomNumberGenerator, RGB};
 use std::collections::HashSet;
+pub mod camera;
 pub mod dungeon;
 pub mod themes;
 pub mod tiletype;
-pub mod camera;
 pub use tiletype::{tile_opaque, tile_walkable, TileType};
 
 use crate::spatial;

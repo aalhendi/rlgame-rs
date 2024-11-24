@@ -1,7 +1,11 @@
-use rltk::{Rltk, VirtualKeyCode};
-use specs::{Entity, WorldExt, Join};
+use rltk::{DrawBatch, Point, Rltk, VirtualKeyCode};
+use specs::{Entity, Join, WorldExt};
 
-use crate::{gui::item_render::{get_item_color, get_item_display_name}, raws::{rawsmaster::get_vendor_items, RAWS}, InBackpack, Item, Name, State, Vendor, VendorMode};
+use crate::{
+    gui::item_render::{get_item_color, get_item_display_name},
+    raws::{rawsmaster::get_vendor_items, RAWS},
+    InBackpack, Item, Name, State, Vendor, VendorMode,
+};
 
 use super::{print_item_label, print_item_menu};
 
@@ -33,6 +37,8 @@ fn vendor_sell_menu(
     _vendor: Entity,
     _mode: VendorMode,
 ) -> (VendorResult, Option<Entity>, Option<String>, Option<f32>) {
+    let mut draw_batch = DrawBatch::new();
+
     let player_entity = gs.ecs.fetch::<Entity>();
     let names = gs.ecs.read_storage::<Name>();
     let backpack = gs.ecs.read_storage::<InBackpack>();
@@ -46,7 +52,7 @@ fn vendor_sell_menu(
 
     let mut y = (25 - (count / 2)) as i32;
     print_item_menu(
-        ctx,
+        &mut draw_batch,
         y,
         51,
         count,
@@ -62,11 +68,16 @@ fn vendor_sell_menu(
         let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
         let color = Some(get_item_color(&gs.ecs, entity));
         let name = &get_item_display_name(&gs.ecs, entity);
-        print_item_label(ctx, y, label_char, name, color);
-        ctx.print(50, y, format!("{val:.1} gp", val = item.base_value * 0.8));
+        print_item_label(&mut draw_batch, y, label_char, name, color);
+        draw_batch.print(
+            Point::new(50, y),
+            format!("{val:.1} gp", val = item.base_value * 0.8),
+        );
         equippable.push(entity);
         y += 1;
     }
+
+    let _ = draw_batch.submit(6000);
 
     match ctx.key {
         None => (VendorResult::NoResponse, None, None, None),
@@ -95,6 +106,8 @@ fn vendor_buy_menu(
     vendor: Entity,
     _mode: VendorMode,
 ) -> (VendorResult, Option<Entity>, Option<String>, Option<f32>) {
+    let mut draw_batch = DrawBatch::new();
+
     let vendors = gs.ecs.read_storage::<Vendor>();
     let inventory = get_vendor_items(
         &vendors.get(vendor).unwrap().categories,
@@ -104,7 +117,7 @@ fn vendor_buy_menu(
 
     let mut y = (25 - (count / 2)) as i32;
     print_item_menu(
-        ctx,
+        &mut draw_batch,
         y,
         51,
         count,
@@ -113,10 +126,12 @@ fn vendor_buy_menu(
 
     for (j, sale) in inventory.iter().enumerate() {
         let label_char = char::from_u32((97 + j) as u32).expect("Invalid char");
-        print_item_label(ctx, y, label_char, &sale.0, None);
+        print_item_label(&mut draw_batch, y, label_char, &sale.0, None);
         ctx.print(50, y, format!("{val:.1} gp", val = sale.1 * 1.2));
         y += 1;
     }
+
+    let _ = draw_batch.submit(6000);
 
     match ctx.key {
         None => (VendorResult::NoResponse, None, None, None),
@@ -138,4 +153,3 @@ fn vendor_buy_menu(
         },
     }
 }
-

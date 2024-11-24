@@ -640,8 +640,12 @@ impl GameState for State {
         damage_system::delete_the_dead(&mut self.ecs);
 
         if SHOW_FPS {
-            ctx.print(1, 59, format!("FPS: {}", ctx.fps));
+            let mut draw_batch = rltk::DrawBatch::new();
+            draw_batch.print(Point::new(1, 59), format!("FPS: {}", ctx.fps));
+            let _ = draw_batch.submit(7000);
         }
+
+        let _ = rltk::render_draw_buffer(ctx);
     }
 }
 // --- State End ---

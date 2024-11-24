@@ -1,4 +1,4 @@
-use rltk::{Point, Rltk, RGB};
+use rltk::{ColorPair, DrawBatch, Point, Rltk, RGB};
 use specs::{Entity, WorldExt};
 
 use crate::{map::camera, State, Viewshed};
@@ -15,12 +15,12 @@ pub fn ranged_target(
     let player_pos = gs.ecs.fetch::<Point>();
     let viewsheds = gs.ecs.read_storage::<Viewshed>();
 
-    ctx.print_color(
-        5,
-        0,
-        RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
+    let mut draw_batch = DrawBatch::new();
+
+    draw_batch.print_color(
+        Point::new(5, 0),
         "Select Target:",
+        ColorPair::new(RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK)),
     );
 
     // Highlight available target cells
@@ -37,7 +37,7 @@ pub fn ranged_target(
                     && screen_y > 1
                     && screen_y < (max_y - min_y) - 1
                 {
-                    ctx.set_bg(screen_x, screen_y, RGB::named(rltk::BLUE));
+                    draw_batch.set_bg(Point::new(screen_x, screen_y), RGB::named(rltk::BLUE));
                     available_cells.push(pt);
                 }
             }
@@ -60,7 +60,7 @@ pub fn ranged_target(
     }
 
     if valid_target {
-        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::CYAN));
+        draw_batch.set_bg(Point::new(mouse_pos.0, mouse_pos.1), RGB::named(rltk::CYAN));
         if ctx.left_click {
             return (
                 ItemMenuResult::Selected,
@@ -68,11 +68,12 @@ pub fn ranged_target(
             );
         }
     } else {
-        ctx.set_bg(mouse_pos.0, mouse_pos.1, RGB::named(rltk::RED));
+        draw_batch.set_bg(Point::new(mouse_pos.0, mouse_pos.1), RGB::named(rltk::RED));
         if ctx.left_click {
             return (ItemMenuResult::Cancel, None);
         }
     }
 
+    let _ = draw_batch.submit(5000);
     (ItemMenuResult::NoResponse, None)
 }

@@ -1,9 +1,8 @@
-use rltk::{Rltk, VirtualKeyCode, RGB};
+use rltk::{ColorPair, DrawBatch, Rltk, VirtualKeyCode, RGB};
 
 use crate::{saveload_system, RunState, State};
 
 use super::print_menu_item;
-
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum MainMenuSelection {
@@ -19,14 +18,14 @@ pub enum MainMenuResult {
 }
 
 pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
+    let mut draw_batch = DrawBatch::new();
     let save_exists = saveload_system::save_exists();
     let runstate = gs.ecs.fetch::<RunState>();
 
-    ctx.print_color_centered(
+    draw_batch.print_color_centered(
         15,
-        RGB::named(rltk::YELLOW),
-        RGB::named(rltk::BLACK),
         "Rust Roguelike!",
+        ColorPair::new(RGB::named(rltk::YELLOW), RGB::named(rltk::BLACK)),
     );
 
     if let RunState::MainMenu {
@@ -34,7 +33,7 @@ pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
     } = *runstate
     {
         print_menu_item(
-            ctx,
+            &mut draw_batch,
             "Begin New Game",
             24,
             cur_hovering == MainMenuSelection::NewGame,
@@ -42,13 +41,20 @@ pub fn main_menu(gs: &mut State, ctx: &mut Rltk) -> MainMenuResult {
 
         if save_exists {
             print_menu_item(
-                ctx,
+                &mut draw_batch,
                 "Load Game",
                 25,
                 cur_hovering == MainMenuSelection::LoadGame,
             );
         }
-        print_menu_item(ctx, "Quit", 26, cur_hovering == MainMenuSelection::Quit);
+        print_menu_item(
+            &mut draw_batch,
+            "Quit",
+            26,
+            cur_hovering == MainMenuSelection::Quit,
+        );
+
+        let _ = draw_batch.submit(6000);
 
         if let Some(key) = ctx.key {
             match key {
